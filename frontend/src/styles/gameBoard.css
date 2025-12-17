@@ -1,0 +1,144 @@
+.cell {
+  width: 100%;
+  height: 100%;
+  background: #e5e7eb;
+  border-radius: 3px;
+}
+
+
+.box1 { grid-area: box1; }
+.box2 { grid-area: box2; background-color: #e81212;}
+.box3 { grid-area: box3; }
+.box4 { grid-area: box4; }
+.box5 { grid-area: box5; }
+.box6 { grid-area: box6; }
+.box7 { grid-area: box7; }
+.box8 { grid-area: box8; }
+.box9 { grid-area: box9; }
+.box10 { grid-area: box10; }
+.box11 { grid-area: box11; }
+.box12 { grid-area: box12; }
+.box13 { grid-area: box13; }
+.box14 { grid-area: box14; }
+.box15 { grid-area: box15; background-color: #2323d7; }
+.box16 { grid-area: box16; }
+.box17 { grid-area: box17; }
+.box18 { grid-area: box18; }
+.box19 { grid-area: box19; }
+.box20 { grid-area: box20; }
+.box21 { grid-area: box21; }
+.box22 { grid-area: box22; }
+.box23 { grid-area: box23; }
+.box24 { grid-area: box24; }
+.box25 { grid-area: box25; }
+.box26 { grid-area: box26; }
+.box27 { grid-area: box27; }
+.box28 { grid-area: box28; background-color: #eaea0e;}
+.box29 { grid-area: box29; }
+.box30 { grid-area: box30; }
+.box31 { grid-area: box31; }
+.box32 { grid-area: box32; }
+.box33 { grid-area: box33; }
+.box34 { grid-area: box34; }
+.box35 { grid-area: box35; }
+.box36 { grid-area: box36; }
+.box37 { grid-area: box37; }
+.box38 { grid-area: box38; }
+.box39 { grid-area: box39; }
+.box40 { grid-area: box40; }
+.box41 { grid-area: box41; background-color: #02b102;}
+.box42 { grid-area: box42; }
+.box43 { grid-area: box43; }
+.box44 { grid-area: box44; }
+.box45 { grid-area: box45; }
+.box46 { grid-area: box46; }
+.box47 { grid-area: box47; }
+.box48 { grid-area: box48; }
+.box49 { grid-area: box49; }
+.box50 { grid-area: box50; }
+.box51 { grid-area: box51; }
+.box52 { grid-area: box52; }
+
+.trackR1 { grid-area: trackR1; }
+.trackR2 { grid-area: trackR2; }
+.trackR3 { grid-area: trackR3; }
+.trackR4 { grid-area: trackR4; }
+.trackR5 { grid-area: trackR5; }
+
+.trackB1 { grid-area: trackB1; }
+.trackB2 { grid-area: trackB2; }
+.trackB3 { grid-area: trackB3; }
+.trackB4 { grid-area: trackB4; }
+.trackB5 { grid-area: trackB5; }
+
+.trackY1 { grid-area: trackY1; }
+.trackY2 { grid-area: trackY2; }
+.trackY3 { grid-area: trackY3; }
+.trackY4 { grid-area: trackY4; }
+.trackY5 { grid-area: trackY5; }
+
+.trackG1 { grid-area: trackG1; }
+.trackG2 { grid-area: trackG2; }
+.trackG3 { grid-area: trackG3; }
+.trackG4 { grid-area: trackG4; }
+.trackG5 { grid-area: trackG5; }
+
+.homeR { grid-area: homeR; }
+.homeB { grid-area: homeB; }
+.homeY { grid-area: homeY; }
+.homeG { grid-area: homeG; }
+
+.finish { grid-area: finish;}
+
+
+.bg-R { background: #e81212; }
+.bg-B { background: #2323d7; }
+.bg-Y { background: #eaea0e; }
+.bg-G { background: #02b102; }
+
+
+
+/* Finish container */
+.finish {
+  position: relative;
+}
+
+/* Base triangle style */
+.finish-triangle {
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+/* Red (Bottom) */
+.finish .red {
+  clip-path: polygon(50% 54%, 0 100%, 100% 100%);
+  /* border-color: transparent transparent #e81212 transparent; */
+  bottom: 0;
+  left: 0;
+}
+
+/* Blue (Left) */
+.finish .blue {
+  border-width: 50% 50% 50% 0;
+  border-color: transparent #2323d7 transparent transparent;
+  top: 0;
+  left: 0;
+}
+
+/* Yellow (Top) */
+.finish .yellow {
+  border-width: 50% 50% 0 50%;
+  border-color: #eaea0e transparent transparent transparent;
+  top: 0;
+  left: 0;
+}
+
+/* Green (Right) */
+.finish .green {
+  border-width: 50% 0 50% 50%;
+  border-color: transparent transparent transparent #02b102;
+  top: 0;
+  right: 0;
+}
