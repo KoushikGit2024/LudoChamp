@@ -19,12 +19,12 @@ const LudoOffline = () => {
   }, []);
   useEffect(() => {
     if (!ref.current) return;
-    const rect = ref.current.getBoundingClientRect();
+    // const rect = ref.current.getBoundingClientRect();
     // console.log(rect);
   }, []);
 
   return (
-    <div ref={ref} className='aspect-square bg-red-600 m-5' style={(screen)?{minWidth:'90%'}:{minHeight:'90%'}} onClick={()=>console.log(ref.current.childNodes)}>
+    <div ref={ref} className='aspect-square bg-red-900 m-5' style={(screen)?{minWidth:'90%'}:{minHeight:'90%'}} onClick={()=>console.log(ref.current.childNodes)}>
       <GameBoard/>
         
     </div>

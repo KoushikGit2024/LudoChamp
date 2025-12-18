@@ -7,7 +7,7 @@
 
 
 .box1 { grid-area: box1; }
-.box2 { grid-area: box2; background-color: #e81212;}
+.box2 { grid-area: box2; background-color: #e81212; background-image: '../../public/safeStar.png';}
 .box3 { grid-area: box3; }
 .box4 { grid-area: box4; }
 .box5 { grid-area: box5; }

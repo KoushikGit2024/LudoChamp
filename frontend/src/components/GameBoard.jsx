@@ -4,7 +4,7 @@ import "../styles/gameBoard.css";
 const GameBoard = () => {
   return (
     <div
-      className="boardContainer grid gap-1 bg-[black] rounded-0 max-w-full max-h-full w-full h-full"
+      className="boardContainer aspect-square grid gap-1 rounded-0 max-w-full max-h-full w-full h-full bg-blue-500"
       style={{
         gridTemplateColumns: "repeat(15, 1fr)",
         gridTemplateRows: "repeat(15, 1fr)",
@@ -29,7 +29,7 @@ const GameBoard = () => {
     >
       {/* Boxes */}
       {Array.from({ length: 52 }, (_, i) => (
-        <div key={i} className={`cell box${i + 1} flex items-center justify-center`}>o</div>
+        <div key={i} className={`cell box${i + 1} flex items-center justify-center aspect-square`}>o</div>
       ))}
 
       {/* Tracks */}
@@ -37,17 +37,17 @@ const GameBoard = () => {
         [1, 2, 3, 4, 5].map((n) => (
           <div
             key={`${c}${n}`}
-            className={`cell track${c}${n} bg-${c} flex items-center justify-center`}
+            className={`cell track${c}${n} bg-${c} flex items-center justify-center aspect-square`}
           >a</div>
         ))
       )}
 
       {/* Homes */}
-      <div className="cell homeR bg-R text-5xl flex items-center justify-center" >R</div>
-      <div className="cell homeB bg-B text-5xl flex items-center justify-center" >B</div>
-      <div className="cell homeY bg-Y text-5xl flex items-center justify-center" >Y</div>
-      <div className="cell homeG bg-G text-5xl flex items-center justify-center" >G</div>
-      <div className="cell finish flex items-center justify-center" >
+      <div className="cell homeR bg-R text-5xl flex items-center justify-center aspect-square" >R</div>
+      <div className="cell homeB bg-B text-5xl flex items-center justify-center aspect-square" >B</div>
+      <div className="cell homeY bg-Y text-5xl flex items-center justify-center aspect-square" >Y</div>
+      <div className="cell homeG bg-G text-5xl flex items-center justify-center aspect-square" >G</div>
+      <div className="cell finish flex items-center justify-center aspect-square" >
         <div 
           className="absolute inset-0 bg-[#eaea0e] flex justify-center pt-2 font-bold"
           style={{ clipPath: 'polygon(0% 0%, 100% 0%, 50% 50%)' }}
