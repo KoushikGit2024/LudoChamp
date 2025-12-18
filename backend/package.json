@@ -45,6 +45,7 @@
     "ipaddr.js": "^1.9.1",
     "is-promise": "^4.0.0",
     "kareem": "^3.0.0",
+    "ludochamp": "file:..",
     "math-intrinsics": "^1.1.0",
     "media-typer": "^1.1.0",
     "memory-pager": "^1.5.0",
