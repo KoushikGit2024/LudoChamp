@@ -96,49 +96,22 @@
 .bg-Y { background: #eaea0e; }
 .bg-G { background: #02b102; }
 
+.homeR1 {grid-area: homeR1; }
+.homeR2 {grid-area: homeR2; }
+.homeR3 {grid-area: homeR3; }
+.homeR4 {grid-area: homeR4; }
 
+.homeB1 {grid-area: homeB1; }
+.homeB2 {grid-area: homeB2; }
+.homeB3 {grid-area: homeB3; }
+.homeB4 {grid-area: homeB4; }
 
-/* Finish container */
-.finish {
-  position: relative;
-}
+.homeY1 {grid-area: homeY1; }
+.homeY2 {grid-area: homeY2; }
+.homeY3 {grid-area: homeY3; }
+.homeY4 {grid-area: homeY4; }
 
-/* Base triangle style */
-.finish-triangle {
-  position: absolute;
-  width: 0;
-  height: 0;
-  border-style: solid;
-}
-
-/* Red (Bottom) */
-.finish .red {
-  clip-path: polygon(50% 54%, 0 100%, 100% 100%);
-  /* border-color: transparent transparent #e81212 transparent; */
-  bottom: 0;
-  left: 0;
-}
-
-/* Blue (Left) */
-.finish .blue {
-  border-width: 50% 50% 50% 0;
-  border-color: transparent #2323d7 transparent transparent;
-  top: 0;
-  left: 0;
-}
-
-/* Yellow (Top) */
-.finish .yellow {
-  border-width: 50% 50% 0 50%;
-  border-color: #eaea0e transparent transparent transparent;
-  top: 0;
-  left: 0;
-}
-
-/* Green (Right) */
-.finish .green {
-  border-width: 50% 0 50% 50%;
-  border-color: transparent transparent transparent #02b102;
-  top: 0;
-  right: 0;
-}
+.homeG1 {grid-area: homeG1; }
+.homeG2 {grid-area: homeG2; }
+.homeG3 {grid-area: homeG3; }
+.homeG4 {grid-area: homeG4; }

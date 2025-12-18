@@ -9,7 +9,7 @@ const LudoOffline = () => {
   const ref=useRef(null);
   useEffect(() => {
     const handleResize = () => {
-      console.log("ji")
+      // console.log("ji")
       setScreen(window.innerWidth <= window.innerHeight);
     };
 
@@ -24,7 +24,7 @@ const LudoOffline = () => {
   }, []);
 
   return (
-    <div ref={ref} className='aspect-square bg-red-900 m-5' style={(screen)?{minWidth:'90%'}:{minHeight:'90%'}} onClick={()=>console.log(ref.current.childNodes)}>
+    <div ref={ref} className='aspect-square bg-red-900 p-0' style={(screen)?{minWidth:'90%'}:{minHeight:'90%'}}>
       <GameBoard/>
         
     </div>

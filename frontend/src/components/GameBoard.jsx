@@ -1,10 +1,34 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "../styles/gameBoard.css";
-
+import star from '../../public/safeStar.png'
 const GameBoard = () => {
+  const pathRefs = useRef([]);
+  const boardRef = useRef(null);
+  const [pathPoints,setPathPoints]=useState([])
+  const [temp,setTemp]=useState(0);
+  const [loaded,setLoaded]=useState(false)
+
+  useEffect(()=>{
+    if(!pathRefs.current[0]) return;
+    let tempPts=new Array(52).fill(null);
+    pathRefs.current.forEach((el,i)=>{
+      tempPts[i]={
+        x:el.getBoundingClientRect().x-boardRef.current.getBoundingClientRect().x-12,//.left-boardRef.current.getBoundingClientRect().left,
+        y:el.getBoundingClientRect().y-boardRef.current.getBoundingClientRect().y-12,
+      };
+      if(i==0)
+        console.log()
+    })
+    setPathPoints(tempPts);
+    setLoaded(true)
+  },[])
+
   return (
+
+
+
     <div
-      className="boardContainer aspect-square grid gap-1 rounded-0 max-w-full max-h-full w-full h-full bg-blue-500"
+      className="boardContainer aspect-square grid gap-1 rounded-0 max-w-full max-h-full w-full h-full bg-[purple] p-3"
       style={{
         gridTemplateColumns: "repeat(15, 1fr)",
         gridTemplateRows: "repeat(15, 1fr)",
@@ -26,10 +50,18 @@ const GameBoard = () => {
           "homeR homeR homeR homeR homeR homeR box1 box52 box51 homeG homeG homeG homeG homeG homeG"
         `,
       }}
+      ref={boardRef}
+      onClick={()=>{
+        // console.log(pathPoints[temp]);
+        if(temp<51)
+          setTemp(temp+1);
+        else
+          setTemp(0);
+      }}
     >
       {/* Boxes */}
       {Array.from({ length: 52 }, (_, i) => (
-        <div key={i} className={`cell box${i + 1} flex items-center justify-center aspect-square`}>o</div>
+        <div key={i} ref={(el)=>(pathRefs.current[i]=el)} className={`cell box${i + 1} flex items-center justify-center aspect-square`} style={{backgroundImage:star}}  onClick={(e)=>{console.log([e.target.getBoundingClientRect(),boardRef.current.getBoundingClientRect()])}}>{(loaded)?i:""}</div>
       ))}
 
       {/* Tracks */}
@@ -43,11 +75,99 @@ const GameBoard = () => {
       )}
 
       {/* Homes */}
-      <div className="cell homeR bg-R text-5xl flex items-center justify-center aspect-square" >R</div>
-      <div className="cell homeB bg-B text-5xl flex items-center justify-center aspect-square" >B</div>
-      <div className="cell homeY bg-Y text-5xl flex items-center justify-center aspect-square" >Y</div>
-      <div className="cell homeG bg-G text-5xl flex items-center justify-center aspect-square" >G</div>
-      <div className="cell finish flex items-center justify-center aspect-square" >
+      <div className="cell homeR bg-R flex items-center justify-center aspect-square" >
+        <div 
+          className="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]"
+          style={{
+            gridTemplateAreas:`
+            "homeR1 homeR2"
+            "homeR3 homeR4
+          `,}}
+        >
+          <div className="homeR1 bg-[#e81212] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            1
+          </div>
+          <div className="homeR2 bg-[#e81212] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            2
+          </div>
+          <div className="homeR3 bg-[#e81212] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            3
+          </div>
+          <div className="homeR4 bg-[#e81212] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            4
+          </div>
+        </div>
+      </div>
+      <div className="cell homeB bg-B flex items-center justify-center aspect-square" >
+        <div 
+          className="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]"
+          style={{
+            gridTemplateAreas:`
+            "homeB1 homeB2"
+            "homeB3 homeB4
+          `,}}
+        >
+          <div className="homeB1 bg-[#2323d7] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            1
+          </div>
+          <div className="homeB2 bg-[#2323d7] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            2
+          </div>
+          <div className="homeB3 bg-[#2323d7] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            3
+          </div>
+          <div className="homeB4 bg-[#2323d7] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            4
+          </div>
+        </div>
+      </div>
+      <div className="cell homeY bg-Y flex items-center justify-center aspect-square" >
+        <div 
+          className="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]"
+          style={{
+            gridTemplateAreas:`
+            "homeY1 homeY2"
+            "homeY3 homeY4
+          `,}}
+        >
+          <div className="homeY1 bg-[#eaea0e] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            1
+          </div>
+          <div className="homeY2 bg-[#eaea0e] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            2
+          </div>
+          <div className="homeY3 bg-[#eaea0e] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            3
+          </div>
+          <div className="homeY4 bg-[#eaea0e] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            4
+          </div>
+        </div>
+      </div>
+      <div className="cell homeG bg-G flex items-center justify-center aspect-square" >
+        <div 
+          className="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]"
+          style={{
+            gridTemplateAreas:`
+            "homeG1 homeG2"
+            "homeG3 homeG4
+          `,}}
+        >
+          <div className="homeG1 bg-[#02b102] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            1
+          </div>
+          <div className="homeG2 bg-[#02b102] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            2
+          </div>
+          <div className="homeG3 bg-[#02b102] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            3
+          </div>
+          <div className="homeG4 bg-[#02b102] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
+            4
+          </div>
+        </div>
+      </div>
+      <div className="cell finish relative flex items-center justify-center aspect-square" >
         <div 
           className="absolute inset-0 bg-[#eaea0e] flex justify-center pt-2 font-bold"
           style={{ clipPath: 'polygon(0% 0%, 100% 0%, 50% 50%)' }}
@@ -82,6 +202,10 @@ const GameBoard = () => {
         </div>
         <div className="bg-[#969696]  z-10 self min-w-1/10 min-h-1/10" style={{clipPath:'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',translate:'0 -60%'}} ></div>
       </div>
+      {
+        (loaded)?<div className="aspect-square absolute z-100 bg-[gold] " style={{transform:`translate(${pathPoints[temp].x}px,${pathPoints[temp].y}px)`,width:`${pathRefs.current[0].getBoundingClientRect().width}px`}}>P</div>:"Phhhjjhjhj"
+        // <div className="piece aspect-square absolute z-100 bg-[gold] text-4xl" style={{transform:`translate(1px,233px)`,width:'auto'}}>P</div>
+      }
     </div>
   );
 };
