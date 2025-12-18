@@ -16,7 +16,7 @@ app.get("/api", (req, res) => {
   res.send("Hi")
 })
 
-if (process.env.NODE_ENV === "production") {
+if (process.env.NODE_ENV === "production"||true) {
   app.use(express.static(path.join(__dirname, "../frontend/dist")))
 
   // SPA fallback — MUST be RegExp
