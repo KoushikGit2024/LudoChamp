@@ -16,6 +16,10 @@ app.get("/api", (req, res) => {
   res.send("Hi")
 })
 
+app.get("/test",(req,res)=>{
+  res.send({msg:"Server running well!!!"})
+})
+
 if (process.env.NODE_ENV === "production"||true) {
   app.use(express.static(path.join(__dirname, "../frontend/dist")))
 
