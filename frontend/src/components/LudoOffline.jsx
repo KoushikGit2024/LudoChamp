@@ -26,7 +26,9 @@ const LudoOffline = () => {
   return (
     <div ref={ref} className='aspect-square bg-red-900 p-0' style={(screen)?{minWidth:'90%'}:{minHeight:'90%'}}>
       <GameBoard/>
-        
+      <div className="dice bg-[white] w-[10%] aspect-square">
+        kou
+      </div>
     </div>
   )
 }

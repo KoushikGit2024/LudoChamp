@@ -1,34 +1,78 @@
 import React, { useEffect, useRef, useState } from "react";
 import "../styles/gameBoard.css";
 import star from '../../public/safeStar.png'
+import SlideEffect from '../assets/SlideEffect.mp3'
+import gsap from "gsap";
+import {useGSAP} from '@gsap/react'
+
+import debounce from '../derivedFuncs/debounce.js'
 const GameBoard = () => {
   const pathRefs = useRef([]);
   const boardRef = useRef(null);
+  const pieceRef =useRef(null);
+  const audioRef = useRef(null);
+
   const [pathPoints,setPathPoints]=useState([])
   const [temp,setTemp]=useState(0);
   const [loaded,setLoaded]=useState(false)
+  const [cellSize,setCellSize]=useState(0)
+   
+  const playSound = () => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = 0;
+    audioRef.current.play();
+  };
+  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  const pathPointCalculator = ()=>{
+    if (!pathRefs.current[0] || !boardRef.current) return;
 
-  useEffect(()=>{
-    if(!pathRefs.current[0]) return;
-    let tempPts=new Array(52).fill(null);
-    pathRefs.current.forEach((el,i)=>{
-      tempPts[i]={
-        x:el.getBoundingClientRect().x-boardRef.current.getBoundingClientRect().x-12,//.left-boardRef.current.getBoundingClientRect().left,
-        y:el.getBoundingClientRect().y-boardRef.current.getBoundingClientRect().y-12,
+    const boardRect = boardRef.current.getBoundingClientRect();
+    const firstCellRect = pathRefs.current[0].getBoundingClientRect();
+    const pieceSize = firstCellRect.width;
+    setCellSize(pieceSize);
+    const tempPts = pathRefs.current.map((el) => {
+      const cellRect = el.getBoundingClientRect();
+      return {
+        x:cellRect.left-boardRect.left,
+        y:cellRect.top-boardRect.top,
       };
-      if(i==0)
-        console.log()
-    })
+    });
     setPathPoints(tempPts);
-    setLoaded(true)
-  },[])
+  }
+  useEffect(() => {
+    pathPointCalculator();
+    setLoaded(true);
+  }, []);
+  // window.addEventListener('resize',debounce(
+  //   ()=>{console.log("hi")}
+  // ,1000))
+  useEffect(() => {
+
+    window.addEventListener('resize',debounce(
+      pathPointCalculator
+    ,100));
+
+    return () => {
+      window.removeEventListener('resize',debounce(
+        pathPointCalculator
+      ,100));
+    };
+  }, []);
+
+  useGSAP(() => {
+    if (!pieceRef.current || !pathPoints[temp]) return;
+    
+    gsap.to(pieceRef.current, {
+      x: pathPoints[temp].x,
+      y: pathPoints[temp].y,
+      duration: 0.5,
+      ease: "power2.out"
+    });
+  }, [temp, pathPoints]);
 
   return (
-
-
-
     <div
-      className="boardContainer aspect-square grid gap-1 rounded-0 max-w-full max-h-full w-full h-full bg-[purple] p-3"
+      className="boardContainer relative aspect-square grid gap-[2px] rounded-0 max-w-full max-h-full w-full h-full bg-[purple] p-3"
       style={{
         gridTemplateColumns: "repeat(15, 1fr)",
         gridTemplateRows: "repeat(15, 1fr)",
@@ -51,17 +95,25 @@ const GameBoard = () => {
         `,
       }}
       ref={boardRef}
-      onClick={()=>{
+      onClick={async ()=>{
         // console.log(pathPoints[temp]);
-        if(temp<51)
-          setTemp(temp+1);
-        else
-          setTemp(0);
+        
+        for(let i=0;i<5;i++){
+          setTemp(prev => (prev < 51 ? prev + 1 : 0));
+          playSound(); 
+          await sleep(500);
+        } 
       }}
     >
       {/* Boxes */}
       {Array.from({ length: 52 }, (_, i) => (
-        <div key={i} ref={(el)=>(pathRefs.current[i]=el)} className={`cell box${i + 1} flex items-center justify-center aspect-square`} style={{backgroundImage:star}}  onClick={(e)=>{console.log([e.target.getBoundingClientRect(),boardRef.current.getBoundingClientRect()])}}>{(loaded)?i:""}</div>
+        <div 
+          key={i} 
+          ref={(el)=>(pathRefs.current[i]=el)} 
+          className={`cell box${i + 1} flex items-center justify-center aspect-square`} style={{backgroundImage:star}}
+        >
+          {(loaded)?i:""}
+        </div>
       ))}
 
       {/* Tracks */}
@@ -203,9 +255,12 @@ const GameBoard = () => {
         <div className="bg-[#969696]  z-10 self min-w-1/10 min-h-1/10" style={{clipPath:'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',translate:'0 -60%'}} ></div>
       </div>
       {
-        (loaded)?<div className="aspect-square absolute z-100 bg-[gold] " style={{transform:`translate(${pathPoints[temp].x}px,${pathPoints[temp].y}px)`,width:`${pathRefs.current[0].getBoundingClientRect().width}px`}}>P</div>:"Phhhjjhjhj"
-        // <div className="piece aspect-square absolute z-100 bg-[gold] text-4xl" style={{transform:`translate(1px,233px)`,width:'auto'}}>P</div>
+        (loaded) && <div ref={pieceRef} className="piece aspect-square fixed z-100 bg-[gold] text-[10px] p-0 m-0 flex items-center justify-center"  style={{width:`${cellSize}px`,display:(`${(loaded)?"flex":"none"}`)}}>
+          a<audio src={SlideEffect} className="fixed top-0 left-0 z-[1000]">hi</audio>
+        </div>
+        // <div className="piece aspect-square fixed z-100 bg-[gold] text-[10px] p-0 m-0" onClick={(e)=>{console.log(e.target.getBoundingClientRect())}}>P</div>
       }
+      <audio ref={audioRef} src={SlideEffect} preload="auto">hi</audio>
     </div>
   );
 };
