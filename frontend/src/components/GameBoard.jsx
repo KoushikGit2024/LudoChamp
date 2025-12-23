@@ -6,6 +6,7 @@ import gsap from "gsap";
 import {useGSAP} from '@gsap/react'
 
 import debounce from '../derivedFuncs/debounce.js'
+import Cell from "./Cell.jsx";
 const GameBoard = () => {
   const pathRefs = useRef([]);
   const boardRef = useRef(null);
@@ -13,9 +14,49 @@ const GameBoard = () => {
   const audioRef = useRef(null);
 
   const [pathPoints,setPathPoints]=useState([])
-  const [temp,setTemp]=useState(0);
+  const [temp,setTemp]=useState(54);
   const [loaded,setLoaded]=useState(false)
   const [cellSize,setCellSize]=useState(0)
+
+  const Homes = [
+    { keyId: "R", color: "#e81212", base: 76, bg: "bg-R" },
+    { keyId: "B", color: "#2323d7", base: 80, bg: "bg-B" },
+    { keyId: "Y", color: "#eaea0e", base: 84, bg: "bg-Y" },
+    { keyId: "G", color: "#02b102", base: 88, bg: "bg-G" },
+  ];
+
+
+  const FinishTriangles = [
+    {
+      color: "#eaea0e",
+      clip: "polygon(0% 0%, 100% 0%, 50% 50%)",
+      align: "flex justify-center pt-2",
+      ref: 74,
+      rotate: "rotate-180",
+    },
+    {
+      color: "#02b102",
+      clip: "polygon(100% 0%, 100% 100%, 50% 50%)",
+      align: "flex items-center justify-end pr-2",
+      ref: 75,
+      rotate: "rotate-270",
+    },
+    {
+      color: "#e81212",
+      clip: "polygon(100% 100%, 0% 100%, 50% 50%)",
+      align: "flex justify-center items-end pb-2",
+      ref: 72,
+      rotate: "rotate-0",
+    },
+    {
+      color: "#2323d7",
+      clip: "polygon(0% 100%, 0% 0%, 50% 50%)",
+      align: "flex items-center pl-2",
+      ref: 73,
+      rotate: "rotate-90",
+    },
+  ];
+
    
   const playSound = () => {
     if (!audioRef.current) return;
@@ -31,6 +72,7 @@ const GameBoard = () => {
     const pieceSize = firstCellRect.width;
     setCellSize(pieceSize);
     const tempPts = pathRefs.current.map((el) => {
+      // console.log(pathRefs.current.length)
       const cellRect = el.getBoundingClientRect();
       return {
         x:cellRect.left-boardRect.left,
@@ -43,9 +85,7 @@ const GameBoard = () => {
     pathPointCalculator();
     setLoaded(true);
   }, []);
-  // window.addEventListener('resize',debounce(
-  //   ()=>{console.log("hi")}
-  // ,1000))
+   
   useEffect(() => {
 
     window.addEventListener('resize',debounce(
@@ -69,6 +109,25 @@ const GameBoard = () => {
       ease: "power2.out"
     });
   }, [temp, pathPoints]);
+  const range = (start, end) => {
+    const res = [];
+    let i = start;
+    while (true) {
+      res.push(i);
+      if (i === end) break;
+      i = i+1;
+    }
+    return res;
+  };
+
+  const piecePath = {
+    R: [...range(1, 56),72],
+    B: [...range(14, 51),...range(0, 12),...range(57, 61),73],
+    Y: [...range(27, 51),...range(0, 25),...range(62, 66),74],
+    G: [...range(40, 51),...range(0, 38),...range(67, 71),75],
+  };
+
+  console.log(piecePath['G'])
 
   return (
     <div
@@ -99,7 +158,7 @@ const GameBoard = () => {
         // console.log(pathPoints[temp]);
         
         for(let i=0;i<5;i++){
-          setTemp(prev => (prev < 51 ? prev + 1 : 0));
+          setTemp(prev => (prev < 92 ? prev + 1 : 0));
           playSound(); 
           await sleep(500);
         } 
@@ -112,151 +171,78 @@ const GameBoard = () => {
           ref={(el)=>(pathRefs.current[i]=el)} 
           className={`cell box${i + 1} flex items-center justify-center aspect-square`} style={{backgroundImage:star}}
         >
-          {(loaded)?i:""}
+          <Cell num={(loaded)?i:""}/>
         </div>
       ))}
 
       {/* Tracks */}
-      {["R", "B", "Y", "G"].map((c) =>
-        [1, 2, 3, 4, 5].map((n) => (
+      
+      {["R", "B", "Y", "G"].map((c,i) =>
+        [1, 2, 3, 4, 5].map((n,j) => (
           <div
+          ref={(el)=>(pathRefs.current[i*5+j+52]=el)}
             key={`${c}${n}`}
             className={`cell track${c}${n} bg-${c} flex items-center justify-center aspect-square`}
-          >a</div>
+          >{i*5+j+52}</div>
         ))
       )}
 
       {/* Homes */}
-      <div className="cell homeR bg-R flex items-center justify-center aspect-square" >
-        <div 
-          className="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]"
+      {
+        Homes.map(({ keyId, color, base, bg})=>(
+          <div key={keyId} className={`cell home${keyId} ${bg} flex items-center justify-center aspect-square`}>
+            <div
+              className="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]"
+              style={{
+                gridTemplateAreas: `
+                  "home${keyId}1 home${keyId}2"
+                  "home${keyId}3 home${keyId}4"
+                `,
+              }}
+            >
+              {[0, 1, 2, 3].map(i => (
+                <div
+                  key={i}
+                  ref={el => (pathRefs.current[base + i] = el)}
+                  className={`home${keyId}${i + 1} flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]`}
+                  style={{ backgroundColor: color }}
+                >
+                  {base + i}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))
+      }
+
+      <div className="cell finish relative flex items-center justify-center aspect-square">
+        {FinishTriangles.map(({ color, clip, align, ref, rotate }) => (
+          <div
+            key={ref}
+            className={`absolute inset-0 ${align} font-bold`}
+            style={{ backgroundColor: color, clipPath: clip }}
+          >
+            <div
+              ref={el => (pathRefs.current[ref] = el)}
+              className={`h-1/3 w-1/3 flex items-end justify-center ${rotate}`}
+            >
+              {ref}
+            </div>
+          </div>
+        ))}
+
+        <div
+          className="bg-[#969696] z-10 min-w-1/10 min-h-1/10"
           style={{
-            gridTemplateAreas:`
-            "homeR1 homeR2"
-            "homeR3 homeR4
-          `,}}
-        >
-          <div className="homeR1 bg-[#e81212] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            1
-          </div>
-          <div className="homeR2 bg-[#e81212] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            2
-          </div>
-          <div className="homeR3 bg-[#e81212] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            3
-          </div>
-          <div className="homeR4 bg-[#e81212] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            4
-          </div>
-        </div>
-      </div>
-      <div className="cell homeB bg-B flex items-center justify-center aspect-square" >
-        <div 
-          className="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]"
-          style={{
-            gridTemplateAreas:`
-            "homeB1 homeB2"
-            "homeB3 homeB4
-          `,}}
-        >
-          <div className="homeB1 bg-[#2323d7] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            1
-          </div>
-          <div className="homeB2 bg-[#2323d7] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            2
-          </div>
-          <div className="homeB3 bg-[#2323d7] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            3
-          </div>
-          <div className="homeB4 bg-[#2323d7] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            4
-          </div>
-        </div>
-      </div>
-      <div className="cell homeY bg-Y flex items-center justify-center aspect-square" >
-        <div 
-          className="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]"
-          style={{
-            gridTemplateAreas:`
-            "homeY1 homeY2"
-            "homeY3 homeY4
-          `,}}
-        >
-          <div className="homeY1 bg-[#eaea0e] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            1
-          </div>
-          <div className="homeY2 bg-[#eaea0e] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            2
-          </div>
-          <div className="homeY3 bg-[#eaea0e] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            3
-          </div>
-          <div className="homeY4 bg-[#eaea0e] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            4
-          </div>
-        </div>
-      </div>
-      <div className="cell homeG bg-G flex items-center justify-center aspect-square" >
-        <div 
-          className="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]"
-          style={{
-            gridTemplateAreas:`
-            "homeG1 homeG2"
-            "homeG3 homeG4
-          `,}}
-        >
-          <div className="homeG1 bg-[#02b102] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            1
-          </div>
-          <div className="homeG2 bg-[#02b102] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            2
-          </div>
-          <div className="homeG3 bg-[#02b102] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            3
-          </div>
-          <div className="homeG4 bg-[#02b102] min-w-[60%] w-[60%] min-h-[60%] h-[60%] flex items-center justify-center aspect-square">
-            4
-          </div>
-        </div>
-      </div>
-      <div className="cell finish relative flex items-center justify-center aspect-square" >
-        <div 
-          className="absolute inset-0 bg-[#eaea0e] flex justify-center pt-2 font-bold"
-          style={{ clipPath: 'polygon(0% 0%, 100% 0%, 50% 50%)' }}
-        >
-          <div className=" h-1/3 w-1/3 flex items-end justify-center rotate-180">
-            hi
-          </div>
-        </div>
-        <div 
-          className="absolute inset-0 bg-[#02b102] flex items-center justify-end pr-2 font-bold"
-          style={{ clipPath: 'polygon(100% 0%, 100% 100%, 50% 50%)' }}
-        >
-          <div className=" h-1/3 w-1/3 flex items-end justify-center rotate-270">
-            hi
-          </div>
-        </div>
-        <div 
-          className="absolute inset-0 bg-[#e81212] flex justify-center items-end pb-2 font-bold"
-          style={{ clipPath: 'polygon(100% 100%, 0% 100%, 50% 50%)' }}
-        >
-          <div className=" h-1/3 w-1/3 flex items-end justify-center rotate-0">
-            hi
-          </div>
-        </div>
-        <div 
-          className="absolute inset-0 bg-[#2323d7] flex items-center jusc pl-2 font-bold"
-          style={{ clipPath: 'polygon(0% 100%, 0% 0%, 50% 50%)' }}
-        >
-          <div className=" h-1/3 w-1/3 flex items-end justify-center rotate-90">
-            hi
-          </div>
-        </div>
-        <div className="bg-[#969696]  z-10 self min-w-1/10 min-h-1/10" style={{clipPath:'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',translate:'0 -60%'}} ></div>
+            clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
+            translate: "0 -60%",
+          }}
+        />
       </div>
       {
         (loaded) && <div ref={pieceRef} className="piece aspect-square fixed z-100 bg-[gold] text-[10px] p-0 m-0 flex items-center justify-center"  style={{width:`${cellSize}px`,display:(`${(loaded)?"flex":"none"}`)}}>
-          a<audio src={SlideEffect} className="fixed top-0 left-0 z-[1000]">hi</audio>
+          {/* <audio src={SlideEffect} className="fixed top-0 left-0 z-[1000]">hi</audio> */}
         </div>
         // <div className="piece aspect-square fixed z-100 bg-[gold] text-[10px] p-0 m-0" onClick={(e)=>{console.log(e.target.getBoundingClientRect())}}>P</div>
       }

@@ -15,7 +15,7 @@ function App() {
   // const [count, setCount] = useState(0)
 
   return (
-    <main className='bg-[#1aefab] flex flex-col items-center justify-center p-0 m-0 w-screen h-screen md:overflow-hidden'>
+    <main className='bg-[#2c1aef] flex flex-col items-center justify-center p-0 m-0 w-screen h-screen md:overflow-hidden'>
       {/* <div className='min-h-full bg-amber-300 min-w-full'> */}
         <Routes>
           <Route path='/' element={<Home/>}/>
