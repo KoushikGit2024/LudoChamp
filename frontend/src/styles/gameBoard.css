@@ -5,6 +5,33 @@
   /* border-radius: 3px; */
 }
 
+.cell {
+  position: relative;
+}
+
+/* shared pseudo layer */
+.cell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: var(--bg-size, 70%);
+  transform: rotate(var(--bg-rotate, 0deg));
+  pointer-events: none;
+}
+
+/* safe star */
+.cell.safe::before {
+  background-image: var(--bg-img);
+}
+
+/* home pointer arrow */
+.cell.home-pointer::before {
+  background-image: var(--bg-img);
+}
+
+
 
 .box1 { grid-area: box1; }
 .box2 { grid-area: box2; background-color: #e81212; background-image: '../../public/safeStar.png';}

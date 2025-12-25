@@ -1,20 +1,23 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import "../styles/gameBoard.css";
 import star from '../../public/safeStar.png'
+import arrow from '../../public/homePointer.png'
 import SlideEffect from '../assets/SlideEffect.mp3'
 import gsap from "gsap";
 import {useGSAP} from '@gsap/react'
+// import SVG from '../assets/react.svg' 
 
 import debounce from '../derivedFuncs/debounce.js'
 import Cell from "./Cell.jsx";
-const GameBoard = () => {
+import Room from "./Room.jsx";
+const GameBoard = memo(() => {
   const pathRefs = useRef([]);
   const boardRef = useRef(null);
-  const pieceRef =useRef(null);
+  const chariotRef =useRef(null);
   const audioRef = useRef(null);
 
   const [pathPoints,setPathPoints]=useState([])
-  const [temp,setTemp]=useState(54);
+  const [temp,setTemp]=useState(2);
   const [loaded,setLoaded]=useState(false)
   const [cellSize,setCellSize]=useState(0)
 
@@ -25,38 +28,53 @@ const GameBoard = () => {
     { keyId: "G", color: "#02b102", base: 88, bg: "bg-G" },
   ];
 
+  const [pieceState, setPieceState] = useState(() =>
+    Array.from({ length: 72 }, () => ({
+      R: 0,
+      B: 0,
+      Y: 0,
+      G: 0,
+    }))
+  );
+  const [piecePosition,setPosition]=useState({
+    R:[-1,-1,-1,-1],
+    B:[-1,-1,-1,-1],
+    Y:[-1,-1,-1,-1],
+    G:[-1,-1,-1,-1],
+  });
 
   const FinishTriangles = [
     {
       color: "#eaea0e",
       clip: "polygon(0% 0%, 100% 0%, 50% 50%)",
-      align: "flex justify-center pt-2",
+      align: "flex justify-center pt-1",
       ref: 74,
-      rotate: "rotate-180",
-    },
-    {
+      rotate: "rotate-135",
+    },{
       color: "#02b102",
       clip: "polygon(100% 0%, 100% 100%, 50% 50%)",
-      align: "flex items-center justify-end pr-2",
+      align: "flex items-center justify-end pr-1",
       ref: 75,
-      rotate: "rotate-270",
-    },
-    {
+      rotate: "rotate-225",
+    },{
       color: "#e81212",
       clip: "polygon(100% 100%, 0% 100%, 50% 50%)",
-      align: "flex justify-center items-end pb-2",
+      align: "flex justify-center items-end pb-1",
       ref: 72,
-      rotate: "rotate-0",
-    },
-    {
+      rotate: "rotate-315",
+    },{
       color: "#2323d7",
       clip: "polygon(0% 100%, 0% 0%, 50% 50%)",
-      align: "flex items-center pl-2",
+      align: "flex items-center pl-1",
       ref: 73,
-      rotate: "rotate-90",
+      rotate: "rotate-45",
     },
   ];
 
+  const SAFE_CELLS = new Set([1, 9, 14, 22, 27, 35, 40, 48]);
+  const homePointer = new Map([
+    [12,0],[25,90],[38,180],[51,270]
+  ]);
    
   const playSound = () => {
     if (!audioRef.current) return;
@@ -100,15 +118,16 @@ const GameBoard = () => {
   }, []);
 
   useGSAP(() => {
-    if (!pieceRef.current || !pathPoints[temp]) return;
+    if (!chariotRef.current || !pathPoints[temp]) return;
     
-    gsap.to(pieceRef.current, {
+    gsap.to(chariotRef.current, {
       x: pathPoints[temp].x,
       y: pathPoints[temp].y,
       duration: 0.5,
       ease: "power2.out"
     });
-  }, [temp, pathPoints]);
+  }, [temp]);
+
   const range = (start, end) => {
     const res = [];
     let i = start;
@@ -126,12 +145,15 @@ const GameBoard = () => {
     Y: [...range(27, 51),...range(0, 25),...range(62, 66),74],
     G: [...range(40, 51),...range(0, 38),...range(67, 71),75],
   };
-
-  console.log(piecePath['G'])
+  // useEffect(()=>{
+  //   console.log(piecePath.R.length)
+  // })
+  // console.log("hi2")
+  piecePath;
 
   return (
     <div
-      className="boardContainer relative aspect-square grid gap-[2px] rounded-0 max-w-full max-h-full w-full h-full bg-[purple] p-3"
+      className="boardContainer  relative aspect-square grid gap-[2px] rounded-0 max-w-full max-h-full w-full h-full bg-[purple] p-3"
       style={{
         gridTemplateColumns: "repeat(15, 1fr)",
         gridTemplateRows: "repeat(15, 1fr)",
@@ -154,26 +176,55 @@ const GameBoard = () => {
         `,
       }}
       ref={boardRef}
-      onClick={async ()=>{
-        // console.log(pathPoints[temp]);
+      // onClick={async ()=>{
+      //   // console.log(pathPoints[temp]);
         
-        for(let i=0;i<5;i++){
-          setTemp(prev => (prev < 92 ? prev + 1 : 0));
-          playSound(); 
-          await sleep(500);
-        } 
-      }}
+      //   for(let i=0;i<10;i++){
+      //     setTemp(prev => (prev < 92 ? prev + 1 : 0));
+      //     playSound(); 
+      //     await sleep(500);
+      //   } 
+      // }}
     >
       {/* Boxes */}
-      {Array.from({ length: 52 }, (_, i) => (
-        <div 
-          key={i} 
-          ref={(el)=>(pathRefs.current[i]=el)} 
-          className={`cell box${i + 1} flex items-center justify-center aspect-square`} style={{backgroundImage:star}}
-        >
-          <Cell num={(loaded)?i:""}/>
-        </div>
-      ))}
+      {Array.from({ length: 52 }, (_, i) => {
+        const isSafe = SAFE_CELLS.has(i);
+        const isHomePointer = homePointer.has(i);
+        // homePointer.has(i) &&  console.log(homePointer.get(i))
+        return (
+          <div
+            key={i}
+            ref={(el) => (pathRefs.current[i] = el)}
+            className={`cell box${i + 1} flex items-center justify-center aspect-square
+              ${isSafe ? "safe" : ""}
+              ${isHomePointer ? "home-pointer" : ""}
+            `}
+            style={
+              isSafe
+                ? {
+                    "--bg-img": `url(${star})`,
+                    "--bg-size": "70%",
+                  }
+                : isHomePointer
+                ? {
+                    "--bg-img": `url(${arrow})`,
+                    "--bg-size": "70%",
+                    "--bg-rotate": `${homePointer.get(i)}deg`,
+                  }
+                : undefined
+            }
+          >
+            <Cell
+              num={loaded ? i : ""}
+              R={pieceState[i].R}
+              B={pieceState[i].B}
+              Y={pieceState[i].Y}
+              G={pieceState[i].G}
+            />
+          </div>
+        );
+    })}
+
 
       {/* Tracks */}
       
@@ -183,7 +234,9 @@ const GameBoard = () => {
           ref={(el)=>(pathRefs.current[i*5+j+52]=el)}
             key={`${c}${n}`}
             className={`cell track${c}${n} bg-${c} flex items-center justify-center aspect-square`}
-          >{i*5+j+52}</div>
+          > 
+            <Cell R={(c==='R')&&pieceState[i].R} B={(c==='B')&&pieceState[i].B} Y={(c==='Y')&&pieceState[i].Y} G={(c==='G')&&pieceState[i].G}/>
+          </div>
         ))
       )}
 
@@ -208,7 +261,7 @@ const GameBoard = () => {
                             min-w-[60%] min-h-[60%] w-[60%] h-[60%]`}
                   style={{ backgroundColor: color }}
                 >
-                  {base + i}
+                  <Room R={keyId==='R'} B={keyId==='B'} Y={keyId==='Y'} G={keyId==='G'}/>
                 </div>
               ))}
             </div>
@@ -220,35 +273,35 @@ const GameBoard = () => {
         {FinishTriangles.map(({ color, clip, align, ref, rotate }) => (
           <div
             key={ref}
-            className={`absolute inset-0 ${align} font-bold`}
+            className={`absolute inset-0 ${align}`}
             style={{ backgroundColor: color, clipPath: clip }}
           >
             <div
               ref={el => (pathRefs.current[ref] = el)}
-              className={`h-1/3 w-1/3 flex items-end justify-center ${rotate}`}
+              className={`h-1/4 flex items-end justify-center text-[14px] ${rotate} bg-amber-5000 aspect-square`}
             >
-              {ref}
+              <Cell R={1} B={1} Y={1} G={1}/>
             </div>
           </div>
         ))}
 
-        <div
+        {/* <div
           className="bg-[#969696] z-10 min-w-1/10 min-h-1/10"
           style={{
             clipPath: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)",
             translate: "0 -60%",
           }}
-        />
+        /> */}
       </div>
       {
-        (loaded) && <div ref={pieceRef} className="piece aspect-square fixed z-100 bg-[gold] text-[10px] p-0 m-0 flex items-center justify-center"  style={{width:`${cellSize}px`,display:(`${(loaded)?"flex":"none"}`)}}>
+        (loaded) && <div ref={chariotRef} className="piece aspect-square fixed z-100 bg-[gold] text-[10px] p-0 m-0 flex items-center justify-center"  style={{width:`${cellSize}px`,display:(`${(loaded)?"flex":"none"}`)}}>
           {/* <audio src={SlideEffect} className="fixed top-0 left-0 z-[1000]">hi</audio> */}
         </div>
         // <div className="piece aspect-square fixed z-100 bg-[gold] text-[10px] p-0 m-0" onClick={(e)=>{console.log(e.target.getBoundingClientRect())}}>P</div>
       }
-      <audio ref={audioRef} src={SlideEffect} preload="auto">hi</audio>
+      <audio ref={audioRef} src={SlideEffect} preload="auto"/>
     </div>
   );
-};
+});
 
 export default GameBoard;

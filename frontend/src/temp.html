@@ -1,0 +1,858 @@
+<html lang="en"><head>
+    <script type="module">import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;</script>
+
+    <script type="module" src="/@vite/client"></script>
+
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/ChampLogo.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ludo Champ</title>
+  <style type="text/css" data-vite-dev-id="D:/All Codes/Web Devs/MyProjects/LudoChamp/frontend/src/main.css">/*! tailwindcss v4.1.13 | MIT License | https://tailwindcss.com */
+@layer properties;
+@layer theme, base, components, utilities;
+@layer theme {
+  :root, :host {
+    --font-sans: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji",
+      "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace;
+    --color-red-400: oklch(70.4% 0.191 22.216);
+    --color-red-900: oklch(39.6% 0.141 25.723);
+    --color-amber-200: oklch(92.4% 0.12 95.746);
+    --color-amber-300: oklch(87.9% 0.169 91.605);
+    --color-emerald-300: oklch(84.5% 0.143 164.978);
+    --color-blue-500: oklch(62.3% 0.214 259.815);
+    --color-white: #fff;
+    --spacing: 0.25rem;
+    --default-font-family: var(--font-sans);
+    --default-mono-font-family: var(--font-mono);
+  }
+}
+@layer base {
+  *, ::after, ::before, ::backdrop, ::file-selector-button {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+  }
+  html, :host {
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+    tab-size: 4;
+    font-family: var(--default-font-family, ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+    font-feature-settings: var(--default-font-feature-settings, normal);
+    font-variation-settings: var(--default-font-variation-settings, normal);
+    -webkit-tap-highlight-color: transparent;
+  }
+  hr {
+    height: 0;
+    color: inherit;
+    border-top-width: 1px;
+  }
+  abbr:where([title]) {
+    -webkit-text-decoration: underline dotted;
+    text-decoration: underline dotted;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-size: inherit;
+    font-weight: inherit;
+  }
+  a {
+    color: inherit;
+    -webkit-text-decoration: inherit;
+    text-decoration: inherit;
+  }
+  b, strong {
+    font-weight: bolder;
+  }
+  code, kbd, samp, pre {
+    font-family: var(--default-mono-font-family, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
+    font-feature-settings: var(--default-mono-font-feature-settings, normal);
+    font-variation-settings: var(--default-mono-font-variation-settings, normal);
+    font-size: 1em;
+  }
+  small {
+    font-size: 80%;
+  }
+  sub, sup {
+    font-size: 75%;
+    line-height: 0;
+    position: relative;
+    vertical-align: baseline;
+  }
+  sub {
+    bottom: -0.25em;
+  }
+  sup {
+    top: -0.5em;
+  }
+  table {
+    text-indent: 0;
+    border-color: inherit;
+    border-collapse: collapse;
+  }
+  :-moz-focusring {
+    outline: auto;
+  }
+  progress {
+    vertical-align: baseline;
+  }
+  summary {
+    display: list-item;
+  }
+  ol, ul, menu {
+    list-style: none;
+  }
+  img, svg, video, canvas, audio, iframe, embed, object {
+    display: block;
+    vertical-align: middle;
+  }
+  img, video {
+    max-width: 100%;
+    height: auto;
+  }
+  button, input, select, optgroup, textarea, ::file-selector-button {
+    font: inherit;
+    font-feature-settings: inherit;
+    font-variation-settings: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+    border-radius: 0;
+    background-color: transparent;
+    opacity: 1;
+  }
+  :where(select:is([multiple], [size])) optgroup {
+    font-weight: bolder;
+  }
+  :where(select:is([multiple], [size])) optgroup option {
+    padding-inline-start: 20px;
+  }
+  ::file-selector-button {
+    margin-inline-end: 4px;
+  }
+  ::placeholder {
+    opacity: 1;
+  }
+  @supports (not (-webkit-appearance: -apple-pay-button))  or (contain-intrinsic-size: 1px) {
+    ::placeholder {
+      color: currentcolor;
+      @supports (color: color-mix(in lab, red, red)) {
+        color: color-mix(in oklab, currentcolor 50%, transparent);
+      }
+    }
+  }
+  textarea {
+    resize: vertical;
+  }
+  ::-webkit-search-decoration {
+    -webkit-appearance: none;
+  }
+  ::-webkit-date-and-time-value {
+    min-height: 1lh;
+    text-align: inherit;
+  }
+  ::-webkit-datetime-edit {
+    display: inline-flex;
+  }
+  ::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+  ::-webkit-datetime-edit, ::-webkit-datetime-edit-year-field, ::-webkit-datetime-edit-month-field, ::-webkit-datetime-edit-day-field, ::-webkit-datetime-edit-hour-field, ::-webkit-datetime-edit-minute-field, ::-webkit-datetime-edit-second-field, ::-webkit-datetime-edit-millisecond-field, ::-webkit-datetime-edit-meridiem-field {
+    padding-block: 0;
+  }
+  ::-webkit-calendar-picker-indicator {
+    line-height: 1;
+  }
+  :-moz-ui-invalid {
+    box-shadow: none;
+  }
+  button, input:where([type="button"], [type="reset"], [type="submit"]), ::file-selector-button {
+    appearance: button;
+  }
+  ::-webkit-inner-spin-button, ::-webkit-outer-spin-button {
+    height: auto;
+  }
+  [hidden]:where(:not([hidden="until-found"])) {
+    display: none !important;
+  }
+}
+@layer utilities {
+  .pointer-events-none {
+    pointer-events: none;
+  }
+  .invisible {
+    visibility: hidden;
+  }
+  .absolute {
+    position: absolute;
+  }
+  .fixed {
+    position: fixed;
+  }
+  .relative {
+    position: relative;
+  }
+  .inset-0 {
+    inset: calc(var(--spacing) * 0);
+  }
+  .top-0 {
+    top: calc(var(--spacing) * 0);
+  }
+  .left-0 {
+    left: calc(var(--spacing) * 0);
+  }
+  .z-10 {
+    z-index: 10;
+  }
+  .z-100 {
+    z-index: 100;
+  }
+  .z-\[1000\] {
+    z-index: 1000;
+  }
+  .m-0 {
+    margin: calc(var(--spacing) * 0);
+  }
+  .flex {
+    display: flex;
+  }
+  .grid {
+    display: grid;
+  }
+  .hidden {
+    display: none;
+  }
+  .aspect-square {
+    aspect-ratio: 1 / 1;
+  }
+  .h-1\/4 {
+    height: calc(1/4 * 100%);
+  }
+  .h-4\/5 {
+    height: calc(4/5 * 100%);
+  }
+  .h-9\/10 {
+    height: calc(9/10 * 100%);
+  }
+  .h-10 {
+    height: calc(var(--spacing) * 10);
+  }
+  .h-\[60\%\] {
+    height: 60%;
+  }
+  .h-full {
+    height: 100%;
+  }
+  .h-screen {
+    height: 100vh;
+  }
+  .max-h-full {
+    max-height: 100%;
+  }
+  .min-h-1\/10 {
+    min-height: calc(1/10 * 100%);
+  }
+  .min-h-2 {
+    min-height: calc(var(--spacing) * 2);
+  }
+  .min-h-10 {
+    min-height: calc(var(--spacing) * 10);
+  }
+  .min-h-20 {
+    min-height: calc(var(--spacing) * 20);
+  }
+  .min-h-40 {
+    min-height: calc(var(--spacing) * 40);
+  }
+  .min-h-100 {
+    min-height: calc(var(--spacing) * 100);
+  }
+  .min-h-\[60\%\] {
+    min-height: 60%;
+  }
+  .min-h-full {
+    min-height: 100%;
+  }
+  .w-4\/5 {
+    width: calc(4/5 * 100%);
+  }
+  .w-9 {
+    width: calc(var(--spacing) * 9);
+  }
+  .w-9\/10 {
+    width: calc(9/10 * 100%);
+  }
+  .w-\[10\%\] {
+    width: 10%;
+  }
+  .w-\[60\%\] {
+    width: 60%;
+  }
+  .w-\[80\%\] {
+    width: 80%;
+  }
+  .w-full {
+    width: 100%;
+  }
+  .w-screen {
+    width: 100vw;
+  }
+  .max-w-full {
+    max-width: 100%;
+  }
+  .min-w-1\/10 {
+    min-width: calc(1/10 * 100%);
+  }
+  .min-w-\[60\%\] {
+    min-width: 60%;
+  }
+  .min-w-full {
+    min-width: 100%;
+  }
+  .rotate-45 {
+    rotate: 45deg;
+  }
+  .rotate-135 {
+    rotate: 135deg;
+  }
+  .rotate-225 {
+    rotate: 225deg;
+  }
+  .rotate-315 {
+    rotate: 315deg;
+  }
+  .transform {
+    transform: var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,);
+  }
+  .cursor-pointer {
+    cursor: pointer;
+  }
+  .resize {
+    resize: both;
+  }
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .grid-rows-2 {
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+  }
+  .flex-col {
+    flex-direction: column;
+  }
+  .flex-row {
+    flex-direction: row;
+  }
+  .place-items-center {
+    place-items: center;
+  }
+  .items-center {
+    align-items: center;
+  }
+  .items-end {
+    align-items: flex-end;
+  }
+  .justify-between {
+    justify-content: space-between;
+  }
+  .justify-center {
+    justify-content: center;
+  }
+  .justify-end {
+    justify-content: flex-end;
+  }
+  .gap-1 {
+    gap: calc(var(--spacing) * 1);
+  }
+  .gap-2 {
+    gap: calc(var(--spacing) * 2);
+  }
+  .gap-\[2px\] {
+    gap: 2px;
+  }
+  .rounded-full {
+    border-radius: calc(infinity * 1px);
+  }
+  .bg-\[\#2c1aef\] {
+    background-color: #2c1aef;
+  }
+  .bg-\[\#969696\] {
+    background-color: #969696;
+  }
+  .bg-\[\#bd82ee\] {
+    background-color: #bd82ee;
+  }
+  .bg-\[gold\] {
+    background-color: gold;
+  }
+  .bg-\[purple\] {
+    background-color: purple;
+  }
+  .bg-\[white\] {
+    background-color: white;
+  }
+  .bg-amber-200 {
+    background-color: var(--color-amber-200);
+  }
+  .bg-amber-300 {
+    background-color: var(--color-amber-300);
+  }
+  .bg-blue-500 {
+    background-color: var(--color-blue-500);
+  }
+  .bg-emerald-300 {
+    background-color: var(--color-emerald-300);
+  }
+  .bg-red-400 {
+    background-color: var(--color-red-400);
+  }
+  .bg-red-900 {
+    background-color: var(--color-red-900);
+  }
+  .bg-white {
+    background-color: var(--color-white);
+  }
+  .p-0 {
+    padding: calc(var(--spacing) * 0);
+  }
+  .p-1 {
+    padding: calc(var(--spacing) * 1);
+  }
+  .p-2 {
+    padding: calc(var(--spacing) * 2);
+  }
+  .p-3 {
+    padding: calc(var(--spacing) * 3);
+  }
+  .p-\[5\%\] {
+    padding: 5%;
+  }
+  .pt-1 {
+    padding-top: calc(var(--spacing) * 1);
+  }
+  .pr-1 {
+    padding-right: calc(var(--spacing) * 1);
+  }
+  .pb-1 {
+    padding-bottom: calc(var(--spacing) * 1);
+  }
+  .pl-1 {
+    padding-left: calc(var(--spacing) * 1);
+  }
+  .text-\[10px\] {
+    font-size: 10px;
+  }
+  .text-\[14px\] {
+    font-size: 14px;
+  }
+  .md\:overflow-hidden {
+    @media (width >= 48rem) {
+      overflow: hidden;
+    }
+  }
+}
+@property --tw-rotate-x {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-rotate-y {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-rotate-z {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-skew-x {
+  syntax: "*";
+  inherits: false;
+}
+@property --tw-skew-y {
+  syntax: "*";
+  inherits: false;
+}
+@layer properties {
+  @supports ((-webkit-hyphens: none) and (not (margin-trim: inline))) or ((-moz-orient: inline) and (not (color:rgb(from red r g b)))) {
+    *, ::before, ::after, ::backdrop {
+      --tw-rotate-x: initial;
+      --tw-rotate-y: initial;
+      --tw-rotate-z: initial;
+      --tw-skew-x: initial;
+      --tw-skew-y: initial;
+    }
+  }
+}
+</style><style type="text/css" data-vite-dev-id="D:/All Codes/Web Devs/MyProjects/LudoChamp/frontend/src/styles/gameBoard.css">.cell {
+  width: 100%;
+  height: 100%;
+  background: #e5e7eb;
+  /* border-radius: 3px; */
+}
+
+.cell {
+  position: relative;
+}
+
+/* shared pseudo layer */
+.cell::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: var(--bg-size, 70%);
+  transform: rotate(var(--bg-rotate, 0deg));
+  pointer-events: none;
+}
+
+/* safe star */
+.cell.safe::before {
+  background-image: var(--bg-img);
+}
+
+/* home pointer arrow */
+.cell.home-pointer::before {
+  background-image: var(--bg-img);
+}
+
+
+
+.box1 { grid-area: box1; }
+.box2 { grid-area: box2; background-color: #e81212; background-image: '../../public/safeStar.png';}
+.box3 { grid-area: box3; }
+.box4 { grid-area: box4; }
+.box5 { grid-area: box5; }
+.box6 { grid-area: box6; }
+.box7 { grid-area: box7; }
+.box8 { grid-area: box8; }
+.box9 { grid-area: box9; }
+.box10 { grid-area: box10; }
+.box11 { grid-area: box11; }
+.box12 { grid-area: box12; }
+.box13 { grid-area: box13; }
+.box14 { grid-area: box14; }
+.box15 { grid-area: box15; background-color: #2323d7; }
+.box16 { grid-area: box16; }
+.box17 { grid-area: box17; }
+.box18 { grid-area: box18; }
+.box19 { grid-area: box19; }
+.box20 { grid-area: box20; }
+.box21 { grid-area: box21; }
+.box22 { grid-area: box22; }
+.box23 { grid-area: box23; }
+.box24 { grid-area: box24; }
+.box25 { grid-area: box25; }
+.box26 { grid-area: box26; }
+.box27 { grid-area: box27; }
+.box28 { grid-area: box28; background-color: #eaea0e;}
+.box29 { grid-area: box29; }
+.box30 { grid-area: box30; }
+.box31 { grid-area: box31; }
+.box32 { grid-area: box32; }
+.box33 { grid-area: box33; }
+.box34 { grid-area: box34; }
+.box35 { grid-area: box35; }
+.box36 { grid-area: box36; }
+.box37 { grid-area: box37; }
+.box38 { grid-area: box38; }
+.box39 { grid-area: box39; }
+.box40 { grid-area: box40; }
+.box41 { grid-area: box41; background-color: #02b102;}
+.box42 { grid-area: box42; }
+.box43 { grid-area: box43; }
+.box44 { grid-area: box44; }
+.box45 { grid-area: box45; }
+.box46 { grid-area: box46; }
+.box47 { grid-area: box47; }
+.box48 { grid-area: box48; }
+.box49 { grid-area: box49; }
+.box50 { grid-area: box50; }
+.box51 { grid-area: box51; }
+.box52 { grid-area: box52; }
+
+.trackR1 { grid-area: trackR1; }
+.trackR2 { grid-area: trackR2; }
+.trackR3 { grid-area: trackR3; }
+.trackR4 { grid-area: trackR4; }
+.trackR5 { grid-area: trackR5; }
+
+.trackB1 { grid-area: trackB1; }
+.trackB2 { grid-area: trackB2; }
+.trackB3 { grid-area: trackB3; }
+.trackB4 { grid-area: trackB4; }
+.trackB5 { grid-area: trackB5; }
+
+.trackY1 { grid-area: trackY1; }
+.trackY2 { grid-area: trackY2; }
+.trackY3 { grid-area: trackY3; }
+.trackY4 { grid-area: trackY4; }
+.trackY5 { grid-area: trackY5; }
+
+.trackG1 { grid-area: trackG1; }
+.trackG2 { grid-area: trackG2; }
+.trackG3 { grid-area: trackG3; }
+.trackG4 { grid-area: trackG4; }
+.trackG5 { grid-area: trackG5; }
+
+.homeR { grid-area: homeR; }
+.homeB { grid-area: homeB; }
+.homeY { grid-area: homeY; }
+.homeG { grid-area: homeG; }
+
+.finish { grid-area: finish;}
+
+
+.bg-R { background: #e81212; }
+.bg-B { background: #2323d7; }
+.bg-Y { background: #eaea0e; }
+.bg-G { background: #02b102; }
+
+.homeR1 {grid-area: homeR1; }
+.homeR2 {grid-area: homeR2; }
+.homeR3 {grid-area: homeR3; }
+.homeR4 {grid-area: homeR4; }
+
+.homeB1 {grid-area: homeB1; }
+.homeB2 {grid-area: homeB2; }
+.homeB3 {grid-area: homeB3; }
+.homeB4 {grid-area: homeB4; }
+
+.homeY1 {grid-area: homeY1; }
+.homeY2 {grid-area: homeY2; }
+.homeY3 {grid-area: homeY3; }
+.homeY4 {grid-area: homeY4; }
+
+.homeG1 {grid-area: homeG1; }
+.homeG2 {grid-area: homeG2; }
+.homeG3 {grid-area: homeG3; }
+.homeG4 {grid-area: homeG4; }</style><style type="text/css" data-vite-dev-id="D:/All Codes/Web Devs/MyProjects/LudoChamp/frontend/src/styles/cell.css">.no-select {
+  user-select: none;
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none;     /* IE/Edge legacy */
+  -webkit-user-drag: none;   /* Safari */
+}
+</style><style type="text/css" data-vite-dev-id="D:/All Codes/Web Devs/MyProjects/LudoChamp/frontend/src/styles/dice.css">.dice-container {
+  width: 80%;
+  height: 80%;
+  background: white;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 3px 6px rgba(0,0,0,0.35),
+    inset 0 1px 2px rgba(255,255,255,0.7);
+}
+
+.dice-container.rolling {
+  animation: shake 0.15s infinite;
+}
+
+@keyframes shake {
+  0% { transform: rotate(0deg) }
+  25% { transform: rotate(8deg) }
+  50% { transform: rotate(-8deg) }
+  75% { transform: rotate(6deg) }
+  100% { transform: rotate(0deg) }
+}
+
+/* Dice dots */
+.dice-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  width: 60%;
+  height: 60%;
+}
+
+.pip {
+  width: 70%;
+  height: 70%;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.pip.on {
+  background: black;
+}
+</style></head>
+  <body>
+    <div id="root"><main class="bg-[#2c1aef] flex flex-col items-center justify-center p-0 m-0 w-screen h-screen md:overflow-hidden"><div class="flex items-center justify-center bg-[#bd82ee]  h-full w-full max-h-full max-w-full "><div class="aspect-square bg-red-900 p-0 flex flex-col items-center justify-center" style="min-width: 90%;"><div class="flex flex-row items-center justify-between min-w-full"><div class=" bg-emerald-300 min-h-10">ghfgjhfgugughgjehtgug</div><div class="dice-cover aspect-square bg-amber-200 min-h-10 flex items-center justify-center"><div class="dice-cover aspect-square min-h-full flex items-center justify-center cursor-pointer"><div class="dice-container "><div class="dice-grid"><span class="pip "></span><span class="pip "></span><span class="pip "></span><span class="pip "></span><span class="pip on"></span><span class="pip "></span><span class="pip "></span><span class="pip "></span><span class="pip "></span></div></div></div>0</div><div class=" bg-emerald-300 min-h-10">ghfgjhfgugughgjehtgug</div></div><div class="min-w-full"><div class="boardContainer  relative aspect-square grid gap-[2px] rounded-0 max-w-full max-h-full w-full h-full bg-[purple] p-3" style="grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); grid-template-areas: &quot;homeB homeB homeB homeB homeB homeB box25 box26 box27 homeY homeY homeY homeY homeY homeY&quot; &quot;homeB homeB homeB homeB homeB homeB box24 trackY1 box28 homeY homeY homeY homeY homeY homeY&quot; &quot;homeB homeB homeB homeB homeB homeB box23 trackY2 box29 homeY homeY homeY homeY homeY homeY&quot; &quot;homeB homeB homeB homeB homeB homeB box22 trackY3 box30 homeY homeY homeY homeY homeY homeY&quot; &quot;homeB homeB homeB homeB homeB homeB box21 trackY4 box31 homeY homeY homeY homeY homeY homeY&quot; &quot;homeB homeB homeB homeB homeB homeB box20 trackY5 box32 homeY homeY homeY homeY homeY homeY&quot; &quot;box14 box15 box16 box17 box18 box19 finish finish finish box33 box34 box35 box36 box37 box38&quot; &quot;box13 trackB1 trackB2 trackB3 trackB4 trackB5 finish finish finish trackG5 trackG4 trackG3 trackG2 trackG1 box39&quot; &quot;box12 box11 box10 box9 box8 box7 finish finish finish box45 box44 box43 box42 box41 box40&quot; &quot;homeR homeR homeR homeR homeR homeR box6 trackR5 box46 homeG homeG homeG homeG homeG homeG&quot; &quot;homeR homeR homeR homeR homeR homeR box5 trackR4 box47 homeG homeG homeG homeG homeG homeG&quot; &quot;homeR homeR homeR homeR homeR homeR box4 trackR3 box48 homeG homeG homeG homeG homeG homeG&quot; &quot;homeR homeR homeR homeR homeR homeR box3 trackR2 box49 homeG homeG homeG homeG homeG homeG&quot; &quot;homeR homeR homeR homeR homeR homeR box2 trackR1 box50 homeG homeG homeG homeG homeG homeG&quot; &quot;homeR homeR homeR homeR homeR homeR box1 box52 box51 homeG homeG homeG homeG homeG homeG&quot;;"><div class="cell box1 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box2 flex items-center justify-center aspect-square
+              safe
+              
+            " style="--bg-img: url(/public/safeStar.png); --bg-size: 70%;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box3 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box4 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box5 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box6 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box7 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box8 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box9 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box10 flex items-center justify-center aspect-square
+              safe
+              
+            " style="--bg-img: url(/public/safeStar.png); --bg-size: 70%;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box11 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box12 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box13 flex items-center justify-center aspect-square
+              
+              home-pointer
+            " style="--bg-img: url(/public/homePointer.png); --bg-size: 70%; --bg-rotate: 0deg;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box14 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box15 flex items-center justify-center aspect-square
+              safe
+              
+            " style="--bg-img: url(/public/safeStar.png); --bg-size: 70%;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box16 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box17 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box18 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box19 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box20 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box21 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box22 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box23 flex items-center justify-center aspect-square
+              safe
+              
+            " style="--bg-img: url(/public/safeStar.png); --bg-size: 70%;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box24 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box25 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box26 flex items-center justify-center aspect-square
+              
+              home-pointer
+            " style="--bg-img: url(/public/homePointer.png); --bg-size: 70%; --bg-rotate: 90deg;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box27 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box28 flex items-center justify-center aspect-square
+              safe
+              
+            " style="--bg-img: url(/public/safeStar.png); --bg-size: 70%;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box29 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box30 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box31 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box32 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box33 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box34 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box35 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box36 flex items-center justify-center aspect-square
+              safe
+              
+            " style="--bg-img: url(/public/safeStar.png); --bg-size: 70%;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box37 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box38 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box39 flex items-center justify-center aspect-square
+              
+              home-pointer
+            " style="--bg-img: url(/public/homePointer.png); --bg-size: 70%; --bg-rotate: 180deg;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box40 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box41 flex items-center justify-center aspect-square
+              safe
+              
+            " style="--bg-img: url(/public/safeStar.png); --bg-size: 70%;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box42 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box43 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box44 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box45 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box46 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box47 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box48 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box49 flex items-center justify-center aspect-square
+              safe
+              
+            " style="--bg-img: url(/public/safeStar.png); --bg-size: 70%;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box50 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box51 flex items-center justify-center aspect-square
+              
+              
+            "><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell box52 flex items-center justify-center aspect-square
+              
+              home-pointer
+            " style="--bg-img: url(/public/homePointer.png); --bg-size: 70%; --bg-rotate: 270deg;"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackR1 bg-R flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackR2 bg-R flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackR3 bg-R flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackR4 bg-R flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackR5 bg-R flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackB1 bg-B flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackB2 bg-B flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackB3 bg-B flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackB4 bg-B flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackB5 bg-B flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackY1 bg-Y flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackY2 bg-Y flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackY3 bg-Y flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackY4 bg-Y flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackY5 bg-Y flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackG1 bg-G flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackG2 bg-G flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackG3 bg-G flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackG4 bg-G flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell trackG5 bg-G flex items-center justify-center aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"></div></div><div class="cell homeR bg-R flex items-center justify-center aspect-square"><div class="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]" style="grid-template-areas: &quot;homeR1 homeR2&quot; &quot;homeR3 homeR4&quot;;"><div class="homeR1 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(232, 18, 18);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(232, 18, 18); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeR2 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(232, 18, 18);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(232, 18, 18); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeR3 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(232, 18, 18);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(232, 18, 18); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeR4 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(232, 18, 18);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(232, 18, 18); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div></div></div><div class="cell homeB bg-B flex items-center justify-center aspect-square"><div class="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]" style="grid-template-areas: &quot;homeB1 homeB2&quot; &quot;homeB3 homeB4&quot;;"><div class="homeB1 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(35, 35, 215);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(35, 35, 215); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeB2 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(35, 35, 215);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(35, 35, 215); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeB3 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(35, 35, 215);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(35, 35, 215); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeB4 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(35, 35, 215);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(35, 35, 215); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div></div></div><div class="cell homeY bg-Y flex items-center justify-center aspect-square"><div class="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]" style="grid-template-areas: &quot;homeY1 homeY2&quot; &quot;homeY3 homeY4&quot;;"><div class="homeY1 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(234, 234, 14);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(234, 234, 14); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeY2 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(234, 234, 14);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(234, 234, 14); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeY3 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(234, 234, 14);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(234, 234, 14); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeY4 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(234, 234, 14);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(234, 234, 14); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div></div></div><div class="cell homeG bg-G flex items-center justify-center aspect-square"><div class="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]" style="grid-template-areas: &quot;homeG1 homeG2&quot; &quot;homeG3 homeG4&quot;;"><div class="homeG1 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(2, 177, 2);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(2, 177, 2); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeG2 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(2, 177, 2);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(2, 177, 2); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeG3 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(2, 177, 2);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(2, 177, 2); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div><div class="homeG4 flex items-center justify-center aspect-square 
+                            min-w-[60%] min-h-[60%] w-[60%] h-[60%]" style="background-color: rgb(2, 177, 2);"><div class="relative rounded-full flex items-center justify-center" style="width: 50%; height: 50%; background-color: rgb(2, 177, 2); box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" draggable="false" src="/coinStamp.png" style="user-select: none; -webkit-user-drag: none;"></div></div></div></div><div class="cell finish relative flex items-center justify-center aspect-square"><div class="absolute inset-0 flex justify-center pt-1" style="background-color: rgb(234, 234, 14); clip-path: polygon(0% 0%, 100% 0%, 50% 50%);"><div class="h-1/4 flex items-end justify-center text-[14px] rotate-135 bg-amber-5000 aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(232, 18, 18); transform: translate(0%, 0%); z-index: 10; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(35, 35, 215); transform: translate(40%, -40%); z-index: 9; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(234, 234, 14); transform: translate(-40%, -40%); z-index: 8; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(2, 177, 2); transform: translate(40%, 40%); z-index: 7; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div></div></div></div><div class="absolute inset-0 flex items-center justify-end pr-1" style="background-color: rgb(2, 177, 2); clip-path: polygon(100% 0%, 100% 100%, 50% 50%);"><div class="h-1/4 flex items-end justify-center text-[14px] rotate-225 bg-amber-5000 aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(232, 18, 18); transform: translate(0%, 0%); z-index: 10; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(35, 35, 215); transform: translate(40%, -40%); z-index: 9; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(234, 234, 14); transform: translate(-40%, -40%); z-index: 8; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(2, 177, 2); transform: translate(40%, 40%); z-index: 7; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div></div></div></div><div class="absolute inset-0 flex justify-center items-end pb-1" style="background-color: rgb(232, 18, 18); clip-path: polygon(100% 100%, 0% 100%, 50% 50%);"><div class="h-1/4 flex items-end justify-center text-[14px] rotate-315 bg-amber-5000 aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(232, 18, 18); transform: translate(0%, 0%); z-index: 10; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(35, 35, 215); transform: translate(40%, -40%); z-index: 9; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(234, 234, 14); transform: translate(-40%, -40%); z-index: 8; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(2, 177, 2); transform: translate(40%, 40%); z-index: 7; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div></div></div></div><div class="absolute inset-0 flex items-center pl-1" style="background-color: rgb(35, 35, 215); clip-path: polygon(0% 100%, 0% 0%, 50% 50%);"><div class="h-1/4 flex items-end justify-center text-[14px] rotate-45 bg-amber-5000 aspect-square"><div class=" relative w-full h-full flex items-center justify-center pointer-events-none"><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(232, 18, 18); transform: translate(0%, 0%); z-index: 10; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(35, 35, 215); transform: translate(40%, -40%); z-index: 9; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(234, 234, 14); transform: translate(-40%, -40%); z-index: 8; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div><div class="absolute rounded-full" style="width: 50%; height: 50%; background-color: rgb(2, 177, 2); transform: translate(40%, 40%); z-index: 7; box-shadow: rgba(0, 0, 0, 0.5) 0px 1px 1px, rgba(0, 0, 0, 0.35) 0px 2px 4px, rgba(255, 255, 255, 0.4) 0px 1px 1px inset;"><img class="h-full w-full no-select" alt="cheap-2" src="/coinStamp.png"></div></div></div></div></div><div class="piece aspect-square fixed z-100 bg-[gold] text-[10px] p-0 m-0 flex items-center justify-center" style="width: 45.7375px; display: flex;"></div><audio src="/src/assets/SlideEffect.mp3" preload="auto"></audio></div></div><div><div class=" bg-emerald-300 min-h-10">ghfgjhfgugughgjehtgug</div><div class=" bg-emerald-300 min-h-10">ghfgjhfgugughgjehtgug</div></div></div></div></main></div>
+    <script type="module" src="/src/main.jsx?t=1766688404265"></script>
+  
+
+</body></html>
