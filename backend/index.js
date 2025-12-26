@@ -30,7 +30,7 @@ app.get("/api", (req, res) => {
 app.get("/test",(req,res)=>{
   res.send({msg:"Server running well!!!"})
 })
-   n
+  //  n
 if (process.env.NODE_ENV === "production"||true) {
   app.use(express.static(path.join(__dirname, "../frontend/dist")))
 

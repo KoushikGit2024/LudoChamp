@@ -21,7 +21,7 @@ const LudoOffline = () => {
     console.log(moveObj)
 
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  });
   useEffect(() => {
     if (!ref.current) return;
     // const rect = ref.current.getBoundingClientRect();
