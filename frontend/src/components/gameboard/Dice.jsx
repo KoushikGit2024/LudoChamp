@@ -1,6 +1,6 @@
 import { useState } from "react";
 import DiceFace from "./DiceFace";
-import '../styles/dice.css'
+import '../../styles/dice.css'
 const Dice = ({ setMove }) => {
   const [rolling, setRolling] = useState(false);
   const [value, setValue] = useState(1);
@@ -10,10 +10,10 @@ const Dice = ({ setMove }) => {
 
     setRolling(true);
 
-    let ticks = 0;
+    // let ticks = 0;
     const interval = setInterval(() => {
       setValue(Math.floor(Math.random() * 6) + 1);
-      ticks++;
+      // ticks++;
     }, 80);
 
     setTimeout(() => {

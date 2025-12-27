@@ -4,20 +4,19 @@ import {io} from 'socket.io-client'
 
 
 const Profile = () => {
-  const socket = io("http://localhost:8000");
+  const socket = io("/");
   // console.log(socket)
   socket.on("connect", (e) => {
     console.log("Connected:", e);
-    
   });
-  socket.emit("join-room", useState);
+  socket.emit("join-room", ()=>{console.log("HI")});
   
   return (
     <div className='bg-emerald-300 p-2 flex gap-2 items-center justify-center'>
       profile
       <button type="button" className='bg-blue-500 p-1' onClick={()=>{
         console.log("Helii");
-        socket.emit("message", useState);
+        socket.emit("message", "nsjdjj");
       }}>Press Meee!</button>
     </div>
   )

@@ -2,10 +2,10 @@ import React, { useContext } from 'react'
 import { useEffect } from 'react';
 import { useRef } from 'react';
 import { useState } from 'react'
-import GameBoard from './GameBoard';
+import GameBoard from './gameboard/GameBoard';
 import { MoveContext } from '../../contexts/MoveContext';
-import Dice from './Dice';
-import PlayerBoard from './PlayerBoard';
+import Dice from './gameboard/Dice';
+import PlayerBoard from './gameboard/PlayerBoard';
 
 const LudoOffline = () => {
   const [screen,setScreen]=useState(window.innerWidth<=window.innerHeight);
@@ -30,9 +30,9 @@ const LudoOffline = () => {
 
   return (
     <div ref={ref} className={`aspect-square bg-red-900 flex flex-col items-center justify-center ${(screen)?'min-w-[90%]':'min-h-[90%]'}`}>
-      <div className='flex flex-row items-center justify-between min-w-full'>
-        <PlayerBoard playing={true}/>
-        <div className="dice-cover aspect-square bg-amber-200 min-h-10 flex items-center justify-center"
+      <div className='flex flex-row items-center justify-between min-w-full h-1/12'>
+        <PlayerBoard playing={true} left={true} userName={'chidanand'} fullName={'Koushik Kar'} turn={true}/>
+        <div className="dice-cover aspect-square bg-amber-200 min-h-full flex items-center justify-center"
           // onClick={()=>{
           //   let a;
           //   do {
@@ -43,16 +43,16 @@ const LudoOffline = () => {
           // }}
         >
           <Dice setMove={setMove}/>
-          {Number(screen)}
+          {/* {Number(screen)} */}
         </div>
-        <PlayerBoard playing={true}/>
+        <PlayerBoard playing={true} left={false} userName={'chidanand'} fullName={'Koushik Kar'} turn={!true+1+1}/>
       </div>
       <div className={`${(!screen)?'w-auto h-full':'h-auto w-full p-04'} bg-cyan-400 aspect-square`}>
         <GameBoard />
       </div>
-      <div className='flex flex-row items-center justify-between min-w-full'>
-        <PlayerBoard playing={true}/>
-        <PlayerBoard playing={true}/>
+      <div className='flex flex-row items-center justify-between min-w-full h-1/12'>
+        <PlayerBoard playing={true} left={true} userName={'chidanand'} fullName={'Koushik Kar'} turn={true}/>
+        <PlayerBoard playing={true} left={false} userName={'chidanand'} fullName={'Koushik Kar'} turn={true}/>
       </div> 
     </div>
   )

@@ -1,5 +1,5 @@
 import React, { memo } from "react";
-import '../styles/cell.css'
+import '../../styles/cell.css'
 const COLORS = {
   R: "#e81212",
   B: "#2323d7",

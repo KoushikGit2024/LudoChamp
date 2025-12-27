@@ -1,13 +1,13 @@
 import React, { memo, useEffect, useRef, useState } from "react";
-import "../styles/gameBoard.css";
-import star from '../../public/safeStar.png'
-import arrow from '../../public/homePointer.png'
-import SlideEffect from '../assets/SlideEffect.mp3'
+import "../../styles/gameBoard.css";
+const star = '/safeStar.png'
+const arrow = '/homePointer.png'
+import SlideEffect from '../../assets/SlideEffect.mp3'
 import gsap from "gsap";
 import {useGSAP} from '@gsap/react'
 // import SVG from '../assets/react.svg' 
 
-import debounce from '../derivedFuncs/debounce.js'
+import debounce from '../../derivedFuncs/debounce.js'
 import Cell from "./Cell.jsx";
 import Room from "./Room.jsx";
 const GameBoard = memo(() => {
@@ -153,7 +153,7 @@ const GameBoard = memo(() => {
 
   return (
     <div
-      className="boardContainer  relative aspect-square grid gap-[2px] rounded-0 max-w-full max-h-full w-full h-full bg-[purple] p-3"
+      className="boardContainer invisible relative aspect-square grid gap-[2px] rounded-0 max-w-full max-h-full w-full h-full bg-[purple] p-3"
       style={{
         gridTemplateColumns: "repeat(15, 1fr)",
         gridTemplateRows: "repeat(15, 1fr)",

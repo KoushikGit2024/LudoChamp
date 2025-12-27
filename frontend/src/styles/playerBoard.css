@@ -1,0 +1,7 @@
+.profile-turn-timer {
+  --angle: 360deg;
+  background: conic-gradient(
+    rgba(251, 191, 36, 0.95) var(--angle),
+    transparent 0deg
+  );
+}
