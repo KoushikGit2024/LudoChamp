@@ -28,6 +28,19 @@ export const useGameStore = create(
         pieces: ["R1","R2","R3","R4"]
       }
       */
+     onBoard:[],
+     0:{
+
+     },
+     1:{
+
+     },
+     2:{
+
+     },
+     3:{
+
+     },
     },
 
     /* =========================

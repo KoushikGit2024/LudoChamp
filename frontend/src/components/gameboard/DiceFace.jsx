@@ -10,7 +10,7 @@ const DiceFace = ({ value }) => {
   };
 
   return (
-    <div className="dice-grid bg-blue-500 h-full w-full">
+    <div className="dice-grid h-full w-full">
       {Array.from({ length: 9 }, (_, i) => (
         <span key={i} className={`pip ${map[value].includes(i + 1) ? "on" : ""}`} />
       ))}

@@ -30,18 +30,18 @@ const GameBoard = memo(() => {
 
   const [pieceState, setPieceState] = useState(() =>
     Array.from({ length: 72 }, () => ({
-      R: 0,
-      B: 0,
-      Y: 0,
-      G: 0,
+      0: 0,
+      1: 0,
+      2: 0,
+      3: 0,
     }))
   );
-  const [piecePosition,setPosition]=useState({
-    R:[-1,-1,-1,-1],
-    B:[-1,-1,-1,-1],
-    Y:[-1,-1,-1,-1],
-    G:[-1,-1,-1,-1],
-  });
+  // const [piecePosition,setPosition]=useState({
+  //   R:[-1,-1,-1,-1],
+  //   B:[-1,-1,-1,-1],
+  //   Y:[-1,-1,-1,-1],
+  //   G:[-1,-1,-1,-1],
+  // });
 
   const FinishTriangles = [
     {
