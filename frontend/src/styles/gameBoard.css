@@ -1,7 +1,28 @@
+.boardContainer {
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+  grid-template-areas:
+    "homeB homeB homeB homeB homeB homeB box25 box26 box27 homeY homeY homeY homeY homeY homeY"
+    "homeB homeB homeB homeB homeB homeB box24 trackY1 box28 homeY homeY homeY homeY homeY homeY"
+    "homeB homeB homeB homeB homeB homeB box23 trackY2 box29 homeY homeY homeY homeY homeY homeY"
+    "homeB homeB homeB homeB homeB homeB box22 trackY3 box30 homeY homeY homeY homeY homeY homeY"
+    "homeB homeB homeB homeB homeB homeB box21 trackY4 box31 homeY homeY homeY homeY homeY homeY"
+    "homeB homeB homeB homeB homeB homeB box20 trackY5 box32 homeY homeY homeY homeY homeY homeY"
+    "box14 box15 box16 box17 box18 box19 finish finish finish box33 box34 box35 box36 box37 box38"
+    "box13 trackB1 trackB2 trackB3 trackB4 trackB5 finish finish finish trackG5 trackG4 trackG3 trackG2 trackG1 box39"
+    "box12 box11 box10 box9 box8 box7 finish finish finish box45 box44 box43 box42 box41 box40"
+    "homeR homeR homeR homeR homeR homeR box6 trackR5 box46 homeG homeG homeG homeG homeG homeG"
+    "homeR homeR homeR homeR homeR homeR box5 trackR4 box47 homeG homeG homeG homeG homeG homeG"
+    "homeR homeR homeR homeR homeR homeR box4 trackR3 box48 homeG homeG homeG homeG homeG homeG"
+    "homeR homeR homeR homeR homeR homeR box3 trackR2 box49 homeG homeG homeG homeG homeG homeG"
+    "homeR homeR homeR homeR homeR homeR box2 trackR1 box50 homeG homeG homeG homeG homeG homeG"
+    "homeR homeR homeR homeR homeR homeR box1 box52 box51 homeG homeG homeG homeG homeG homeG";
+}
+
 .cell {
   width: 100%;
   height: 100%;
-  background: #e5e7eb;
   /* border-radius: 3px; */
 }
 
@@ -34,7 +55,7 @@
 
 
 .box1 { grid-area: box1; }
-.box2 { grid-area: box2; background-color: #e81212; background-image: '../../public/safeStar.png';}
+.box2 { grid-area: box2; background-color: var(--color); background-image: '../../public/safeStar.png';}
 .box3 { grid-area: box3; }
 .box4 { grid-area: box4; }
 .box5 { grid-area: box5; }
@@ -47,7 +68,7 @@
 .box12 { grid-area: box12; }
 .box13 { grid-area: box13; }
 .box14 { grid-area: box14; }
-.box15 { grid-area: box15; background-color: #2323d7; }
+.box15 { grid-area: box15; background-color: var(--color); background-image: '../../public/safeStar.png';}
 .box16 { grid-area: box16; }
 .box17 { grid-area: box17; }
 .box18 { grid-area: box18; }
@@ -60,7 +81,7 @@
 .box25 { grid-area: box25; }
 .box26 { grid-area: box26; }
 .box27 { grid-area: box27; }
-.box28 { grid-area: box28; background-color: #eaea0e;}
+.box28 { grid-area: box28; background-color: var(--color); background-image: '../../public/safeStar.png';}
 .box29 { grid-area: box29; }
 .box30 { grid-area: box30; }
 .box31 { grid-area: box31; }
@@ -73,7 +94,7 @@
 .box38 { grid-area: box38; }
 .box39 { grid-area: box39; }
 .box40 { grid-area: box40; }
-.box41 { grid-area: box41; background-color: #02b102;}
+.box41 { grid-area: box41; background-color: var(--color); background-image: '../../public/safeStar.png';}
 .box42 { grid-area: box42; }
 .box43 { grid-area: box43; }
 .box44 { grid-area: box44; }
@@ -118,10 +139,10 @@
 .finish { grid-area: finish;}
 
 
-.bg-R { background: #e81212; }
-.bg-B { background: #2323d7; }
-.bg-Y { background: #eaea0e; }
-.bg-G { background: #02b102; }
+.bg-R { background: var(--color); }
+.bg-B { background: var(--color); }
+.bg-Y { background: var(--color); }
+.bg-G { background: var(--color); }
 
 .homeR1 {grid-area: homeR1; }
 .homeR2 {grid-area: homeR2; }

@@ -7,9 +7,9 @@ export const useGameStore = create(
        META (GAME FLOW)
     ========================== */
     meta: {
-      gameId: null,
+      gameId: "",
       status: "WAITING", // WAITING | RUNNING | FINISHED
-      currentTurn: null, // "RED" | "BLUE" | ...
+      currentTurn: 0, // "RED" | "BLUE" | ...
       turnStartedAt: null,
       turnDuration: 10000
     },
@@ -18,100 +18,113 @@ export const useGameStore = create(
        PLAYERS (2–4)
     ========================== */
     players: {
-      /*
-      RED: {
-        id: "socketId",
-        seat: 0,
-        name: "Player 1",
-        online: true,
-        color: "RED",
-        pieces: ["R1","R2","R3","R4"]
-      }
-      */
-     onBoard:[],
-     0:{
-
-     },
-     1:{
-
-     },
-     2:{
-
-     },
-     3:{
-
-     },
+      playerCount:3,
+      onBoard:[0,1,2,3],
+      0:{
+        socketId:"",
+        name:"",
+        userId:"",
+        profile:"",
+        online:false,
+        pieces:[30,23,5,46],
+        homeCount:1,
+        winCount:3,
+        color:'#FF3131',
+      },
+      1:{
+        socketId:"",
+        name:"",
+        userId:"",
+        profile:"",
+        online:false,
+        pieces:[30,23,5,46],
+        homeCount:2,
+        winCount:2,
+        color:'#00D4FF',
+      },
+      2:{
+        socketId:"",
+        name:"",
+        userId:"",
+        profile:"",
+        online:false,
+        pieces:[30,23,5,46],
+        homeCount:3,
+        winCount:1,
+        color:'#ffc400',
+      },
+      3:{
+        socketId:null,
+        name:"",
+        userId:"",
+        profile:"",
+        online:false,
+        pieces:[30,23,5,46],
+        homeCount:3,
+        winCount:1,
+        color:'#39FF14',
+      },
     },
 
     /* =========================
        PIECES (NORMALIZED)
-    ========================== */
-    pieces: {
-      /*
-      R1: {
-        id: "R1",
-        color: "RED",
-        pos: -1,          // -1 = home
-        status: "HOME"    // HOME | ACTIVE | FINISHED
-      }
-      */
-    },
-
-    /* =========================
-       TURN ORDER
-    ========================== */
-    turnOrder: [], // ["RED","BLUE","GREEN","YELLOW"]
+    ========================== */ 
 
     /* =========================
        INITIALIZATION
     ========================== */
-    initGame: ({ gameId, players }) => {
-      const playerMap = {};
-      const pieceMap = {};
-      const turnOrder = [];
+    // initiateGame: ({...gameObj}) =>{
 
-      players.forEach((p, idx) => {
-        turnOrder.push(p.color);
+    // },
 
-        playerMap[p.color] = {
-          id: p.id,
-          seat: idx,
-          name: p.name,
-          online: true,
-          color: p.color,
-          pieces: []
-        };
+    // initiatePlayer: (userObj) => {
+      // const playerMap = {};
+      // const pieceMap = {};
+      // const turnOrder = [];
 
-        for (let i = 1; i <= 4; i++) {
-          const pid = `${p.color[0]}${i}`;
-          playerMap[p.color].pieces.push(pid);
+      // players.forEach((p, idx) => {
+      //   turnOrder.push(p.color);
 
-          pieceMap[pid] = {
-            id: pid,
-            color: p.color,
-            pos: -1,
-            status: "HOME"
-          };
-        }
-      });
+      //   playerMap[p.color] = {
+      //     socketId: p.socketId,
+      //     seat: idx,
+      //     name: p.name,
+      //     online: true,
+      //     color: p.color,
+      //     pieces: []
+      //   };
 
-      set(
-        {
-          meta: {
-            gameId,
-            status: "RUNNING",
-            currentTurn: turnOrder[0],
-            turnStartedAt: Date.now(),
-            turnDuration: 10000
-          },
-          players: playerMap,
-          pieces: pieceMap,
-          turnOrder
-        },
-        false,
-        "INIT_GAME"
-      );
-    },
+      //   for (let i = 1; i <= 4; i++) {
+      //     const pid = `${p.color[0]}${i}`;
+      //     playerMap[p.color].pieces.push(pid);
+
+      //     pieceMap[pid] = {
+      //       socketId: pid,
+      //       color: p.color,
+      //       pos: -1,
+      //       status: "HOME"
+      //     };
+      //   }
+      // });
+      // set({},)
+      // if()
+      // set(
+      //   {
+      //     meta: {
+      //       gameId:userObj.gameId,
+      //       status: "RUNNING",
+      //       currentTurn: 0,
+      //       turnStartedAt: Date.now(),
+      //       turnDuration: 10000
+      //     },
+      //     players: playerMap,
+      //     pieces: pieceMap,
+      //     turnOrder
+      //   },
+      //   false,
+      //   "INIT_GAME"
+      // );
+    // },
 
     /* =========================
        TURN CONTROL

@@ -4,7 +4,7 @@ import LudoOffline from '../components/LudoOffline'
 
 const Session = () => {
   return (
-    <div className='bg-pink-400 h-screen w-screen flex items-center justify-center'>
+    <div className='main-page-wrapp bg-black h-screen w-screen flex items-center justify-center'>
       <MoveProvider>
         <LudoOffline/>
       </MoveProvider>

@@ -32,7 +32,7 @@ const Dice = ({ setMove }) => {
       onClick={rollDice}
     >
       <div
-        className={`dice-container ${rolling ? "rolling" : ""}`}
+        className={`dice-container w-[80%] h-[80%] rounded-[20%] flex items-center justify-center bg-white ${rolling ? "rolling" : ""}`}
       >
         <DiceFace value={value} />
       </div>

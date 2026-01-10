@@ -10,9 +10,18 @@ const DiceFace = ({ value }) => {
   };
 
   return (
-    <div className="dice-grid h-full w-full">
+    <div 
+      className="dice-grid h-[60%] w-[60%] aspect-square grid place-items-center"
+      style={{
+        gridTemplateColumns:'repeat(3, 1fr)',
+        gridTemplateRows:'repeat(3, 1fr)',
+      }}
+    >
       {Array.from({ length: 9 }, (_, i) => (
-        <span key={i} className={`pip ${map[value].includes(i + 1) ? "on" : ""}`} />
+        <span 
+          key={i} 
+          className={`pip aspect-square w-[60%] h-[60%] rounded-full ${map[value].includes(i + 1) ? "bg-black" : "bg-blue-4000"}`} 
+        />
       ))}
     </div>
   );

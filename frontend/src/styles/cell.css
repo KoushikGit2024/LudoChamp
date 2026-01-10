@@ -4,3 +4,29 @@
   -ms-user-select: none;     /* IE/Edge legacy */
   -webkit-user-drag: none;   /* Safari */
 }
+
+.neon-ring {
+  position: relative;
+  /* Add this! It keeps the glow from slipping under the game board */
+  isolation: isolate; 
+}
+
+.neon-ring::before {
+  content: "";
+  position: absolute;
+  inset: -15%;
+  border-radius: 50%;
+  background: conic-gradient(
+    from 0deg,
+    var(--neon-color),
+    transparent 40%,
+    var(--neon-color)
+  );
+  filter: blur(6px);
+  animation: spin 1.2s linear infinite;
+  /* This ensures it stays behind the coin but inside the 'isolate' context */
+  z-index: -1; 
+  opacity: 0.9;
+  /* Ensure the shadow doesn't catch mouse clicks */
+  pointer-events: none; 
+}

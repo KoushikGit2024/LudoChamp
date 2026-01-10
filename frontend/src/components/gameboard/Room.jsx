@@ -1,13 +1,19 @@
 import React, { memo } from "react";
 import '../../styles/cell.css'
-const COLORS = {
-  R: "#e81212",
-  B: "#2323d7",
-  Y: "#eaea0e",
-  G: "#02b102",
-};
+import { useGameStore } from "../../store/useGameStore";
 
 const Room = memo(({ R = 0, B = 0, Y = 0, G = 0 }) => {
+  const clrR=useGameStore(state=>state.players[0].color);
+  const clrB=useGameStore(state=>state.players[1].color);
+  const clrY=useGameStore(state=>state.players[2].color);
+  const clrG=useGameStore(state=>state.players[3].color);
+
+  const COLORS = {
+    R: clrR,
+    B: clrB,
+    Y: clrY,
+    G: clrG,
+  };
   const color =COLORS[
     (R && 'R') ||
     (B && 'B') ||
@@ -22,7 +28,7 @@ const Room = memo(({ R = 0, B = 0, Y = 0, G = 0 }) => {
       style={{
         width: "50%",
         height: "50%",
-        backgroundColor: color || "#afa04a",
+        backgroundColor: color,
         boxShadow: `
             0 1px 1px rgba(0,0,0,0.5),
             0 2px 4px rgba(0,0,0,0.35),
