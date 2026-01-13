@@ -1,6 +1,6 @@
 import React, { memo } from "react";
-import '../../styles/cell.css'
-import { useGameStore } from "../../store/useGameStore";
+import '../../../styles/cell.css'
+// import { useGameStore } from "../../store/useGameStore";
 
 // Percentage offsets relative to cell size
 const OFFSETS = [
@@ -11,18 +11,8 @@ const OFFSETS = [
   { x: "-40%", y: "40%" },
 ];
 
-const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0,activeColor='' }) => {
-  const clrR=useGameStore(state=>state.players[0].color);
-  const clrB=useGameStore(state=>state.players[1].color);
-  const clrY=useGameStore(state=>state.players[2].color);
-  const clrG=useGameStore(state=>state.players[3].color);
-
-  const COLORS = {
-    R: clrR,
-    B: clrB,
-    Y: clrY,
-    G: clrG,
-  };
+const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0,activeColor='' ,COLORS={},moveAllowed=false}) => {
+  
   const pieces = [];
 
   [["R", R], ["B", B], ["Y", Y], ["G", G]].forEach(([key, count]) => {
@@ -32,23 +22,21 @@ const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0,activeColor='' }) => {
   });
 
   return (
-    <div className="bg-transparent relative w-full h-full flex items-center justify-center pointer-events-none">
+    <div className="bg-pink-4000 relative w-full h-full flex items-center justify-center pointer-events-none">
       {pieces.map((color, i) => {
         const { x, y } = OFFSETS[i % OFFSETS.length];
         const isActive = color === activeColor;
-
+        // console.log(isActive)
         return (
           <div
             key={`${color}-${i}`}
-            className={`absolute rounded-full ${
-              isActive ? "neon-ring" : ""
-            }`}
+            className={`absolute rounded-full overflow-hidden`}
             style={{
               width: "50%",
               height: "50%",
               backgroundColor: COLORS[color],
               transform: `translate(${x}, ${y})`,
-              zIndex: isActive ? 100 : -i + 10,
+              zIndex: isActive && moveAllowed ? 100+i : -i + 10,
               boxShadow: `
                 0 1px 1px rgba(0,0,0,0.5),
                 0 2px 4px rgba(0,0,0,0.35),
@@ -60,7 +48,9 @@ const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0,activeColor='' }) => {
             }}
           >
             <img
-              className="h-full w-full no-select"
+              className={`h-full w-full no-select rounded-full ${
+              isActive && moveAllowed ? "spin" : ""
+            }`}
               src="/coinStamp.png"
               alt="coin"
             />

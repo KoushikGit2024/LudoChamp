@@ -6,7 +6,7 @@ import Home from './pages/Home'
 import Profile from './pages/Profile'
 import Dashboard from './pages/Dashboard'
 import Session from './pages/Session'
-import LudoOffline from './components/LudoOffline'
+// import LudoOffline from './components/LudoOffline'
 // import LudoGame from './assets/New'
 //---------------------------------------
 

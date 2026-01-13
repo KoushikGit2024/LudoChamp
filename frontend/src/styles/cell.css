@@ -11,22 +11,52 @@
   isolation: isolate; 
 }
 
-.neon-ring::before {
+.neon-ring::after {
   content: "";
   position: absolute;
-  inset: -15%;
+  inset: -10%;
   border-radius: 50%;
+
   background: conic-gradient(
-    from 0deg,
-    var(--neon-color),
-    transparent 40%,
-    var(--neon-color)
+    black 0deg 45deg,
+    white 45deg 90deg,
+    black 90deg 135deg,
+    white 135deg 180deg,
+    black 180deg 225deg,
+    white 225deg 270deg,
+    black 270deg 315deg,
+    white 315deg 360deg
   );
-  filter: blur(6px);
-  animation: spin 1.2s linear infinite;
-  /* This ensures it stays behind the coin but inside the 'isolate' context */
-  z-index: -1; 
-  opacity: 0.9;
-  /* Ensure the shadow doesn't catch mouse clicks */
-  pointer-events: none; 
+
+  padding: 10%; /* ring thickness */
+
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+
+  animation: spin 2s linear infinite;
+  z-index: -10;
+  pointer-events: none;
+}
+
+.spin{
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0%{
+    
+  }
+  50%{
+    /* background-color: white; */
+  }
+  100%{
+    transform: rotate(360deg);
+  }
 }

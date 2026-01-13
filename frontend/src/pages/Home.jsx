@@ -1,6 +1,6 @@
 import React from 'react'
-import LudoOffline from '../components/LudoOffline'
-import { MoveProvider } from '../../contexts/MoveContext'
+// import LudoOffline from '../components/LudoOffline'
+// import { MoveProvider } from '../contexts/MoveProvider'
 
 const Home = () => {
   return (

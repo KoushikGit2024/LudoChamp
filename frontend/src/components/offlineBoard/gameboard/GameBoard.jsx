@@ -1,59 +1,89 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
-import "../../styles/gameBoard.css";
+import "../../../styles/gameBoard.css";
 const star = '/safeStar.png'
 const arrow = '/homePointer.png'
-import SlideEffect from '../../assets/SlideEffect.mp3'
+import SlideEffect from '../../../assets/SlideEffect.mp3'
 import gsap from "gsap";
 import {useGSAP} from '@gsap/react'
-// import SVG from '../assets/react.svg' 
-
-import debounce from '../../derivedFuncs/debounce.js'
+import debounce from '../../../derivedFuncs/debounce.js'
 import Cell from "./Cell.jsx";
 import Room from "./Room.jsx";
-import { useGameStore } from "../../store/useGameStore.js";
+import { useGameStore } from "../../../store/useGameStore";
 // import { shallow } from "zustand/shallow";
 
-const GameBoard = memo(({temp=0}) => {
+const GameBoard = memo(({clicked,setClicked,moveCount}) => {
+  //=============Move Object==============
+  const moveObj=useGameStore((state)=>state.move)
+
+
+  //=============Cell References==========
   const pathRefs = useRef([]);
   const boardRef = useRef(null);
   const chariotRef =useRef(null);
   const audioRef = useRef(null);
 
-  const [pathPoints,setPathPoints]=useState([])
-  
-  const [loaded,setLoaded]=useState(false)
-  const [cellSize,setCellSize]=useState(0)
-
-  const clrR=useGameStore(state=>state.players[0].color);
-  const clrB=useGameStore(state=>state.players[1].color);
-  const clrY=useGameStore(state=>state.players[2].color);
-  const clrG=useGameStore(state=>state.players[3].color);
+  //========Store Variables=============
+  const clrR=useGameStore(state=>state.players['R'].color);
+  const clrB=useGameStore(state=>state.players['B'].color);
+  const clrY=useGameStore(state=>state.players['Y'].color);
+  const clrG=useGameStore(state=>state.players['G'].color);
 
   const Colors = useMemo(()=>(
     [clrR,clrB,clrY,clrG]
-  ),[]);
+  ),[clrR,clrB,clrY,clrG]);
+  // console.log(clrG)
+  const COLORS =useMemo(()=>({
+    R: clrR,
+    B: clrB,
+    Y: clrY,
+    G: clrG,
+  }),[clrR,clrB,clrY,clrG]) ;
+  const redHome=useGameStore((state)=>state.players['R'].homeCount)
+  const blueHome=useGameStore((state)=>state.players['B'].homeCount)
+  const yellowHome=useGameStore((state)=>state.players['Y'].homeCount)
+  const greenHome=useGameStore((state)=>state.players['G'].homeCount)
 
+  const HomeCount=useMemo(()=>(
+    [redHome,blueHome,yellowHome,greenHome]
+  ),[redHome,blueHome,yellowHome,greenHome]); 
+
+  const redGoal=useGameStore((state)=>state.players['R'].winCount)
+  const blueGoal=useGameStore((state)=>state.players['B'].winCount)
+  const yellowGoal=useGameStore((state)=>state.players['Y'].winCount)
+  const greenGoal=useGameStore((state)=>state.players['G'].winCount)
+
+  const WinCount=useMemo(()=>(
+    [redGoal,blueGoal,yellowGoal,greenGoal]
+  ),[redGoal,blueGoal,yellowGoal,greenGoal]);
+
+  const turn=useGameStore(state=>(state.move.turn))
+  
+
+  useEffect(()=>{
+    if(moveObj.moveCount===0) return;
+    console.log('dice useeffect')
+  },[moveObj.moveCount])
+
+  //========Component Variables===============
+  const [pathPoints,setPathPoints]=useState([])
+  const [showChariot,setChariotDisplay]=useState(false)
+  const [chariotDest,setChariotDest]=useState(0);
+  const [cellSize,setCellSize]=useState(0)
   const Homes = useMemo(()=>([
     { keyId: "R", color: Colors[0], base: 76, bg: "bg-R" },
     { keyId: "B", color: Colors[1], base: 80, bg: "bg-B" },
     { keyId: "Y", color: Colors[2], base: 84, bg: "bg-Y" },
     { keyId: "G", color: Colors[3], base: 88, bg: "bg-G" },
-  ]),[]);
-
+  ]),[Colors]);
   const [pieceState, setPieceState] = useState(() =>
     Array.from({ length: 72 }, () => ({
-      0: 0,
-      1: 0,
-      2: 0,
-      3: 0,
+      R: 0,
+      B: 0,
+      Y: 0,
+      G: 0,
     }))
   );
-  // const [piecePosition,setPosition]=useState({
-  //   R:[-1,-1,-1,-1],
-  //   B:[-1,-1,-1,-1],
-  //   Y:[-1,-1,-1,-1],
-  //   G:[-1,-1,-1,-1],
-  // });
+  // console.log(pieceState.length)
   const FinishTriangles =useMemo(()=>([
     {
       color: Colors[2],
@@ -80,12 +110,17 @@ const GameBoard = memo(({temp=0}) => {
       ref: 73,
       rotate: "rotate-45",
     },
-  ]),[]);
+  ]),[Colors]);
 
   const SAFE_CELLS = new Set([1, 9, 14, 22, 27, 35, 40, 48]);
   const homePointer = new Map([
     [12,0],[25,90],[38,180],[51,270]
   ]);
+  
+  
+  
+
+  //====================Component Functions===============
    
   // const playSound = () => {
   //   if (!audioRef.current) return;
@@ -93,6 +128,9 @@ const GameBoard = memo(({temp=0}) => {
   //   audioRef.current.play();
   // };
   // const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+
+
   const pathPointCalculator = ()=>{
     if (!pathRefs.current[0] || !boardRef.current) return;
 
@@ -100,64 +138,84 @@ const GameBoard = memo(({temp=0}) => {
     const firstCellRect = pathRefs.current[0].getBoundingClientRect();
     const pieceSize = firstCellRect.width;
     setCellSize(pieceSize);
-    const tempPts = pathRefs.current.map((el) => {
+    const tempPts = pathRefs.current.map((el,idx) => {
       const cellRect = el.getBoundingClientRect();
+      // el.innerHTML=idx;
       return {
         x:cellRect.left-boardRect.left,
         y:cellRect.top-boardRect.top,
+        width:cellRect.width,
       };
     });
+    console.log(tempPts);
     setPathPoints(tempPts);
   }
   useEffect(() => {
     pathPointCalculator();
-    setLoaded(true);
-  }, []);
-   
-  useEffect(() => {
-
-    window.addEventListener('resize',debounce(
+    // console.log(setPieceState)
+    const resizeHandler = debounce(
       pathPointCalculator
-    ,100));
+    ,100)
+
+    window.addEventListener('resize',resizeHandler);
 
     return () => {
-      window.removeEventListener('resize',debounce(
-        pathPointCalculator
-      ,100));
+      window.removeEventListener('resize',resizeHandler);
     };
   }, []);
+   
+
+
+  //======================Component Functions==============
+  const onBoard=new Set(useGameStore((state)=>state.meta.onBoard))
+  // console.log(onBoard)
+  const playerIdx=useGameStore((state)=>(state.move.playerIdx))
+  const pieceArr=useGameStore((state)=>(state.players[turn].pieces))
+  const moveAllowed=useGameStore((state)=>(state.move.moveAllowed))
+  const piecePath=useGameStore((state)=>state.piecePath)
+  const runChariot=(curPosn,curIdx,diceNum,turnColor)=>{
+    let tempState=[...pieceState];
+    tempState
+  }
+
+  const determineAndProcessClickCell=(num,refNum,homeColor='')=>{
+    if(!moveAllowed){
+      console.log('move not allowed')
+      return;
+    } 
+    if(refNum>-1 && refNum<72 && pieceState[refNum][turn]===0) {
+      console.log('no piece')
+      return
+    }
+    if(refNum>=76 && refNum<=91){
+      if ( (homeColor!==turn||moveCount!==6)) {
+        console.log('home no move')
+        return
+      } else {
+        const flagIdx=pieceArr[-num-1]===-1;
+        console.log('home move',flagIdx)
+      }
+      
+    }
+
+    // let curArr=pieceArr
+    console.log(num,refNum)
+  }
 
   useGSAP(() => {
-    if (!chariotRef.current || !pathPoints[temp]) return;
+    if (!chariotRef.current || !pathPoints[chariotDest]) return;
     
     gsap.to(chariotRef.current, {
-      x: pathPoints[temp].x,
-      y: pathPoints[temp].y,
+      x: pathPoints[chariotDest].x,
+      y: pathPoints[chariotDest].y,
       duration: 0.5,
       ease: "power2.out"
     });
-  }, [temp]);
+  }, [chariotDest]); //----Used to make the animation for piece Movement
 
   
   //============Store Variables==============
-  const redHome=useGameStore((state)=>state.players[0].homeCount)
-  const blueHome=useGameStore((state)=>state.players[1].homeCount)
-  const yellowHome=useGameStore((state)=>state.players[2].homeCount)
-  const greenHome=useGameStore((state)=>state.players[3].homeCount)
-
-  const HomeCount=useMemo(()=>(
-    [redHome,blueHome,yellowHome,greenHome]
-  ),[redHome,blueHome,yellowHome,greenHome]);
-  // console.log(HomeCount)
-  const redGoal=useGameStore((state)=>state.players[0].winCount)
-  const blueGoal=useGameStore((state)=>state.players[1].winCount)
-  const yellowGoal=useGameStore((state)=>state.players[2].winCount)
-  const greenGoal=useGameStore((state)=>state.players[3].winCount)
-
-  const WinCount=useMemo(()=>(
-    [redGoal,blueGoal,yellowGoal,greenGoal]
-  ),[redGoal,blueGoal,yellowGoal,greenGoal]);
-  // console.log(WinCount)
+  
   return (
     <div
       className="boardContainer relative aspect-square grid gap-[2px] rounded-0 max-w-full max-h-full w-full h-full bg-[purple] p-3"
@@ -171,7 +229,7 @@ const GameBoard = memo(({temp=0}) => {
           <div
             key={i}
             ref={(el) => (pathRefs.current[i] = el)}
-            className={`cell box${i + 1} bg-[#fdfdfd73] flex items-center justify-center aspect-square
+            className={`cell box${i + 1} bgg-[#fdfdfd73] flex items-center justify-center aspect-square p-[2px] bg-emerald-400 rounded-[2px]
               ${isSafe ? "safe" : ""}
               ${isHomePointer ? "home-pointer" : ""}
             `}
@@ -199,13 +257,16 @@ const GameBoard = memo(({temp=0}) => {
                   }
                 : {}),
             }}
+            onClick={()=>determineAndProcessClickCell(i,i)}
           >
             <Cell
               R={pieceState[i].R}
               B={pieceState[i].B}
               Y={pieceState[i].Y}
               G={pieceState[i].G}
-              activeColor={''}
+              activeColor={turn}
+              COLORS={COLORS}
+              moveAllowed={moveAllowed}
             />
           </div>
         );
@@ -227,8 +288,15 @@ const GameBoard = memo(({temp=0}) => {
               c==='G'? {"--color":Colors[3]}:
               {}
             }
-          > 
-            <Cell R={(c==='R')&&pieceState[i].R} B={(c==='B')&&pieceState[i].B} Y={(c==='Y')&&pieceState[i].Y} G={(c==='G')&&pieceState[i].G}/>
+          >
+            <Cell 
+              R={(c==='R')&&pieceState[i].R} 
+              B={(c==='B')&&pieceState[i].B} 
+              Y={(c==='Y')&&pieceState[i].Y} 
+              G={(c==='G')&&pieceState[i].G}
+              activeColor={turn}
+              moveAllowed={moveAllowed}
+            />
           </div>
         ))
       )}
@@ -263,11 +331,23 @@ const GameBoard = memo(({temp=0}) => {
                   className={`home${keyId}${i + 1} flex items-center justify-center aspect-square 
                             min-w-[60%] min-h-[60%] w-[60%] h-[60%]`}
                   style={{ backgroundColor: color }}
+                  onClick={()=>determineAndProcessClickCell(base+i-((keyId=='R')*80 + (keyId=='B')*84 + (keyId=='Y')*88 + (keyId=='G')*92),base+i,keyId)}
                 >
+                  {/* { console.log(pieceState)} */}
                   {
-                    (i<HomeCount[boxIdx])? 
-                      <Room R={keyId==='R'} B={keyId==='B'} Y={keyId==='Y'} G={keyId==='G'}/>
-                      :''
+                    (onBoard.has(keyId))?(
+                      (i<HomeCount[boxIdx])? 
+                        <Room 
+                          R={keyId==='R'&& pieceState[base+i]?.R||0} 
+                          B={keyId==='B'&& pieceState[base+i]?.B||0} 
+                          Y={keyId==='Y'&& pieceState[base+i]?.Y||0} 
+                          G={keyId==='G'&& pieceState[base+i]?.G||0}
+                          activeColor={turn}
+                          moveAllowed={moveAllowed}
+                          COLORS={COLORS}
+                        />
+                      :null
+                    ):null
                   }
                 </div>
               ))}
@@ -294,8 +374,14 @@ const GameBoard = memo(({temp=0}) => {
 
       </div>
       {
-        (loaded) && <div ref={chariotRef} className="piece aspect-square fixed z-100 bg-transparent text-[10px] p-0 m-0 flex items-center justify-center"  style={{width:`${cellSize}px`,display:(`${(loaded)?"flex":"none"}`)}}>
-          {/* <audio src={SlideEffect} className="fixed top-0 left-0 z-[1000]">hi</audio> */}Hi
+        <div ref={chariotRef} className="piece aspect-square fixed z-100 bg-transparent text-[10px] p-0 m-0 flex items-center justify-center"  style={{width:`${cellSize}px`,display:(`${(showChariot)?"flex":"none"}`)}}>
+          <Room 
+            R={turn==='R'} 
+            B={turn==='B'} 
+            Y={turn==='Y'} 
+            G={turn==='G'}
+            COLORS={COLORS}
+          />
         </div>
       }
       <audio ref={audioRef} src={SlideEffect} preload="auto"/>

@@ -1,4 +1,4 @@
-import '../../styles/dice.css'
+import '../../../styles/dice.css'
 const DiceFace = ({ value }) => {
   const map = {
     1: [5],
