@@ -105,14 +105,6 @@ export const useGameStore = create(
         }
         return res;
       }
-      // const map = Array.from({ length: 92 }, () => ({ R:0, B:0, Y:0, G:0 }));
-      
-      // for (const color of ["R","B","Y","G"]) {
-      //   get().players[color].pieceRef.forEach(pos => {
-      //     if (pos >= 0) map[pos][color]++;
-      //   });
-      // }
-      // console.log(map);
 
       const piecePath = {
         R: [...range(1, 56),72],
@@ -210,7 +202,7 @@ export const useGameStore = create(
             ticks:state.move.ticks+1,
           }
         }))
-        console.log(get().move);
+        // console.log(get().move);
       }
     },
     updatePieceState:(curColor,pieceIdx,newVal)=>{
@@ -245,6 +237,19 @@ export const useGameStore = create(
           timeOut:false,
         }
       }))
+      // console.log(get().move)
+    },
+
+    updateTimeOut:(newState)=>{
+      set(
+        {
+          ...get(),
+          move:{
+            ...get().move,
+            timeOut:newState,
+          }
+        }
+      )
       // console.log(get().move)
     },
 

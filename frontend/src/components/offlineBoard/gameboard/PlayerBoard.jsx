@@ -4,13 +4,14 @@ import '../../../styles/playerBoard.css'
 // import MoveContext from "../../contexts/MoveContext";
 import { useGameStore } from "../../../store/useGameStore";
 
-const PlayerBoard = memo(({ playing, left, turn=0, idx }) => {
+const PlayerBoard = memo(({ playing, left, turn=0, idx, timeOut,moveAllowed,rollAllowed }) => {
   const timerRef = useRef(null);
   const animRef = useRef(null);
   // const {setMove}=useContext(MoveContext);
   // console.log(crypto)
-  
-  useEffect(() => {
+  const updateTimeOut=useGameStore((state)=>state.updateTimeOut)
+
+  const animeFunc=()=>{
     if (!timerRef.current) return;
 
     animRef.current?.kill();
@@ -22,21 +23,42 @@ const PlayerBoard = memo(({ playing, left, turn=0, idx }) => {
       { "--angle": "360deg" },
       {
         "--angle": "0deg",
-        duration: 60,
+        duration: 3,
         ease: "linear",
         onComplete: () => {
           if (cancelled) return;
+          updateTimeOut(true);
           gsap.set(timerRef.current, { "--angle": "360deg" });
           // setMove(pre => ({ ...pre, timeOut: true }));
         }
       }
     );
+  }
+  let one=1;
+  useEffect(() => {
+    if(!timeOut) return;
+
+    console.log('turn',turn);
+    // if(one--)
+    animeFunc();
 
     return () => {
-      cancelled = true;
+      // cancelled = true;
+      
       animRef.current?.kill();
     };
-  }, [turn]);
+  }, [timeOut]);
+  useEffect(()=>{
+console.log('moveAllowed or rollAllowed',turn,moveAllowed,rollAllowed);
+
+    animeFunc();
+
+    return () => {
+      // cancelled = true;
+      
+      animRef.current?.kill();
+    };
+  },[turn,moveAllowed])
 
   const userName=useGameStore((state)=>state.players[idx].userId)
 

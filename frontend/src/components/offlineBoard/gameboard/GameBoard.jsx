@@ -391,8 +391,7 @@ const GameBoard = memo(({moveCount}) => {
                   
                   {
                     (onBoard.has(keyId)) && (
-                      <Room 
-                        key={`${keyId}-${base+i}`}
+                      <Room
                         R={pieceState.R.get(base+i) ?? 0}
                         B={pieceState.B.get(base+i) ?? 0}
                         Y={pieceState.Y.get(base+i) ?? 0}

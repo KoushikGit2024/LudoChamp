@@ -39,6 +39,7 @@ const LudoOffline = () => {
     G: pieceIdxG
   }),[pieceIdxR,pieceIdxB,pieceIdxY,pieceIdxG])
 
+  const timeOut=useGameStore((state)=>state.move.timeOut)
   useEffect(() => {
     const handleResize = () => {
       setScreen(window.innerWidth < window.innerHeight);
@@ -60,28 +61,28 @@ const LudoOffline = () => {
     >
 
       <div className='flex flex-row items-center justify-between min-w-full h-1/12'>
-        <PlayerBoard playing={playersSet?.has('B')} idx={'B'} left={true} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='B'}/>
+        <PlayerBoard playing={playersSet?.has('B')} idx={'B'} left={true} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='B'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} />
         <div 
           className="dice-cover aspect-square min-h-full flex items-center justify-center mt-1 rounded-[10%]"
           style={{
             backgroundColor:curColor,
           }}
         >
-          <Dice turn={turn} pieceIdx={pieceIdx} winPosn={winPosn} ticks={moveObj.ticks} homeCount={homeCount} rollAllowed={rollAllowed}/>
+          <Dice turn={turn} pieceIdx={pieceIdx} winPosn={winPosn} ticks={moveObj.ticks} homeCount={homeCount} rollAllowed={rollAllowed} timeOut={timeOut}/>
           {/* {Number(screen)} */}
         </div>
-        <PlayerBoard playing={playersSet?.has('Y')} idx={'Y'} left={false} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='Y'}/>
+        <PlayerBoard playing={playersSet?.has('Y')} idx={'Y'} left={false} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='Y'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} />
       </div>
       <div className={`${(!screen)?'w-auto h-full':'h-auto w-full p-04 m-2'} bg-cyan-400 aspect-square ivisible`}>
-        {/* <ErrorBoundary> */}
-          <GameBoard clicked={clicked} setClicked={setClicked} moveCount={moveObj.moveCount} pieceState={pieceState} />
-        {/* </ErrorBoundary> */}
+        <ErrorBoundary>
+          <GameBoard clicked={clicked} setClicked={setClicked} moveCount={moveObj.moveCount} pieceState={pieceState} timeOut={timeOut}/>
+        </ErrorBoundary>
       </div>
       <div 
         // onClick={()=>{(console.log(window.innerHeight+' '+innerWidth))}}
         className='flex flex-row items-center justify-between min-w-full h-1/12'>
-        <PlayerBoard playing={playersSet?.has('R')} idx={'R'} left={true} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='R'}/>
-        <PlayerBoard playing={playersSet?.has('G')} idx={'G'} left={false} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='G'}/>
+        <PlayerBoard playing={playersSet?.has('R')} idx={'R'} left={true} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='R'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} />
+        <PlayerBoard playing={playersSet?.has('G')} idx={'G'} left={false} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='G'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} />
       </div> 
     </div>
   )
