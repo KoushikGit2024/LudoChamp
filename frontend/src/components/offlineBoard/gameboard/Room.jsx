@@ -2,16 +2,16 @@ import React, { memo } from "react";
 import '../../../styles/cell.css'
 // import { useGameStore } from "../../store/useGameStore";
 
-const Room = memo(({ R = 0, B = 0, Y = 0, G = 0 ,activeColor='',moveAllowed=false,COLORS={}}) => {
+const Room = memo(({ R = 0, B = 0, Y = 0, G = 0 ,activeColor,moveAllowed=false,COLORS={}}) => {
   // const clrR=useGameStore(state=>state.players['R'].color);
   // const clrB=useGameStore(state=>state.players['B'].color);
   // const clrY=useGameStore(state=>state.players['Y'].color);
   // const clrG=useGameStore(state=>state.players['G'].color);
   let isActive=false;
-  (R && activeColor==='R')? isActive=true:
-  (B && activeColor==='B')? isActive=true:
-  (Y && activeColor==='Y')? isActive=true:
-  (G && activeColor==='G')? isActive=true:isActive=false;
+  if((R && activeColor==='R')||(B && activeColor==='B')||(Y && activeColor==='Y')||(G && activeColor==='G')){
+    isActive=true
+  }
+  // console.log(isActive,activeColor,R,B,Y,G);
   // const COLORS = {
   //   R: clrR,
   //   B: clrB,
@@ -24,7 +24,7 @@ const Room = memo(({ R = 0, B = 0, Y = 0, G = 0 ,activeColor='',moveAllowed=fals
     (Y && 'Y') ||
     (G && 'G')
   ];
-  // console.log(isActive,R,B,Y,G,activeColor);
+  // console.log(isActive,R,B,Y,G,moveAllowed,activeColor);
 
   return (
     <div
@@ -42,7 +42,7 @@ const Room = memo(({ R = 0, B = 0, Y = 0, G = 0 ,activeColor='',moveAllowed=fals
     >
         <img 
           className={`h-full w-full no-select rounded-full ${
-              isActive && moveAllowed ? "spin" : ""
+              (isActive && moveAllowed) ? "spin" : ""
             }`}
           src="/coinStamp.png" 
           alt="cheap-2"

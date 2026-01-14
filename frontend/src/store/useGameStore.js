@@ -6,12 +6,13 @@ export const useGameStore = create(
     /* =========================
        META (GAME FLOW)
     ========================== */
+    // pieceState: Array.from({ length: 92 }, () => ({ R:0, B:0, Y:0, G:0 })),
+    piecePath:[],
     meta: {
       gameId: "",
       status: "WAITING", // WAITING | RUNNING | FINISHED
       type:"offline",
-      currentTurn: 0, // 0 | 1 | 2 | 3
-      turnStartedAt: null,
+      gameStartedAt: [],
       playerCount: 4,
       onBoard:new Set(['R','B','Y','G']),
     },
@@ -35,9 +36,10 @@ export const useGameStore = create(
         userId: "",
         profile: "",
         online: false,
-        pieces: [30, 23, 5, 46],
+        pieceIdx:[-1,-1,-1,-1],//piece path index
+        pieceRef: new Map([[79,1],[78,1],[77,1],[76,1]]),//{ref: pieceCount} structure
         homeCount: 4,
-        outCount: 0,
+        outCount: 0,//
         winCount: 0,
         winPosn:0,
         color: "#FF3131",
@@ -49,7 +51,8 @@ export const useGameStore = create(
         userId: "",
         profile: "",
         online: false,
-        pieces: [-1, -1, -1, -1],
+        pieceIdx:[-1,-1,-1,-1],
+        pieceRef: new Map([[83,1],[82,1],[81,1],[80,1]]),
         homeCount: 4,
         outCount: 0,
         winCount: 0,
@@ -63,7 +66,8 @@ export const useGameStore = create(
         userId: "",
         profile: "",
         online: false,
-        pieces: [-1, -1, -1, -1],
+        pieceIdx:[-1,-1,-1,-1],
+        pieceRef: new Map([[87,1],[86,1],[85,1],[84,1]]),
         homeCount: 2,
         outCount: 0,
         winCount: 0,
@@ -76,7 +80,8 @@ export const useGameStore = create(
         userId: "",
         profile: "",
         online: false,
-        pieces: [-1, -1, -1, -1],
+        pieceIdx:[-1,-1,-1,-1],
+        pieceRef: new Map([[91,1],[90,1],[89,1],[88,1]]),
         homeCount: 4,
         outCount: 0,
         winCount: 0,
@@ -100,6 +105,14 @@ export const useGameStore = create(
         }
         return res;
       }
+      // const map = Array.from({ length: 92 }, () => ({ R:0, B:0, Y:0, G:0 }));
+      
+      // for (const color of ["R","B","Y","G"]) {
+      //   get().players[color].pieceRef.forEach(pos => {
+      //     if (pos >= 0) map[pos][color]++;
+      //   });
+      // }
+      // console.log(map);
 
       const piecePath = {
         R: [...range(1, 56),72],
@@ -124,13 +137,19 @@ export const useGameStore = create(
         const onBoardSet = new Set(gameObj.players);
 
         ['R','B','Y','G'].forEach((el,idx)=> {
+          let startIdx;
+          if(el==='R') startIdx=79;
+          if(el==='B') startIdx=83;
+          if(el==='Y') startIdx=87;
+          if(el==='G') startIdx=91;
           if (onBoardSet.has(el)) {
             player[el] = {
               ...get().players[el],
               name: gameObj.names[idx],
               userId:'',
               profile: "/defaultProfile.png",
-              pieces: [-1, -1, -1, -1],
+              pieceIdx:[-1,-1,-1,-1],
+              pieceRef: new Map([[startIdx,1],[startIdx-1,1],[startIdx-2,1],[startIdx-3,1]]),
               homeCount: 4,
               outCount: 0,
               winCount: 0,
@@ -144,8 +163,10 @@ export const useGameStore = create(
             };
           }
         });
-
+        const startTime=structuredClone(get().meta.gameStartedAt);
+        startTime.push(Date.now());
         set((state) => ({
+          // pieceState:[...map],
           move:{
             playerIdx:0,
             turn:gameObj.players[0],
@@ -159,11 +180,11 @@ export const useGameStore = create(
           meta: {
             ...state.meta,
             playerCount: gameObj.players.length,
-            onBoard: gameObj.players,
+            onBoard:new Set(gameObj.players),
             gameId:genId,
             status: "RUNNING",
             currentTurn: gameObj.players[0],
-            turnStartedAt: null,
+            gameStartedAt: startTime,
             type:"offline"
           },
           players: {
@@ -171,13 +192,13 @@ export const useGameStore = create(
             ...player,
           },
         }));
-        console.log(get())
+        console.log(get());
       }
 
       // 
     },
 
-    updateMoveCount:(moveCount=0)=>{
+    updateMoveCount:(moveCount=0,turn,ticks)=>{
       if(moveCount!==0){
         set((state)=>({
           ...state,
@@ -192,11 +213,25 @@ export const useGameStore = create(
         console.log(get().move);
       }
     },
+    updatePieceState:(curColor,pieceIdx,newVal)=>{
+      set((state)=>({
+        ...state,
+        players:{
+          ...state.players,
+          [curColor]:{
+            ...state.players[curColor],
+            pieceRef: state.players[curColor].pieceRef.map((el,idx)=>idx===pieceIdx?newVal:el)
+          }
+        }
+      }))
+    },
     transferTurn:()=>{
-      console.log()
+      console.log(get().move)
       const Obj={move:get().move,meta:get().meta};
       const playerIdx=(Obj.move.playerIdx+1)%Obj.meta.playerCount;
-      const turn=Obj.meta.onBoard[playerIdx];
+      // Convert Set to Array for index access
+      const onBoardArray = Array.from(Obj.meta.onBoard);
+      const turn=onBoardArray[playerIdx];
       set((state)=>({
         ...state,
         move:{
@@ -262,10 +297,10 @@ export const useGameStore = create(
     // movePiece: (pieceId, newPos) =>
     //   set(
     //     (state) => ({
-    //       pieces: {
-    //         ...state.pieces,
+    //       pieceRef: {
+    //         ...state.pieceRef,
     //         [pieceId]: {
-    //           ...state.pieces[pieceId],
+    //           ...state.pieceRef[pieceId],
     //           pos: newPos,
     //           status: "ACTIVE",
     //         },
@@ -278,10 +313,10 @@ export const useGameStore = create(
     // finishPiece: (pieceId) =>
     //   set(
     //     (state) => ({
-    //       pieces: {
-    //         ...state.pieces,
+    //       pieceRef: {
+    //         ...state.pieceRef,
     //         [pieceId]: {
-    //           ...state.pieces[pieceId],
+    //           ...state.pieceRef[pieceId],
     //           status: "FINISHED",
     //         },
     //       },

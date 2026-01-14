@@ -5,46 +5,6 @@
   -webkit-user-drag: none;   /* Safari */
 }
 
-.neon-ring {
-  position: relative;
-  /* Add this! It keeps the glow from slipping under the game board */
-  isolation: isolate; 
-}
-
-.neon-ring::after {
-  content: "";
-  position: absolute;
-  inset: -10%;
-  border-radius: 50%;
-
-  background: conic-gradient(
-    black 0deg 45deg,
-    white 45deg 90deg,
-    black 90deg 135deg,
-    white 135deg 180deg,
-    black 180deg 225deg,
-    white 225deg 270deg,
-    black 270deg 315deg,
-    white 315deg 360deg
-  );
-
-  padding: 10%; /* ring thickness */
-
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-
-  animation: spin 2s linear infinite;
-  z-index: -10;
-  pointer-events: none;
-}
-
 .spin{
   animation: spin 1s linear infinite;
 }
@@ -54,7 +14,8 @@
     
   }
   50%{
-    /* background-color: white; */
+    opacity: 0.5;
+    background-color: #ffffff;
   }
   100%{
     transform: rotate(360deg);

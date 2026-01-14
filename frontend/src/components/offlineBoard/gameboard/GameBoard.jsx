@@ -4,16 +4,16 @@ const star = '/safeStar.png'
 const arrow = '/homePointer.png'
 import SlideEffect from '../../../assets/SlideEffect.mp3'
 import gsap from "gsap";
-import {useGSAP} from '@gsap/react'
+// import {useGSAP} from '@gsap/react'
 import debounce from '../../../derivedFuncs/debounce.js'
 import Cell from "./Cell.jsx";
 import Room from "./Room.jsx";
 import { useGameStore } from "../../../store/useGameStore";
-// import { shallow } from "zustand/shallow";
+import { useShallow } from "zustand/shallow";
 
-const GameBoard = memo(({clicked,setClicked,moveCount}) => {
-  //=============Move Object==============
-  const moveObj=useGameStore((state)=>state.move)
+const GameBoard = memo(({moveCount}) => {
+  //=============Move Object==============clicked,setClicked,
+  // const moveObj=useGameStore((state)=>state.move)
 
 
   //=============Cell References==========
@@ -23,94 +23,110 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
   const audioRef = useRef(null);
 
   //========Store Variables=============
-  const clrR=useGameStore(state=>state.players['R'].color);
-  const clrB=useGameStore(state=>state.players['B'].color);
-  const clrY=useGameStore(state=>state.players['Y'].color);
-  const clrG=useGameStore(state=>state.players['G'].color);
+  const {
+    turn,
+    moveAllowed,
+    piecePath,
+    onBoard,
+    pieceArr,
+    updatePieceState,
+    clrR, clrB, clrY, clrG,
+    homeR, homeB, homeY, homeG,
+    winR, winB, winY, winG,
+  } = useGameStore(
+    useShallow(state => ({
+      turn: state.move.turn,
+      moveAllowed: state.move.moveAllowed,
+      piecePath: state.piecePath,
+      onBoard: state.meta.onBoard,
+      pieceArr: state.players[state.move.turn].pieceRef,
+      updatePieceState: state.updatePieceState,
 
-  const Colors = useMemo(()=>(
-    [clrR,clrB,clrY,clrG]
-  ),[clrR,clrB,clrY,clrG]);
-  // console.log(clrG)
-  const COLORS =useMemo(()=>({
-    R: clrR,
-    B: clrB,
-    Y: clrY,
-    G: clrG,
-  }),[clrR,clrB,clrY,clrG]) ;
-  const redHome=useGameStore((state)=>state.players['R'].homeCount)
-  const blueHome=useGameStore((state)=>state.players['B'].homeCount)
-  const yellowHome=useGameStore((state)=>state.players['Y'].homeCount)
-  const greenHome=useGameStore((state)=>state.players['G'].homeCount)
+      clrR: state.players.R.color,
+      clrB: state.players.B.color,
+      clrY: state.players.Y.color,
+      clrG: state.players.G.color,
 
-  const HomeCount=useMemo(()=>(
-    [redHome,blueHome,yellowHome,greenHome]
-  ),[redHome,blueHome,yellowHome,greenHome]); 
+      homeR: state.players.R.homeCount,
+      homeB: state.players.B.homeCount,
+      homeY: state.players.Y.homeCount,
+      homeG: state.players.G.homeCount,
 
-  const redGoal=useGameStore((state)=>state.players['R'].winCount)
-  const blueGoal=useGameStore((state)=>state.players['B'].winCount)
-  const yellowGoal=useGameStore((state)=>state.players['Y'].winCount)
-  const greenGoal=useGameStore((state)=>state.players['G'].winCount)
-
-  const WinCount=useMemo(()=>(
-    [redGoal,blueGoal,yellowGoal,greenGoal]
-  ),[redGoal,blueGoal,yellowGoal,greenGoal]);
-
-  const turn=useGameStore(state=>(state.move.turn))
-  
-
-  useEffect(()=>{
-    if(moveObj.moveCount===0) return;
-    console.log('dice useeffect')
-  },[moveObj.moveCount])
-
-  //========Component Variables===============
-  const [pathPoints,setPathPoints]=useState([])
-  const [showChariot,setChariotDisplay]=useState(false)
-  const [chariotDest,setChariotDest]=useState(0);
-  const [cellSize,setCellSize]=useState(0)
-  const Homes = useMemo(()=>([
-    { keyId: "R", color: Colors[0], base: 76, bg: "bg-R" },
-    { keyId: "B", color: Colors[1], base: 80, bg: "bg-B" },
-    { keyId: "Y", color: Colors[2], base: 84, bg: "bg-Y" },
-    { keyId: "G", color: Colors[3], base: 88, bg: "bg-G" },
-  ]),[Colors]);
-  const [pieceState, setPieceState] = useState(() =>
-    Array.from({ length: 72 }, () => ({
-      R: 0,
-      B: 0,
-      Y: 0,
-      G: 0,
+      winR: state.players.R.winCount,
+      winB: state.players.B.winCount,
+      winY: state.players.Y.winCount,
+      winG: state.players.G.winCount,
     }))
   );
-  // console.log(pieceState.length)
+  const COLORS = useMemo(() => ({
+    R: clrR, B: clrB, Y: clrY, G: clrG
+  }), [clrR, clrB, clrY, clrG]);
+
+  const HomeCount = useMemo(() => ({
+    R: homeR, B: homeB, Y: homeY, G: homeG
+  }), [homeR, homeB, homeY, homeG]);
+
+  const WinCount = useMemo(() => ({
+    R: winR, B: winB, Y: winY, G: winG
+  }), [winR, winB, winY, winG]);
+  const pieceR=useGameStore(state=>state.players.R.pieceRef);
+  const pieceB=useGameStore(state=>state.players.B.pieceRef);
+  const pieceY=useGameStore(state=>state.players.Y.pieceRef);
+  const pieceG=useGameStore(state=>state.players.G.pieceRef);
+
+  const pieceState = {
+    R:pieceR,
+    B:pieceB,
+    Y:pieceY,
+    G:pieceG
+  }
+  
+  // console.log(onBoard)
+
+
+  useEffect(()=>{
+    console.log(turn)
+  },[turn])
+  // console.log(COLORS,turn,pieceState,moveAllowed,pieceArr,onBoard,HomeCount,WinCount,piecePath);
+  //========Component Variables===============
+  const [pathPoints,setPathPoints]=useState([])
+  const [showChariot,setShowChariotDisplay]=useState(false)
+   
+  const Homes = useMemo(()=>([
+    { keyId: "R", color: COLORS.R, base: 76, bg: "bg-R" },
+    { keyId: "B", color: COLORS.B, base: 80, bg: "bg-B" },
+    { keyId: "Y", color: COLORS.Y, base: 84, bg: "bg-Y" },
+    { keyId: "G", color: COLORS.G, base: 88, bg: "bg-G" },
+  ]),[]);
+
+  // const pieceState=Array.from({ length: 92 }, () => ({ R:0, B:0, Y:0, G:0 }));
   const FinishTriangles =useMemo(()=>([
     {
-      color: Colors[2],
+      color: COLORS.Y,
       clip: "polygon(0% 0%, 100% 0%, 50% 50%)",
       align: "flex justify-center pt-1",
       ref: 74,
       rotate: "rotate-135",
     },{
-      color: Colors[3],
+      color: COLORS.G,
       clip: "polygon(100% 0%, 100% 100%, 50% 50%)",
       align: "flex items-center justify-end pr-1",
       ref: 75,
       rotate: "rotate-225",
     },{
-      color: Colors[0],
+      color: COLORS.R,
       clip: "polygon(100% 100%, 0% 100%, 50% 50%)",
       align: "flex justify-center items-end pb-1",
       ref: 72,
       rotate: "rotate-315",
     },{
-      color: Colors[1],
+      color: COLORS.B,
       clip: "polygon(0% 100%, 0% 0%, 50% 50%)",
       align: "flex items-center pl-1",
       ref: 73,
       rotate: "rotate-45",
     },
-  ]),[Colors]);
+  ]),[]);
 
   const SAFE_CELLS = new Set([1, 9, 14, 22, 27, 35, 40, 48]);
   const homePointer = new Map([
@@ -122,12 +138,11 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
 
   //====================Component Functions===============
    
-  // const playSound = () => {
-  //   if (!audioRef.current) return;
-  //   audioRef.current.currentTime = 0;
-  //   audioRef.current.play();
-  // };
-  // const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  const playSound = () => {
+    if (!audioRef.current) return;
+    audioRef.current.currentTime = 0;
+    audioRef.current.play();
+  };
 
 
 
@@ -135,30 +150,28 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
     if (!pathRefs.current[0] || !boardRef.current) return;
 
     const boardRect = boardRef.current.getBoundingClientRect();
-    const firstCellRect = pathRefs.current[0].getBoundingClientRect();
-    const pieceSize = firstCellRect.width;
-    setCellSize(pieceSize);
+    // const firstCellRect = pathRefs.current[0].getBoundingClientRect();
+    // const pieceSize = firstCellRect.width;
+    // setCellSize(pieceSize);
     const tempPts = pathRefs.current.map((el,idx) => {
       const cellRect = el.getBoundingClientRect();
-      // el.innerHTML=idx;
+      // el.innerText=idx;
       return {
         x:cellRect.left-boardRect.left,
         y:cellRect.top-boardRect.top,
         width:cellRect.width,
       };
     });
-    console.log(tempPts);
+    // console.log(tempPts);
     setPathPoints(tempPts);
   }
   useEffect(() => {
     pathPointCalculator();
-    // console.log(setPieceState)
     const resizeHandler = debounce(
       pathPointCalculator
     ,100)
 
     window.addEventListener('resize',resizeHandler);
-
     return () => {
       window.removeEventListener('resize',resizeHandler);
     };
@@ -167,15 +180,69 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
 
 
   //======================Component Functions==============
-  const onBoard=new Set(useGameStore((state)=>state.meta.onBoard))
-  // console.log(onBoard)
-  const playerIdx=useGameStore((state)=>(state.move.playerIdx))
-  const pieceArr=useGameStore((state)=>(state.players[turn].pieces))
-  const moveAllowed=useGameStore((state)=>(state.move.moveAllowed))
-  const piecePath=useGameStore((state)=>state.piecePath)
-  const runChariot=(curPosn,curIdx,diceNum,turnColor)=>{
-    let tempState=[...pieceState];
-    tempState
+
+  const oneStepAnimation = (from, to) => {
+  return new Promise(resolve => {
+    gsap.fromTo(
+      chariotRef.current,
+      {
+        x: pathPoints[from].x,
+        y: pathPoints[from].y,
+        width: pathPoints[from].width,
+      },
+      {
+        x: pathPoints[to].x,
+        y: pathPoints[to].y,
+        width: pathPoints[to].width,
+        duration: 0.5,
+        ease: "power2.inOut",
+        onComplete: resolve
+      }
+    );
+    playSound();
+  });
+};
+
+
+  const runChariot=async (from=null,byPassRef=-1,stepCount=-1,diceNum=-1,turnColor='' ,updateIdx=-1)=>{
+    if(from===null && byPassRef===-1) return;
+    // let tempState=structuredClone(pieceState);
+    // let to;
+    if (from === -1 && diceNum === 6 && stepCount === 1) {
+      const to = piecePath[turnColor][0];
+
+      // Remove piece from home
+      // setPieceState(prev => {
+      //   const copy = structuredClone(prev);
+      //   copy[byPassRef][turnColor]--;
+      //   return copy;
+      // });
+
+      setShowChariotDisplay(true);
+
+      await oneStepAnimation(byPassRef, to);
+
+      // Place piece on board
+      // setPieceState(prev => {
+      //   const copy = structuredClone(prev);
+      //   copy[to][turnColor]++;
+      //   return copy;
+      // });
+
+      setShowChariotDisplay(false);
+
+      updatePieceState(turnColor, updateIdx, 0);
+      return;
+    }
+
+    // tempState[from][turnColor]-=1;
+    
+    // setPieceState(tempState)
+    // setChariotDest(from);
+    // setShowChariotDisplay(true);
+    // for(let step=from;step<=to;step++){
+    //   oneStepAnimation(piecePath[turnColor][step],piecePath[turnColor][step+1]);
+    // }
   }
 
   const determineAndProcessClickCell=(num,refNum,homeColor='')=>{
@@ -193,29 +260,16 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
         return
       } else {
         const flagIdx=pieceArr[-num-1]===-1;
-        console.log('home move',flagIdx)
+        if(!flagIdx) return;
+        // console.log('home move',flagIdx,refNum)
+        runChariot(-1,refNum,1,6,turn,-num-1);
       }
-      
     }
 
     // let curArr=pieceArr
     console.log(num,refNum)
   }
 
-  useGSAP(() => {
-    if (!chariotRef.current || !pathPoints[chariotDest]) return;
-    
-    gsap.to(chariotRef.current, {
-      x: pathPoints[chariotDest].x,
-      y: pathPoints[chariotDest].y,
-      duration: 0.5,
-      ease: "power2.out"
-    });
-  }, [chariotDest]); //----Used to make the animation for piece Movement
-
-  
-  //============Store Variables==============
-  
   return (
     <div
       className="boardContainer relative aspect-square grid gap-[2px] rounded-0 max-w-full max-h-full w-full h-full bg-[purple] p-3"
@@ -235,13 +289,13 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
             `}
             style={{
               ...(i === 1
-                ? { "--color": Colors[0] }
+                ? { "--color": COLORS.R }
                 : i === 14
-                ? { "--color": Colors[1] }
+                ? { "--color": COLORS.B }
                 : i === 27
-                ? { "--color": Colors[2] }
+                ? { "--color": COLORS.Y }
                 : i === 40
-                ? { "--color": Colors[3] }
+                ? { "--color": COLORS.G }
                 : {}),
 
               ...(isSafe
@@ -259,11 +313,12 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
             }}
             onClick={()=>determineAndProcessClickCell(i,i)}
           >
+            {/* {console.log(pieceState[i])} */}
             <Cell
-              R={pieceState[i].R}
-              B={pieceState[i].B}
-              Y={pieceState[i].Y}
-              G={pieceState[i].G}
+              R={pieceState.R.get(i) ?? 0}
+              B={pieceState.B.get(i) ?? 0}
+              Y={pieceState.Y.get(i) ?? 0}
+              G={pieceState.G.get(i) ?? 0}
               activeColor={turn}
               COLORS={COLORS}
               moveAllowed={moveAllowed}
@@ -280,20 +335,20 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
           <div
           ref={(el)=>(pathRefs.current[i*5+j+52]=el)}
             key={`${c}${n}`}
-            className={`cell track${c}${n} bg-${c} flex items-center justify-center aspect-square`}
+            className={`cell track${c}${n} bg-${c} flex items-center justify-center aspect-square rounded-[2px]`}
             style={
-              c==='R'? {"--color":Colors[0]}:
-              c==='B'? {"--color":Colors[1]}:
-              c==='Y'? {"--color":Colors[2]}:
-              c==='G'? {"--color":Colors[3]}:
+              c==='R'? {"--color":COLORS.R}:
+              c==='B'? {"--color":COLORS.B}:
+              c==='Y'? {"--color":COLORS.Y}:
+              c==='G'? {"--color":COLORS.G}:
               {}
             }
           >
             <Cell 
-              R={(c==='R')&&pieceState[i].R} 
-              B={(c==='B')&&pieceState[i].B} 
-              Y={(c==='Y')&&pieceState[i].Y} 
-              G={(c==='G')&&pieceState[i].G}
+              R={pieceState.R.get(i*5+j+52) ?? 0} 
+              B={pieceState.B.get(i*5+j+52) ?? 0} 
+              Y={pieceState.Y.get(i*5+j+52) ?? 0} 
+              G={pieceState.G.get(i*5+j+52) ?? 0}
               activeColor={turn}
               moveAllowed={moveAllowed}
             />
@@ -303,20 +358,20 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
 
       {/* Homes */}
       {
-        Homes.map(({ keyId, color, base, bg},boxIdx)=>(
+        Homes.map(({ keyId, color, base, bg})=>(
           <div 
             key={keyId} 
-            className={`cell home${keyId} ${bg} flex items-center justify-center aspect-square`}
+            className={`cell home${keyId} ${bg} flex items-center justify-center aspect-square rounded-[2px]`}
             style={
-              keyId==='R'? {"--color":Colors[0]}:
-              keyId==='B'? {"--color":Colors[1]}:
-              keyId==='Y'? {"--color":Colors[2]}:
-              keyId==='G'? {"--color":Colors[3]}:
+              keyId==='R'? {"--color":COLORS.R}:
+              keyId==='B'? {"--color":COLORS.B}:
+              keyId==='Y'? {"--color":COLORS.Y}:
+              keyId==='G'? {"--color":COLORS.G}:
               {}
             }
           >
             <div
-              className="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%]"
+              className="bg-white aspect-square w-[80%] gap-1 grid grid-cols-2 grid-rows-2 place-items-center p-[5%] rounded-[2px]"
               style={{
                 gridTemplateAreas: `
                   "home${keyId}1 home${keyId}2"
@@ -328,26 +383,25 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
                 <div
                   key={i}
                   ref={el => (pathRefs.current[base + i] = el)}
-                  className={`home${keyId}${i + 1} flex items-center justify-center aspect-square 
+                  className={`home${keyId}${i + 1} flex items-center justify-center aspect-square text-[5px]
                             min-w-[60%] min-h-[60%] w-[60%] h-[60%]`}
                   style={{ backgroundColor: color }}
                   onClick={()=>determineAndProcessClickCell(base+i-((keyId=='R')*80 + (keyId=='B')*84 + (keyId=='Y')*88 + (keyId=='G')*92),base+i,keyId)}
                 >
-                  {/* { console.log(pieceState)} */}
+                  
                   {
-                    (onBoard.has(keyId))?(
-                      (i<HomeCount[boxIdx])? 
-                        <Room 
-                          R={keyId==='R'&& pieceState[base+i]?.R||0} 
-                          B={keyId==='B'&& pieceState[base+i]?.B||0} 
-                          Y={keyId==='Y'&& pieceState[base+i]?.Y||0} 
-                          G={keyId==='G'&& pieceState[base+i]?.G||0}
-                          activeColor={turn}
-                          moveAllowed={moveAllowed}
-                          COLORS={COLORS}
-                        />
-                      :null
-                    ):null
+                    (onBoard.has(keyId)) && (
+                      <Room 
+                        key={`${keyId}-${base+i}`}
+                        R={pieceState.R.get(base+i) ?? 0}
+                        B={pieceState.B.get(base+i) ?? 0}
+                        Y={pieceState.Y.get(base+i) ?? 0}
+                        G={pieceState.G.get(base+i) ?? 0}
+                        activeColor={turn}
+                        moveAllowed={moveAllowed}
+                        COLORS={COLORS}
+                      />
+                    )
                   }
                 </div>
               ))}
@@ -356,7 +410,7 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
         ))
       }
 
-      <div className="cell finish relative flex items-center justify-center aspect-square p-0 m-0">
+      <div className="cell finish relative flex items-center justify-center aspect-square p-0 m-0 rounded-[2px] overflow-hidden">
         {FinishTriangles.map(({ color, clip, align, ref, rotate }) => (
           <div
             key={ref}
@@ -374,7 +428,7 @@ const GameBoard = memo(({clicked,setClicked,moveCount}) => {
 
       </div>
       {
-        <div ref={chariotRef} className="piece aspect-square fixed z-100 bg-transparent text-[10px] p-0 m-0 flex items-center justify-center"  style={{width:`${cellSize}px`,display:(`${(showChariot)?"flex":"none"}`)}}>
+        <div ref={chariotRef} className="piece aspect-square fixed z-100 bg-transparent text-[10px] p-0 m-0 flex items-center justify-center"  style={{width:`auto`,display:(`${(showChariot)?"flex":"none"}`)}}>
           <Room 
             R={turn==='R'} 
             B={turn==='B'} 

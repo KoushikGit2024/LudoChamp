@@ -22,7 +22,7 @@ const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0,activeColor='' ,COLORS={},moveAl
   });
 
   return (
-    <div className="bg-pink-4000 relative w-full h-full flex items-center justify-center pointer-events-none">
+    <div className="bg-pink-400 relative w-full h-full flex items-center justify-center pointer-events-none">
       {pieces.map((color, i) => {
         const { x, y } = OFFSETS[i % OFFSETS.length];
         const isActive = color === activeColor;
@@ -49,7 +49,7 @@ const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0,activeColor='' ,COLORS={},moveAl
           >
             <img
               className={`h-full w-full no-select rounded-full ${
-              isActive && moveAllowed ? "spin" : ""
+              (isActive && moveAllowed) ? "spin" : "spin"
             }`}
               src="/coinStamp.png"
               alt="coin"
