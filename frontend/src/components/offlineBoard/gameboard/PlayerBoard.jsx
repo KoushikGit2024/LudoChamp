@@ -4,7 +4,7 @@ import '../../../styles/playerBoard.css'
 // import MoveContext from "../../contexts/MoveContext";
 import { useGameStore } from "../../../store/useGameStore";
 
-const PlayerBoard = memo(({ playing, left, turn=0, idx, timeOut,moveAllowed,rollAllowed }) => {
+const PlayerBoard = memo(({ playing, left, turn=0, idx, timeOut,moveAllowed,rollAllowed,online=false }) => {
   const timerRef = useRef(null);
   const animRef = useRef(null);
   // const {setMove}=useContext(MoveContext);
@@ -12,7 +12,7 @@ const PlayerBoard = memo(({ playing, left, turn=0, idx, timeOut,moveAllowed,roll
   const updateTimeOut=useGameStore((state)=>state.updateTimeOut)
 
   const animeFunc=()=>{
-    if (!timerRef.current) return;
+    
 
     animRef.current?.kill();
 
@@ -23,7 +23,7 @@ const PlayerBoard = memo(({ playing, left, turn=0, idx, timeOut,moveAllowed,roll
       { "--angle": "360deg" },
       {
         "--angle": "0deg",
-        duration: 3,
+        duration: 1,
         ease: "linear",
         onComplete: () => {
           if (cancelled) return;
@@ -34,31 +34,30 @@ const PlayerBoard = memo(({ playing, left, turn=0, idx, timeOut,moveAllowed,roll
       }
     );
   }
-  let one=1;
+  // let one=1;
   useEffect(() => {
-    if(!timeOut) return;
+    if (!timerRef.current) return;
 
-    console.log('turn',turn);
-    // if(one--)
-    animeFunc();
+    animeFunc(); // start timer animation
 
     return () => {
-      // cancelled = true;
-      
-      animRef.current?.kill();
+      animRef.current?.kill(); // stop previous turn's animation
     };
-  }, [timeOut]);
-  useEffect(()=>{
-console.log('moveAllowed or rollAllowed',turn,moveAllowed,rollAllowed);
+  }, [turn,rollAllowed,moveAllowed]);
 
-    animeFunc();
+  
 
-    return () => {
-      // cancelled = true;
-      
-      animRef.current?.kill();
-    };
-  },[turn,moveAllowed])
+  // useEffect(()=>{
+    // console.log('moveAllowed or rollAllowed',turn,moveAllowed,rollAllowed);
+    
+  //   if(moveCount!==0 ) return;
+  //   console.log("hi2")
+  //   animeFunc();
+
+  //   return () => {
+  //     animRef.current?.kill();
+  //   };
+  // },[turn,moveAllowed])
 
   const userName=useGameStore((state)=>state.players[idx].userId)
 
@@ -78,7 +77,7 @@ console.log('moveAllowed or rollAllowed',turn,moveAllowed,rollAllowed);
           "--color":"#fff"
         }}
       >
-        <div className="h-full w-full rounded-[8px] overflow-hidden bg-amber-3000 bg-fuchsia-500">
+        <div className={`h-full w-full rounded-[8px] overflow-hhidden bg-amber-3000 bg-fuchsia-500 ${online ? "online-dot" : ""} `}>
           <img
             src="/defaultProfile.png"
             className="max-h-full max-w-full h-full w-full object-cover no-select pointer-events-none"

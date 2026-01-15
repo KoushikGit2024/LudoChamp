@@ -11,7 +11,7 @@ const Dice = ({ pieceIdx,ticks,homeCount,rollAllowed,turn }) => {
   const transferTurn=useGameStore((state)=>state.transferTurn)
   const timeOut=useGameStore((state)=>state.move.timeOut)
   const updateTimeOut=useGameStore((state)=>state.updateTimeOut)
-  
+  // console.log('moveAllowed in dice',moveAllowed);
   const rollDice =() => {
     if (rolling||!rollAllowed) return;
     setRolling(true);
@@ -24,7 +24,7 @@ const Dice = ({ pieceIdx,ticks,homeCount,rollAllowed,turn }) => {
       clearInterval(interval);
       let final;
       do {
-        final =6// Math.floor(Math.random() * 6) + 1;
+        final = Math.floor(Math.random() * 6) + 1;
         // console.log(ticks)
       } while (ticks>=2 && final===6);
       
@@ -40,13 +40,13 @@ const Dice = ({ pieceIdx,ticks,homeCount,rollAllowed,turn }) => {
         // console.log(pieceMap);
         let flag=false;
         pieces.forEach((val)=>{
-          console.log(val)
+          // console.log(val)
           if(val!==-1 && 52-val>=final-1 || val===-1 && final===6){
             flag=true;
             // break;
           }
         })
-        console.log(flag);
+        // console.log(flag);
         
         // pieces.forEach(el => {
         //   console.log(el);
@@ -58,23 +58,27 @@ const Dice = ({ pieceIdx,ticks,homeCount,rollAllowed,turn }) => {
       
     }, 800);
   };
+
+  
   useEffect(()=>{
-    if(!timeOut || !rollAllowed) return;
+    if(!timeOut) return;
 
     if(rollAllowed){
       rollDice();
-      updateTimeOut(false);
+      updateTimeOut(false);//console.log("auto roll triggered");
     }
-    
-  },[timeOut])
+  },[timeOut]);
 
-  useEffect(()=>{
-    console.log('hi')
-  },[]);
+  // useEffect(()=>{
+  //   console.log('hi')
+  // },[]);
   return (
     <div
-      className="dice-cover aspect-square min-h-full flex items-center justify-center cursor-pointer"
+      className="dice-cover aspect-square min-h-full flex items-center justify-center"
       onClick={rollDice}
+      style={{
+        cursor: (rollAllowed)? 'pointer':'not-allowed',
+      }}
     >
       <div
         className={`dice-container w-[80%] h-[80%] rounded-[20%] flex items-center justify-center bg-white ${rolling ? "rolling" : ""}`}

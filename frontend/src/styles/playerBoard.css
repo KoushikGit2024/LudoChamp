@@ -5,3 +5,19 @@
     transparent 0deg
   );
 }
+.online-dot{
+  position: relative;
+}
+.online-dot::before{
+  content: '';
+  position: absolute;
+  aspect-ratio: 1/1;
+  bottom: -5%;
+  right: -5%;
+  /* right: 6px; */
+  width: 30%;
+  height: 30%;
+  background-color: #4ade80; /* Green color */
+  border: 1px solid white; /* Optional: white border around the dot */
+  border-radius: 50%;
+}

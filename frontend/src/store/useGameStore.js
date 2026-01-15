@@ -6,8 +6,6 @@ export const useGameStore = create(
     /* =========================
        META (GAME FLOW)
     ========================== */
-    // pieceState: Array.from({ length: 92 }, () => ({ R:0, B:0, Y:0, G:0 })),
-    piecePath:[],
     meta: {
       gameId: "",
       status: "WAITING", // WAITING | RUNNING | FINISHED
@@ -36,8 +34,8 @@ export const useGameStore = create(
         userId: "",
         profile: "",
         online: false,
-        pieceIdx:[-1,-1,-1,-1],//piece path index
-        pieceRef: new Map([[79,1],[78,1],[77,1],[76,1]]),//{ref: pieceCount} structure
+        pieceIdx:[],//piece path index
+        pieceRef: new Map([]),//{ref: pieceCount} structure
         homeCount: 4,
         outCount: 0,//
         winCount: 0,
@@ -51,8 +49,8 @@ export const useGameStore = create(
         userId: "",
         profile: "",
         online: false,
-        pieceIdx:[-1,-1,-1,-1],
-        pieceRef: new Map([[83,1],[82,1],[81,1],[80,1]]),
+        pieceIdx:[],
+        pieceRef: new Map([]),
         homeCount: 4,
         outCount: 0,
         winCount: 0,
@@ -67,7 +65,7 @@ export const useGameStore = create(
         profile: "",
         online: false,
         pieceIdx:[-1,-1,-1,-1],
-        pieceRef: new Map([[87,1],[86,1],[85,1],[84,1]]),
+        pieceRef: new Map([]),
         homeCount: 2,
         outCount: 0,
         winCount: 0,
@@ -80,8 +78,8 @@ export const useGameStore = create(
         userId: "",
         profile: "",
         online: false,
-        pieceIdx:[-1,-1,-1,-1],
-        pieceRef: new Map([[91,1],[90,1],[89,1],[88,1]]),
+        pieceIdx:[],
+        pieceRef: new Map([]),
         homeCount: 4,
         outCount: 0,
         winCount: 0,
@@ -95,27 +93,7 @@ export const useGameStore = create(
     ========================== */
     initiateGame: (gameObj) => {
       if (get().meta.status !== "WAITING"){ return;}
-      const range =(start, end) => {
-        const res = [];
-        let i = start;
-        while (true) {
-          res.push(i);
-          if (i === end) break;
-          i = i+1;
-        }
-        return res;
-      }
-
-      const piecePath = {
-        R: [...range(1, 56),72],
-        B: [...range(14, 51),...range(0, 12),...range(57, 61),73],
-        Y: [...range(27, 51),...range(0, 25),...range(62, 66),74],
-        G: [...range(40, 51),...range(0, 38),...range(67, 71),75],
-      };
-      // console.log(piecePath.R.length)
-      set((state)=>({
-        ...state,piecePath:piecePath
-      }))
+      
       function shortId(length = 6) {
         const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         const bytes = new Uint8Array(length);
@@ -190,7 +168,7 @@ export const useGameStore = create(
       // 
     },
 
-    updateMoveCount:(moveCount=0,turn,ticks)=>{
+    updateMoveCount:(moveCount=0)=>{
       if(moveCount!==0){
         set((state)=>({
           ...state,
@@ -205,18 +183,79 @@ export const useGameStore = create(
         // console.log(get().move);
       }
     },
-    updatePieceState:(curColor,pieceIdx,newVal)=>{
-      set((state)=>({
-        ...state,
-        players:{
-          ...state.players,
-          [curColor]:{
-            ...state.players[curColor],
-            pieceRef: state.players[curColor].pieceRef.map((el,idx)=>idx===pieceIdx?newVal:el)
+    // updatePieceState:(curColor,pieceIdx,pieceRef,newVal,updateBy=0)=>{
+    //   const newArr=[...get().players[curColor].pieceIdx];
+    //   const newMap=new Map(get().players[curColor].pieceRef);
+    //   console.log('updatePieceState',newArr,newMap);
+    //   if(updateBy!==0){
+    //     newArr[pieceIdx]+=updateBy;
+    //   }
+    //   let cellCount=newMap.get(pieceRef)||0;
+    //   if(cellCount===0) {
+    //     console.log('No piece found at the given reference');
+    //     return;
+    //   }
+    //   cellCount+=newVal;
+    //   if(cellCount<1){
+    //     newMap.delete(pieceRef);
+    //   }
+    //   set((state)=>({
+    //     ...state,
+    //     players:{
+    //       ...state.players,
+    //       [curColor]:{
+    //         ...state.players[curColor],
+    //         pieceRef: newMap,
+    //         pieceIdx: newArr,
+    //       }
+    //     }
+    //   }))
+    // },
+    updatePieceState: (
+      curColor,
+      pieceIdx,
+      pieceRef,
+      deltaRef = 0,   // +1 add, -1 remove, 0 no-op
+      deltaIdx = 0    // +n / -n movement
+    ) => {
+      set((state) => {
+        const player = state.players[curColor];
+
+        // Clone state safely
+        const pieceIdxArr = [...player.pieceIdx];
+        const pieceRefMap = new Map(player.pieceRef);
+
+        /* ---------- UPDATE pieceIdx ---------- */
+        if (deltaIdx !== 0 && pieceIdx >= 0) {
+          pieceIdxArr[pieceIdx] += deltaIdx;
+        }
+
+        /* ---------- UPDATE pieceRef ---------- */
+        if (deltaRef !== 0) {
+          const prevCount = pieceRefMap.get(pieceRef) ?? 0;
+          const nextCount = prevCount + deltaRef;
+
+          if (nextCount <= 0) {
+            pieceRefMap.delete(pieceRef);
+          } else {
+            pieceRefMap.set(pieceRef, nextCount);
           }
         }
-      }))
+
+        return {
+          ...state,
+          players: {
+            ...state.players,
+            [curColor]: {
+              ...player,
+              pieceIdx: pieceIdxArr,
+              pieceRef: pieceRefMap,
+            },
+          },
+        };
+      });
     },
+
     transferTurn:()=>{
       console.log(get().move)
       const Obj={move:get().move,meta:get().meta};
@@ -250,20 +289,29 @@ export const useGameStore = create(
           }
         }
       )
-      // console.log(get().move)
     },
 
     updateHome: (idx) => {
-      set((state) => ({
+      set({
+        ...get(),
         players: {
-          ...state.players,
+          ...get().players,
           [idx]: {
-            ...state.players[idx],
-            homeCount: state.players[idx].homeCount - 1,
+            ...get().players[idx],
+            homeCount: get().players[idx].homeCount - 1,
           },
         },
-      }));
-    }
+      });
+    },
+    setMoving:(val)=>{
+      set({
+        ...get(),
+        move:{ 
+          ...get().move,
+          moving:val
+        }
+      })
+    },
 
     /* =========================
        TURN CONTROL

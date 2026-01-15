@@ -7,11 +7,11 @@ import gsap from "gsap";
 // import {useGSAP} from '@gsap/react'
 import debounce from '../../../derivedFuncs/debounce.js'
 import Cell from "./Cell.jsx";
-import Room from "./Room.jsx";
+// import Room from "../../../../dumpyard/Room.jsx";
 import { useGameStore } from "../../../store/useGameStore";
 import { useShallow } from "zustand/shallow";
-
-const GameBoard = memo(({moveCount}) => {
+import {piecePath} from '../../../contexts/piecePath.js'
+const GameBoard = memo(({moveCount,timeOut,moving,pieceIdxArr}) => {
   //=============Move Object==============clicked,setClicked,
   // const moveObj=useGameStore((state)=>state.move)
 
@@ -26,9 +26,9 @@ const GameBoard = memo(({moveCount}) => {
   const {
     turn,
     moveAllowed,
-    piecePath,
+    // piecePath,
     onBoard,
-    pieceArr,
+    // pieceIdxArr,
     updatePieceState,
     clrR, clrB, clrY, clrG,
     homeR, homeB, homeY, homeG,
@@ -37,9 +37,8 @@ const GameBoard = memo(({moveCount}) => {
     useShallow(state => ({
       turn: state.move.turn,
       moveAllowed: state.move.moveAllowed,
-      piecePath: state.piecePath,
       onBoard: state.meta.onBoard,
-      pieceArr: state.players[state.move.turn].pieceRef,
+      // pieceIdxArr: state.players[state.move.turn].pieceIdx,
       updatePieceState: state.updatePieceState,
 
       clrR: state.players.R.color,
@@ -84,10 +83,10 @@ const GameBoard = memo(({moveCount}) => {
   // console.log(onBoard)
 
 
-  useEffect(()=>{
-    console.log(turn)
-  },[turn])
-  // console.log(COLORS,turn,pieceState,moveAllowed,pieceArr,onBoard,HomeCount,WinCount,piecePath);
+  // useEffect(()=>{
+  //   console.log(turn)
+  // },[turn])
+  // console.log(COLORS,turn,pieceState,moveAllowed,pieceArr,onBoard,HomeCount,WinCount);
   //========Component Variables===============
   const [pathPoints,setPathPoints]=useState([])
   const [showChariot,setShowChariotDisplay]=useState(false)
@@ -97,7 +96,7 @@ const GameBoard = memo(({moveCount}) => {
     { keyId: "B", color: COLORS.B, base: 80, bg: "bg-B" },
     { keyId: "Y", color: COLORS.Y, base: 84, bg: "bg-Y" },
     { keyId: "G", color: COLORS.G, base: 88, bg: "bg-G" },
-  ]),[]);
+  ]),[COLORS]);
 
   // const pieceState=Array.from({ length: 92 }, () => ({ R:0, B:0, Y:0, G:0 }));
   const FinishTriangles =useMemo(()=>([
@@ -182,94 +181,140 @@ const GameBoard = memo(({moveCount}) => {
   //======================Component Functions==============
 
   const oneStepAnimation = (from, to) => {
-  return new Promise(resolve => {
-    gsap.fromTo(
-      chariotRef.current,
-      {
-        x: pathPoints[from].x,
-        y: pathPoints[from].y,
-        width: pathPoints[from].width,
-      },
-      {
-        x: pathPoints[to].x,
-        y: pathPoints[to].y,
-        width: pathPoints[to].width,
-        duration: 0.5,
-        ease: "power2.inOut",
-        onComplete: resolve
+    return new Promise(resolve => {
+      if (!pathPoints[from] || !pathPoints[to]) {
+        resolve();
+        return;
       }
-    );
-    playSound();
-  });
-};
+      gsap.fromTo(
+        chariotRef.current,
+        {
+          x: pathPoints[from].x,
+          y: pathPoints[from].y,
+          width: pathPoints[from].width,
+        },
+        {
+          x: pathPoints[to].x,
+          y: pathPoints[to].y,
+          width: pathPoints[to].width,
+          duration: 0.5,
+          ease: "power2.inOut",
+          onComplete: resolve
+        }
+      );
+      playSound();
+    });
+  };
+  const setMoving=useGameStore(state=>state.setMoving);
 
+  const runChariot = async (idx = -1,refNum = null,stepCount = -1,turnColor = '') => {
+    if (idx === -1 || refNum === null || stepCount <= 0 || !turnColor) return;
 
-  const runChariot=async (from=null,byPassRef=-1,stepCount=-1,diceNum=-1,turnColor='' ,updateIdx=-1)=>{
-    if(from===null && byPassRef===-1) return;
-    // let tempState=structuredClone(pieceState);
-    // let to;
-    if (from === -1 && diceNum === 6 && stepCount === 1) {
-      const to = piecePath[turnColor][0];
+    const indexVal = pieceIdxArr[turnColor][idx];
+    let from = refNum;
+    let to = null;
 
-      // Remove piece from home
-      // setPieceState(prev => {
-      //   const copy = structuredClone(prev);
-      //   copy[byPassRef][turnColor]--;
-      //   return copy;
-      // });
+    // Remove piece from source cell
+    updatePieceState(turnColor, idx, refNum, -1, 0);
 
-      setShowChariotDisplay(true);
+    setShowChariotDisplay(true);
+    setMoving(true);
 
-      await oneStepAnimation(byPassRef, to);
+    // Animate step-by-step and update logical index
+    for (let step = 1; step <= stepCount; step++) {
+      from =
+        step === 1
+          ? refNum
+          : piecePath[turnColor][indexVal + step - 1];
 
-      // Place piece on board
-      // setPieceState(prev => {
-      //   const copy = structuredClone(prev);
-      //   copy[to][turnColor]++;
-      //   return copy;
-      // });
+      to = piecePath[turnColor][indexVal + step];
 
-      setShowChariotDisplay(false);
+      // update logical position (pieceIdx)
+      updatePieceState(turnColor, idx, null, 0, 1);
 
-      updatePieceState(turnColor, updateIdx, 0);
-      return;
+      await oneStepAnimation(from, to);
     }
 
-    // tempState[from][turnColor]-=1;
-    
-    // setPieceState(tempState)
-    // setChariotDest(from);
-    // setShowChariotDisplay(true);
-    // for(let step=from;step<=to;step++){
-    //   oneStepAnimation(piecePath[turnColor][step],piecePath[turnColor][step+1]);
-    // }
+    setMoving(false);
+    setShowChariotDisplay(false);
+
+    // Place piece on destination cell
+    updatePieceState(turnColor, idx, to, +1, 0);
+  };
+
+  const afterPieceMove=(curColor='',arrIdx=-1,pieceRef=-1,moveCount)=>{
+    if(curColor===''||arrIdx===-1||pieceRef===-1) return;
+    const safeSet=new Set([1,9,14,22,27,35,40,48]);
+    if(safeSet.has(pieceRef)) return;
+    const homePath={
+      R:new Set([52,53,54,55,56]),
+      B:new Set([57,58,59,60,61]),
+      Y:new Set([62,63,64,65,66]),
+      G:new Set([67,68,69,70,71]),
+    }
+
+    if(homePath[curColor].has(pieceRef)) return;
+    pieceState.forEach((val,idx)=>{
+      console.log(val,idx)
+    })
   }
 
-  const determineAndProcessClickCell=(num,refNum,homeColor='')=>{
-    if(!moveAllowed){
+  const determineAndProcessClickCell=(refNum)=>{
+    if(!moveAllowed || moving){
       console.log('move not allowed')
       return;
     } 
-    if(refNum>-1 && refNum<72 && pieceState[refNum][turn]===0) {
+    const clickPieceCount=pieceState[turn].get(refNum);
+    if(!( clickPieceCount ?? 0)) {
       console.log('no piece')
       return
     }
-    if(refNum>=76 && refNum<=91){
-      if ( (homeColor!==turn||moveCount!==6)) {
-        console.log('home no move')
-        return
-      } else {
-        const flagIdx=pieceArr[-num-1]===-1;
-        if(!flagIdx) return;
-        // console.log('home move',flagIdx,refNum)
-        runChariot(-1,refNum,1,6,turn,-num-1);
-      }
-    }
+    const baseStartIdx =
+      turn === 'R' ? 79 :
+      turn === 'B' ? 83 :
+      turn === 'Y' ? 87 :
+      91;
 
+    let moveSteps=moveCount;
+    const clickPieceIdx = pieceIdxArr[turn].findIndex((el,idx)=>{
+      if (el === -1) {
+        const homeRef = baseStartIdx - idx;
+        if (refNum === homeRef) {
+          moveSteps = 1;
+          return true;
+        }
+        return false;
+      } else {
+        return piecePath[turn][el] === refNum;
+      }
+    })
+    // console.log('clicked piece idx',clickPieceIdx,refNum,baseStartIdx);
+    if(clickPieceIdx===-1){
+      console.log('no piece found');
+    }
+    runChariot(clickPieceIdx,refNum,moveSteps,turn);
+    afterPieceMove(turn,clickPieceIdx,refNum,moveSteps);
     // let curArr=pieceArr
-    console.log(num,refNum)
+    // console.log(num,refNum)
   }
 
+  const autoMovePieces =()=>{
+    // console.log("auto piece trigger");
+    let randPiece;
+    do {
+      randPiece = Math.floor(Math.random() * 4);
+      // console.log('pieceIdxArr',randPiece );
+    } while (!(52-pieceIdxArr[turn][randPiece]>=moveCount-1));
+  }
+
+  useEffect(()=>{
+    if(!timeOut || moving) return;
+
+    if(moveAllowed){
+      autoMovePieces()
+    }
+    
+  },[timeOut])
   return (
     <div
       className="boardContainer relative aspect-square grid gap-[2px] rounded-0 max-w-full max-h-full w-full h-full bg-[purple] p-3"
@@ -311,7 +356,7 @@ const GameBoard = memo(({moveCount}) => {
                   }
                 : {}),
             }}
-            onClick={()=>determineAndProcessClickCell(i,i)}
+            onClick={()=>determineAndProcessClickCell(i)}
           >
             {/* {console.log(pieceState[i])} */}
             <Cell
@@ -386,19 +431,19 @@ const GameBoard = memo(({moveCount}) => {
                   className={`home${keyId}${i + 1} flex items-center justify-center aspect-square text-[5px]
                             min-w-[60%] min-h-[60%] w-[60%] h-[60%]`}
                   style={{ backgroundColor: color }}
-                  onClick={()=>determineAndProcessClickCell(base+i-((keyId=='R')*80 + (keyId=='B')*84 + (keyId=='Y')*88 + (keyId=='G')*92),base+i,keyId)}
+                  onClick={()=>determineAndProcessClickCell(base+i)}
                 >
-                  
+                  {/* {base+i} */}
                   {
                     (onBoard.has(keyId)) && (
-                      <Room
+                      <Cell
                         R={pieceState.R.get(base+i) ?? 0}
                         B={pieceState.B.get(base+i) ?? 0}
                         Y={pieceState.Y.get(base+i) ?? 0}
                         G={pieceState.G.get(base+i) ?? 0}
                         activeColor={turn}
-                        moveAllowed={moveAllowed}
                         COLORS={COLORS}
+                        moveAllowed={moveAllowed}
                       />
                     )
                   }
@@ -427,8 +472,8 @@ const GameBoard = memo(({moveCount}) => {
 
       </div>
       {
-        <div ref={chariotRef} className="piece aspect-square fixed z-100 bg-transparent text-[10px] p-0 m-0 flex items-center justify-center"  style={{width:`auto`,display:(`${(showChariot)?"flex":"none"}`)}}>
-          <Room 
+        <div ref={chariotRef} className="piece aspect-square fixed z-100 bg-transparent bgg-[#cc1dcf] text-[10px] p-0 m-0 flex items-center justify-center"  style={{width:`auto`,display:(`${(showChariot)?"flex":"none"}`)}}>
+          <Cell
             R={turn==='R'} 
             B={turn==='B'} 
             Y={turn==='Y'} 

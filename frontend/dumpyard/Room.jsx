@@ -1,8 +1,8 @@
 import React, { memo } from "react";
-import '../../../styles/cell.css'
+import '../src/styles/cell.css'
 // import { useGameStore } from "../../store/useGameStore";
 
-const Room = memo(({ R = 0, B = 0, Y = 0, G = 0 ,activeColor,moveAllowed=false,COLORS={}}) => {
+const Room = ({ R = 0, B = 0, Y = 0, G = 0 ,activeColor,moveAllowed=false,COLORS={}}) => {
   // const clrR=useGameStore(state=>state.players['R'].color);
   // const clrB=useGameStore(state=>state.players['B'].color);
   // const clrY=useGameStore(state=>state.players['Y'].color);
@@ -54,7 +54,7 @@ const Room = memo(({ R = 0, B = 0, Y = 0, G = 0 ,activeColor,moveAllowed=false,C
         />
     </div>
   );
-});
+}
 
 
 export default Room;

@@ -23,7 +23,7 @@ const LudoOffline = () => {
   const moveObj=useGameStore(state=>state.move);
   const homeCount=useGameStore(state=>state.players[state.move.turn].homeCount);
   const winPosn=useGameStore(state=>state.players[state.move.turn].winPosn);
-  // const pieceRef=useGameStore(state=>state.players[state.move.turn].pieceRef);
+  
   const rollAllowed=useGameStore(state=>state.move.rollAllowed);
   const pieceState=useGameStore(state=>state.pieceState);
 
@@ -38,6 +38,18 @@ const LudoOffline = () => {
     Y: pieceIdxY,
     G: pieceIdxG
   }),[pieceIdxR,pieceIdxB,pieceIdxY,pieceIdxG])
+
+  const pieceArrR=useGameStore(state=>state.players.R.pieceArr);
+  const pieceArrB=useGameStore(state=>state.players.B.pieceArr);
+  const pieceArrY=useGameStore(state=>state.players.Y.pieceArr);
+  const pieceArrG=useGameStore(state=>state.players.G.pieceArr);
+
+  const pieceArr = useMemo(()=>({
+    R: pieceArrR,
+    B: pieceArrB,
+    Y: pieceArrY,
+    G: pieceArrG
+  }),[pieceArrR,pieceArrB,pieceArrY,pieceArrG])
 
   const timeOut=useGameStore((state)=>state.move.timeOut)
   useEffect(() => {
@@ -61,28 +73,28 @@ const LudoOffline = () => {
     >
 
       <div className='flex flex-row items-center justify-between min-w-full h-1/12'>
-        <PlayerBoard playing={playersSet?.has('B')} idx={'B'} left={true} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='B'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} />
+        <PlayerBoard playing={playersSet?.has('B')} idx={'B'} left={true} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='B'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} moveCount={moveObj.moveCount} />
         <div 
           className="dice-cover aspect-square min-h-full flex items-center justify-center mt-1 rounded-[10%]"
           style={{
             backgroundColor:curColor,
           }}
         >
-          <Dice turn={turn} pieceIdx={pieceIdx} winPosn={winPosn} ticks={moveObj.ticks} homeCount={homeCount} rollAllowed={rollAllowed} timeOut={timeOut}/>
+          <Dice turn={turn} pieceIdx={pieceIdx} winPosn={winPosn} ticks={moveObj.ticks} homeCount={homeCount} rollAllowed={rollAllowed} moveAllowed={moveObj.moveAllowed} timeOut={timeOut}/>
           {/* {Number(screen)} */}
         </div>
-        <PlayerBoard playing={playersSet?.has('Y')} idx={'Y'} left={false} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='Y'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} />
+        <PlayerBoard playing={playersSet?.has('Y')} idx={'Y'} left={false} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='Y'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} moveCount={moveObj.moveCount} />
       </div>
       <div className={`${(!screen)?'w-auto h-full':'h-auto w-full p-04 m-2'} bg-cyan-400 aspect-square ivisible`}>
         <ErrorBoundary>
-          <GameBoard clicked={clicked} setClicked={setClicked} moveCount={moveObj.moveCount} pieceState={pieceState} timeOut={timeOut}/>
+          <GameBoard clicked={clicked} setClicked={setClicked} moveCount={moveObj.moveCount} pieceState={pieceState} timeOut={timeOut} moving={moveObj.moving} pieceIdxArr={pieceIdx}/>
         </ErrorBoundary>
       </div>
       <div 
         // onClick={()=>{(console.log(window.innerHeight+' '+innerWidth))}}
         className='flex flex-row items-center justify-between min-w-full h-1/12'>
-        <PlayerBoard playing={playersSet?.has('R')} idx={'R'} left={true} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='R'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} />
-        <PlayerBoard playing={playersSet?.has('G')} idx={'G'} left={false} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='G'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} />
+        <PlayerBoard playing={playersSet?.has('R')} idx={'R'} left={true} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='R'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} moveCount={moveObj.moveCount} />
+        <PlayerBoard playing={playersSet?.has('G')} idx={'G'} left={false} userName={'chidanand'} fullName={'Koushik Kar'} turn={moveObj.turn==='G'} timeOut={timeOut} moveAllowed={moveObj.moveAllowed} rollAllowed={moveObj.rollAllowed} moveCount={moveObj.moveCount} />
       </div> 
     </div>
   )
