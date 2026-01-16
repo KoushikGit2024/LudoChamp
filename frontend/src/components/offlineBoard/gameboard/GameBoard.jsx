@@ -79,7 +79,7 @@ const GameBoard = memo(({moveCount,timeOut,moving,pieceIdxArr}) => {
     Y:pieceY,
     G:pieceG
   }
-  
+  const transferTurn=useGameStore((state)=>state.transferTurn)
   // console.log(onBoard)
 
 
@@ -208,7 +208,7 @@ const GameBoard = memo(({moveCount,timeOut,moving,pieceIdxArr}) => {
   const setMoving=useGameStore(state=>state.setMoving);
 
   const runChariot = async (idx = -1,refNum = null,stepCount = -1,turnColor = '') => {
-    if (idx === -1 || refNum === null || stepCount <= 0 || !turnColor) return;
+    if (idx === -1 || refNum === null || stepCount <= 0 || !turnColor) return null;
 
     const indexVal = pieceIdxArr[turnColor][idx];
     let from = refNum;
@@ -233,37 +233,61 @@ const GameBoard = memo(({moveCount,timeOut,moving,pieceIdxArr}) => {
       updatePieceState(turnColor, idx, null, 0, 1);
 
       await oneStepAnimation(from, to);
+      // return to;
     }
 
     setMoving(false);
+    // console.log('hiding chariot');
     setShowChariotDisplay(false);
 
     // Place piece on destination cell
     updatePieceState(turnColor, idx, to, +1, 0);
+    updatedRef.current=to;
   };
-
-  const afterPieceMove=(curColor='',arrIdx=-1,pieceRef=-1,moveCount)=>{
-    if(curColor===''||arrIdx===-1||pieceRef===-1) return;
-    const safeSet=new Set([1,9,14,22,27,35,40,48]);
-    if(safeSet.has(pieceRef)) return;
-    const homePath={
-      R:new Set([52,53,54,55,56]),
-      B:new Set([57,58,59,60,61]),
-      Y:new Set([62,63,64,65,66]),
-      G:new Set([67,68,69,70,71]),
-    }
-
-    if(homePath[curColor].has(pieceRef)) return;
-    pieceState.forEach((val,idx)=>{
-      console.log(val,idx)
-    })
-  }
-
-  const determineAndProcessClickCell=(refNum)=>{
-    if(!moveAllowed || moving){
-      console.log('move not allowed')
+  const reRoll=useRef(1);
+  const afterPieceMove=(curColor='',curArrIdx=-1,curPieceRef=-1,moveCount)=>{
+    // console.log('reRoll before',reRoll.current,pieceRef);
+    console.log('Hi from after move')
+    // return;
+    // reRoll.current=99;
+    if(curColor===''||curArrIdx===-1||curPieceRef===-1) return;
+    console.log('reRoll after',reRoll.current);
+    const safeSet=new Set([1,9,14,22,27,35,40,48,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71]);
+    if(safeSet.has(curPieceRef)){
+      console.log('The piece is in a safe place')
       return;
     } 
+    if(pieceState[curColor].get(curPieceRef) ?? 0 >1){
+      console.log("A mate found");
+      return;
+    }
+    let opponentsCount =0,preCount=0
+    let singleColorCount =0, maxPieceColor=''
+    Object.keys(pieceState).forEach(key=>{
+      if(key!==curColor){
+        opponentsCount+=pieceState[key].get(curPieceRef) ?? 0;
+        singleColorCount=Math.max(singleColorCount,pieceState[key].get(curPieceRef) ?? 0);
+        if(singleColorCount!==preCount){
+          
+        }
+        preCount=singleColorCount
+      }
+    })
+    console.log('checking capture',curPieceRef,moveCount);
+    // pieceState.forEach((val,idx)=>{
+    //   console.log(val,idx)
+    // })
+  }
+  const updatedRef=useRef(null);
+  const inputLockedRef = useRef(false);
+
+  const determineAndProcessClickCell=async (refNum)=>{
+    if(!moveAllowed || moving || inputLockedRef.current){
+      console.log('move not allowed',moving,moveAllowed)
+      return;
+    } 
+    reRoll.current=1;
+    inputLockedRef.current=true
     const clickPieceCount=pieceState[turn].get(refNum);
     if(!( clickPieceCount ?? 0)) {
       console.log('no piece')
@@ -288,24 +312,69 @@ const GameBoard = memo(({moveCount,timeOut,moving,pieceIdxArr}) => {
         return piecePath[turn][el] === refNum;
       }
     })
-    // console.log('clicked piece idx',clickPieceIdx,refNum,baseStartIdx);
+    console.log('clicked piece idx',clickPieceIdx,baseStartIdx);
     if(clickPieceIdx===-1){
       console.log('no piece found');
     }
-    runChariot(clickPieceIdx,refNum,moveSteps,turn);
-    afterPieceMove(turn,clickPieceIdx,refNum,moveSteps);
-    // let curArr=pieceArr
-    // console.log(num,refNum)
+    if(pieceIdxArr[turn][clickPieceIdx]===-1 && moveCount!==6){
+      console.log('A dice count of 6 required!!!');
+      return;
+    }
+    await runChariot(clickPieceIdx,refNum,moveSteps,turn);
+    // if(updatedRef.current!==null)
+    //   afterPieceMove(turn,clickPieceIdx,updatedRef.current,moveSteps,moveCount);
+    // afterPieceMove();
+    reRoll.current=1
+    // updatedRef.current=null;
+    setTimeout(() => {
+      if(reRoll.current===2)
+        transferTurn(2);
+      else if(reRoll.current===1)
+        transferTurn(1);
+      else if(reRoll.current===0)
+        transferTurn(0);
+      inputLockedRef.current=false;
+    }, 1000);
   }
+// console.log('moveAllowed',moveAllowed); 
+  const autoMovePieces = () => {
+    const pieces = pieceIdxArr[turn];
 
-  const autoMovePieces =()=>{
-    // console.log("auto piece trigger");
+    // Safety: no legal move → do nothing
+    const canMove = pieces.some(
+      val =>
+        (val !== -1 && 56 - val >= moveCount) ||
+        (val === -1 && moveCount === 6)
+    );
+    if (!canMove) return;
+
     let randPiece;
+
     do {
       randPiece = Math.floor(Math.random() * 4);
-      // console.log('pieceIdxArr',randPiece );
-    } while (!(52-pieceIdxArr[turn][randPiece]>=moveCount-1));
-  }
+    } while (
+      pieces[randPiece] === -1
+        ? moveCount !== 6
+        : 56 - pieces[randPiece] < moveCount
+    );
+
+    let baseStartRef;
+
+    if (pieces[randPiece] === -1) {
+      const base =
+        turn === 'R' ? 79 :
+        turn === 'B' ? 83 :
+        turn === 'Y' ? 87 :
+        91;
+
+      baseStartRef = base - randPiece;
+    } else {
+      baseStartRef = piecePath[turn][pieces[randPiece]];
+    }
+
+    determineAndProcessClickCell(baseStartRef);
+  };
+
 
   useEffect(()=>{
     if(!timeOut || moving) return;
@@ -465,7 +534,7 @@ const GameBoard = memo(({moveCount,timeOut,moving,pieceIdxArr}) => {
               ref={el => (pathRefs.current[ref] = el)}
               className={`h-1/4 flex items-end justify-center text-[14px] ${rotate} bg-amber-5000 aspect-square`}
             >
-              <Cell R={(ref===72) && WinCount[0]} B={(ref===73) && WinCount[1]} Y={(ref===74) && WinCount[2]} G={(ref===75) && WinCount[3]}/>
+              <Cell R={(ref===72) && WinCount['R']} B={(ref===73) && WinCount['B']} Y={(ref===74) && WinCount['Y']} G={(ref===75) && WinCount['G']}/>
             </div>
           </div>
         ))}

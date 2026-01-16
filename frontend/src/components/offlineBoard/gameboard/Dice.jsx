@@ -23,40 +23,39 @@ const Dice = ({ pieceIdx,ticks,homeCount,rollAllowed,turn }) => {
     setTimeout(() => {
       clearInterval(interval);
       let final;
-      do {
+      // do {
         final = Math.floor(Math.random() * 6) + 1;
-        // console.log(ticks)
-      } while (ticks>=2 && final===6);
-      
+      // } while (ticks>=2 && final===6);
       setValue(final);
       setRolling(false);
-      updateMoveCount(final);
-      if((homeCount===4 && final!==6)||pathCount===0){
-        transferTurn();  
-        // console.log((homeCount===4),winPosn);
-        // updateMoveCount(final)
-      } else {
-        const pieces=structuredClone(pieceIdx[turn]);
-        // console.log(pieceMap);
-        let flag=false;
-        pieces.forEach((val)=>{
-          // console.log(val)
-          if(val!==-1 && 52-val>=final-1 || val===-1 && final===6){
-            flag=true;
-            // break;
-          }
-        })
-        // console.log(flag);
-        
-        // pieces.forEach(el => {
-        //   console.log(el);
-        // });
-        if(!flag){
-          // transferTurn();
-        }
-      }
-      
-    }, 800);
+      setTimeout(() => {
+        afterDiceRoll(final);
+      }, 500);
+    }, 900);
+  };
+  const afterDiceRoll = (final) => {
+    updateMoveCount(final);
+
+    if ((homeCount === 4 && final !== 6) || pathCount === 0) {
+      transferTurn(1);
+      console.log('hi')
+      return;
+    }
+
+    const pieces = pieceIdx[turn];
+    const canMove = pieces.some(
+      val =>
+        (val !== -1 && 56 - val >= final) ||
+        (val === -1 && final === 6)
+    );
+
+
+    if (!canMove) {
+      console.log('move cannot be made')
+      transferTurn(1);
+    } else {
+      console.log('move can be made')
+    }
   };
 
   
@@ -67,6 +66,7 @@ const Dice = ({ pieceIdx,ticks,homeCount,rollAllowed,turn }) => {
       rollDice();
       updateTimeOut(false);//console.log("auto roll triggered");
     }
+
   },[timeOut]);
 
   // useEffect(()=>{

@@ -30,10 +30,10 @@ const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0,activeColor='' ,COLORS={},moveAl
         return (
           <div
             key={`${color}-${i}`}
-            className={`absolute rounded-full overflow-hidden`}
+            className={`absolute aspect-square rounded-full overflow-hidden`}
             style={{
-              width: "50%",
-              height: "50%",
+              width: "80%",
+              height: "80%",
               backgroundColor: COLORS[color],
               transform: `translate(${x}, ${y})`,
               zIndex: isActive && moveAllowed ? 100+i : -i + 10,

@@ -11,6 +11,7 @@ export const useGameStore = create(
       status: "WAITING", // WAITING | RUNNING | FINISHED
       type:"offline",
       gameStartedAt: [],
+      winLast:0,
       playerCount: 4,
       onBoard:new Set(['R','B','Y','G']),
     },
@@ -155,14 +156,14 @@ export const useGameStore = create(
             status: "RUNNING",
             currentTurn: gameObj.players[0],
             gameStartedAt: startTime,
-            type:"offline"
+            type:"offline",
+            winLast:0,
           },
           players: {
             ...state.players,
             ...player,
           },
         }));
-        console.log(get());
       }
 
       // 
@@ -180,19 +181,16 @@ export const useGameStore = create(
             ticks:state.move.ticks+1,
           }
         }))
-        // console.log(get().move);
       }
     },
     // updatePieceState:(curColor,pieceIdx,pieceRef,newVal,updateBy=0)=>{
     //   const newArr=[...get().players[curColor].pieceIdx];
     //   const newMap=new Map(get().players[curColor].pieceRef);
-    //   console.log('updatePieceState',newArr,newMap);
     //   if(updateBy!==0){
     //     newArr[pieceIdx]+=updateBy;
     //   }
     //   let cellCount=newMap.get(pieceRef)||0;
     //   if(cellCount===0) {
-    //     console.log('No piece found at the given reference');
     //     return;
     //   }
     //   cellCount+=newVal;
@@ -215,7 +213,7 @@ export const useGameStore = create(
       curColor,
       pieceIdx,
       pieceRef,
-      deltaRef = 0,   // +1 add, -1 remove, 0 no-op
+      deltaRef = 0,   // +1 add, -1 remove
       deltaIdx = 0    // +n / -n movement
     ) => {
       set((state) => {
@@ -225,13 +223,37 @@ export const useGameStore = create(
         const pieceIdxArr = [...player.pieceIdx];
         const pieceRefMap = new Map(player.pieceRef);
 
+        let homeCount = player.homeCount;
+        let outCount  = player.outCount;
+        let winCount  = player.winCount;
+        let winPosn   = player.winPosn;
+
         /* ---------- UPDATE pieceIdx ---------- */
-        if (deltaIdx !== 0 && pieceIdx >= 0) {
-          pieceIdxArr[pieceIdx] += deltaIdx;
+        if (pieceIdx >= 0 && deltaIdx !== 0) {
+          const prevIdx = pieceIdxArr[pieceIdx];
+          const nextIdx = prevIdx + deltaIdx;
+
+          // Home → board
+          if (prevIdx === -1 && nextIdx === 0) {
+            homeCount -= 1;
+            outCount += 1;
+          }
+
+          // Board → win
+          if (nextIdx === 56) {
+            outCount -= 1;
+            winCount += 1;
+
+            if (winCount === 4) {
+              winPosn = state.meta.winLast + 1;
+            }
+          }
+
+          pieceIdxArr[pieceIdx] = nextIdx;
         }
 
         /* ---------- UPDATE pieceRef ---------- */
-        if (deltaRef !== 0) {
+        if (pieceRef !== null && deltaRef !== 0) {
           const prevCount = pieceRefMap.get(pieceRef) ?? 0;
           const nextCount = prevCount + deltaRef;
 
@@ -248,6 +270,10 @@ export const useGameStore = create(
             ...state.players,
             [curColor]: {
               ...player,
+              homeCount,
+              outCount,
+              winCount,
+              winPosn,
               pieceIdx: pieceIdxArr,
               pieceRef: pieceRefMap,
             },
@@ -256,16 +282,31 @@ export const useGameStore = create(
       });
     },
 
-    transferTurn:()=>{
-      console.log(get().move)
-      const Obj={move:get().move,meta:get().meta};
-      const playerIdx=(Obj.move.playerIdx+1)%Obj.meta.playerCount;
-      // Convert Set to Array for index access
-      const onBoardArray = Array.from(Obj.meta.onBoard);
-      const turn=onBoardArray[playerIdx];
-      set((state)=>({
-        ...state,
-        move:{
+
+    transferTurn:(turnCase =-1)=>{
+      if(turnCase===-1) return;
+      let Obj={move:get().move,meta:get().meta};
+      let playerIdx;
+      let onBoardArray = Array.from(Obj.meta.onBoard);
+      let turn
+      if(turnCase===0){
+        playerIdx=Obj.move.playerIdx;
+        turn=onBoardArray[playerIdx];
+        Obj.move={
+          playerIdx,
+          turn,
+          rollAllowed:true,
+          moveCount:0,
+          ticks:Obj.move.ticks+1,
+          moveAllowed:false,
+          moving:false,
+          timeOut:false,
+        }
+      }
+      else if(turnCase===1){
+        playerIdx=(Obj.move.playerIdx+1)%Obj.meta.playerCount;
+        turn=onBoardArray[playerIdx];
+        Obj.move={
           playerIdx,
           turn,
           rollAllowed:true,
@@ -275,8 +316,29 @@ export const useGameStore = create(
           moving:false,
           timeOut:false,
         }
-      }))
-      // console.log(get().move)
+      }
+      else if(turnCase===2){
+        playerIdx=Obj.move.playerIdx;
+        turn=onBoardArray[playerIdx];
+        Obj.move={
+          playerIdx,
+          turn,
+          rollAllowed:true,
+          moveCount:0,
+          ticks:0,
+          moveAllowed:false,
+          moving:false,
+          timeOut:false,
+        }
+      }
+      // Convert Set to Array for index access
+      
+      set((state)=>({
+        ...state,
+        move:{
+          ...Obj.move,
+        }
+      }));
     },
 
     updateTimeOut:(newState)=>{
