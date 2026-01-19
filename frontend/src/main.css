@@ -44,3 +44,12 @@ body::after {
   pointer-events: none;
   z-index: 1;
 }
+
+.mySquare{
+  height: 100%;
+  width:100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1/1;
+}

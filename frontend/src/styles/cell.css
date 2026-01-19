@@ -1,3 +1,6 @@
+/* *{
+  border-radius: 2px;
+} */
 .no-select {
   user-select: none;
   -webkit-user-select: none; /* Safari */

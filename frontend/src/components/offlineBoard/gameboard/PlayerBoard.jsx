@@ -12,8 +12,6 @@ const PlayerBoard = memo(({ playing, left, turn=0, idx, timeOut,moveAllowed,roll
   const updateTimeOut=useGameStore((state)=>state.updateTimeOut)
 
   const animeFunc=()=>{
-    
-
     animRef.current?.kill();
 
     let cancelled = false;
@@ -27,7 +25,8 @@ const PlayerBoard = memo(({ playing, left, turn=0, idx, timeOut,moveAllowed,roll
         ease: "linear",
         onComplete: () => {
           if (cancelled) return;
-          updateTimeOut(true);
+          if(!timeOut)
+            updateTimeOut(true);
           gsap.set(timerRef.current, { "--angle": "360deg" });
           // setMove(pre => ({ ...pre, timeOut: true }));
         }

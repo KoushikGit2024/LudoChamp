@@ -1,14 +1,12 @@
 import React, { memo } from "react";
 import '../../../styles/cell.css'
-// import { useGameStore } from "../../store/useGameStore";
 
-// Percentage offsets relative to cell size
 const OFFSETS = [
-  { x: "0%", y: "0%" },
-  { x: "40%", y: "-40%" },
-  { x: "-40%", y: "-40%" },
-  { x: "40%", y: "40%" },
-  { x: "-40%", y: "40%" },
+  { x: "0%",  y: "0%"  },   // 1 piece (center)
+  { x: "-18%", y: "-18%" }, // top-left
+  { x: "18%",  y: "-18%" }, // top-right
+  { x: "-18%", y: "18%"  }, // bottom-left
+  { x: "18%",  y: "18%"  }, // bottom-right
 ];
 
 const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0,activeColor='' ,COLORS={},moveAllowed=false}) => {
@@ -22,7 +20,7 @@ const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0,activeColor='' ,COLORS={},moveAl
   });
 
   return (
-    <div className="bg-pink-4000 relative w-full h-full flex items-center justify-center pointer-events-none">
+    <div className="bgg-pink-400 relative mySquare pointer-events-none">
       {pieces.map((color, i) => {
         const { x, y } = OFFSETS[i % OFFSETS.length];
         const isActive = color === activeColor;
@@ -32,11 +30,11 @@ const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0,activeColor='' ,COLORS={},moveAl
             key={`${color}-${i}`}
             className={`absolute aspect-square rounded-full overflow-hidden`}
             style={{
-              width: "80%",
-              height: "80%",
+              width: "70%",
+              height: "70%",
               backgroundColor: COLORS[color],
               transform: `translate(${x}, ${y})`,
-              zIndex: isActive && moveAllowed ? 100+i : -i + 10,
+              zIndex: isActive && moveAllowed ? 100 : -i + 10,
               boxShadow: `
                 0 1px 1px rgba(0,0,0,0.5),
                 0 2px 4px rgba(0,0,0,0.35),
@@ -48,7 +46,7 @@ const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0,activeColor='' ,COLORS={},moveAl
             }}
           >
             <img
-              className={`h-full w-full no-select rounded-full ${
+              className={`mySquare no-select rounded-full ${
               (isActive && moveAllowed) ? "spin" : ""
             }`}
               src="/coinStamp.png"

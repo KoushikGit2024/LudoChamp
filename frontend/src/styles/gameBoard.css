@@ -37,13 +37,14 @@
   inset: 0;
   background-repeat: no-repeat;
   background-position: center;
+  /* background-image: var(--bg-size, 70%); */
   background-size: var(--bg-size, 70%);
   transform: rotate(var(--bg-rotate, 0deg));
   pointer-events: none;
 }
 
 /* safe star */
-.cell.safe::before {
+.cell::before {
   background-image: var(--bg-img);
 }
 
@@ -55,7 +56,8 @@
 
 
 .box1 { grid-area: box1; }
-.box2 { grid-area: box2; background-color: var(--color); background-image: '../../public/safeStar.png';}
+.box2 { grid-area: box2; }
+.boxC2 { grid-area: box2; background-color: var(--color); background-image: '../../public/safeStar.png';}
 .box3 { grid-area: box3; }
 .box4 { grid-area: box4; }
 .box5 { grid-area: box5; }
@@ -68,7 +70,8 @@
 .box12 { grid-area: box12; }
 .box13 { grid-area: box13; }
 .box14 { grid-area: box14; }
-.box15 { grid-area: box15; background-color: var(--color); background-image: '../../public/safeStar.png';}
+.box15 { grid-area: box15; }
+.boxC15 { grid-area: box15; background-color: var(--color); background-image: '../../public/safeStar.png';}
 .box16 { grid-area: box16; }
 .box17 { grid-area: box17; }
 .box18 { grid-area: box18; }
@@ -81,7 +84,8 @@
 .box25 { grid-area: box25; }
 .box26 { grid-area: box26; }
 .box27 { grid-area: box27; }
-.box28 { grid-area: box28; background-color: var(--color); background-image: '../../public/safeStar.png';}
+.box28 { grid-area: box28; }
+.boxC28 { grid-area: box28; background-color: var(--color); background-image: '../../public/safeStar.png';}
 .box29 { grid-area: box29; }
 .box30 { grid-area: box30; }
 .box31 { grid-area: box31; }
@@ -94,7 +98,8 @@
 .box38 { grid-area: box38; }
 .box39 { grid-area: box39; }
 .box40 { grid-area: box40; }
-.box41 { grid-area: box41; background-color: var(--color); background-image: '../../public/safeStar.png';}
+.box41 { grid-area: box41; }
+.boxC41 { grid-area: box41; background-color: var(--color); background-image: '../../public/safeStar.png';}
 .box42 { grid-area: box42; }
 .box43 { grid-area: box43; }
 .box44 { grid-area: box44; }

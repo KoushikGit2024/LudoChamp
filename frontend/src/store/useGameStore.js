@@ -3,9 +3,6 @@ import { devtools } from "zustand/middleware";
 
 export const useGameStore = create(
   devtools((set, get) => ({
-    /* =========================
-       META (GAME FLOW)
-    ========================== */
     meta: {
       gameId: "",
       status: "WAITING", // WAITING | RUNNING | FINISHED
@@ -228,8 +225,13 @@ export const useGameStore = create(
         let winCount  = player.winCount;
         let winPosn   = player.winPosn;
 
+
+        
         /* ---------- UPDATE pieceIdx ---------- */
-        if (pieceIdx >= 0 && deltaIdx !== 0) {
+        // if(deltaRef===-1){
+
+        // }
+        if (pieceIdx >= 0 && deltaIdx === 1) {
           const prevIdx = pieceIdxArr[pieceIdx];
           const nextIdx = prevIdx + deltaIdx;
 
@@ -245,15 +247,24 @@ export const useGameStore = create(
             winCount += 1;
 
             if (winCount === 4) {
-              winPosn = state.meta.winLast + 1;
+              state.meta.winLast += 1
+              winPosn = state.meta.winLast;
             }
           }
 
           pieceIdxArr[pieceIdx] = nextIdx;
+        } else if(pieceIdx >= 0 && deltaIdx === -2){
+
+          outCount -= 1;
+          homeCount += 1;
+
+
+          pieceIdxArr[pieceIdx] = -1;
+          // console.log(pieceIdxArr)
         }
 
         /* ---------- UPDATE pieceRef ---------- */
-        if (pieceRef !== null && deltaRef !== 0) {
+        if (pieceRef !== null && deltaRef !==0) {
           const prevCount = pieceRefMap.get(pieceRef) ?? 0;
           const nextCount = prevCount + deltaRef;
 
@@ -262,10 +273,20 @@ export const useGameStore = create(
           } else {
             pieceRefMap.set(pieceRef, nextCount);
           }
-        }
+        } 
+        // else if (pieceRef !== null && deltaRef ===-1){
+        //   const baseStart =
+        //   turnColor === 'R' ? 79 :
+        //   turnColor === 'B' ? 83 :
+        //   turnColor === 'Y' ? 87 : 91;
+        // }
 
         return {
           ...state,
+          meta:{
+            ...state.meta,
+            winLast:winPosn,
+          },
           players: {
             ...state.players,
             [curColor]: {
@@ -374,103 +395,5 @@ export const useGameStore = create(
         }
       })
     },
-
-    /* =========================
-       TURN CONTROL
-    ========================== */
-    // setTurn: (color) =>
-    //   set(
-    //     (state) => ({
-    //       meta: {
-    //         ...state.meta,
-    //         currentTurn: color,
-    //         turnStartedAt: Date.now(),
-    //       },
-    //     }),
-    //     false,
-    //     "SET_TURN"
-    //   ),
-
-    // nextTurn: () => {
-    //   const { players, meta } = get();
-    //   const order = players.onBoard;
-    //   const idx = order.indexOf(meta.currentTurn);
-    //   const next = order[(idx + 1) % order.length];
-
-    //   set((state) => ({
-    //     meta: {
-    //       ...state.meta,
-    //       currentTurn: next,
-    //       turnStartedAt: Date.now(),
-    //     },
-    //   }));
-    // },
-
-    /* =========================
-       PIECE MOVEMENT
-    ========================== */
-    // movePiece: (pieceId, newPos) =>
-    //   set(
-    //     (state) => ({
-    //       pieceRef: {
-    //         ...state.pieceRef,
-    //         [pieceId]: {
-    //           ...state.pieceRef[pieceId],
-    //           pos: newPos,
-    //           status: "ACTIVE",
-    //         },
-    //       },
-    //     }),
-    //     false,
-    //     "MOVE_PIECE"
-    //   ),
-
-    // finishPiece: (pieceId) =>
-    //   set(
-    //     (state) => ({
-    //       pieceRef: {
-    //         ...state.pieceRef,
-    //         [pieceId]: {
-    //           ...state.pieceRef[pieceId],
-    //           status: "FINISHED",
-    //         },
-    //       },
-    //     }),
-    //     false,
-    //     "FINISH_PIECE"
-    //   ),
-
-    /* =========================
-       PLAYER STATUS
-    ========================== */
-    // setPlayerOnline: (idx, online) =>
-    //   set(
-    //     (state) => ({
-    //       players: {
-    //         ...state.players,
-    //         [idx]: {
-    //           ...state.players[idx],
-    //           online,
-    //         },
-    //       },
-    //     }),
-    //     false,
-    //     "SET_PLAYER_ONLINE"
-    //   ),
-
-    /* =========================
-       GAME END
-    ========================== */
-    // endGame: () =>
-    //   set(
-    //     (state) => ({
-    //       meta: {
-    //         ...state.meta,
-    //         status: "FINISHED",
-    //       },
-    //     }),
-    //     false,
-    //     "END_GAME"
-    //   ),
   }))
 );
