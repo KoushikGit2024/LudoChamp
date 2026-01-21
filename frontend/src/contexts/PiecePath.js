@@ -16,4 +16,4 @@ const piecePath = {
     G: [...range(40, 51),...range(0, 38),...range(67, 71),75],
 };
 
-export { piecePath };
+export  default piecePath;

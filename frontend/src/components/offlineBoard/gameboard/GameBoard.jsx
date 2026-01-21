@@ -11,7 +11,7 @@ import Cell from "./Cell.jsx";
 // import Room from "../../../../dumpyard/Room.jsx";
 import { useGameStore } from "../../../store/useGameStore";
 import { useShallow } from "zustand/shallow";
-import {piecePath} from '../../../contexts/piecePath.js'
+import piecePath from "../../../contexts/PiecePath.js"
 const GameBoard = memo(({moveCount,timeOut,moving,pieceIdxArr,winState,sound}) => {
   //=============Move Object==============clicked,setClicked,
   // const moveObj=useGameStore((state)=>state.move)
@@ -155,7 +155,7 @@ const GameBoard = memo(({moveCount,timeOut,moving,pieceIdxArr,winState,sound}) =
       audioRefFinish.current.currentTime = 0;
       audioRefFinish.current.play();
     }
-    
+
   };
 
 
