@@ -3,7 +3,7 @@ import DiceFace from "./DiceFace";
 import '../../../styles/dice.css'
 import { useGameStore } from "../../../store/useGameStore";
 import DiceRoll from "../../../assets/DiceRoll.mp3"
-const Dice = ({ pieceIdx,ticks,gameFinished,homeCount,rollAllowed,turn,winState }) => {
+const Dice = ({ pieceIdx,ticks,gameFinished,homeCount,rollAllowed,turn,winState,sound }) => {
   const [rolling, setRolling] = useState(false);
   const [value, setValue] = useState(1);
   const pathCount=useGameStore((state)=>state.players[turn]?.pathCount)  
@@ -14,9 +14,9 @@ const Dice = ({ pieceIdx,ticks,gameFinished,homeCount,rollAllowed,turn,winState 
   const audioRef=useRef(null);
   // console.log('moveAllowed in dice',moveAllowed);
   const playSound=()=>{
-    if(!audioRef.current) return
+    if(!audioRef.current|| !sound ) return
     audioRef.current.currentTime = 0;
-    // audioRef.current.play();
+    audioRef.current.play();
   }
 
   const rollDice =() => {
@@ -76,6 +76,7 @@ const Dice = ({ pieceIdx,ticks,gameFinished,homeCount,rollAllowed,turn,winState 
     
     if(gameFinished){
       alert('game is Finished');
+      return;
     }
     if(!timeOut||gameFinished) return;
     // console.log(gameFinished)

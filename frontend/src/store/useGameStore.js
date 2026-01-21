@@ -249,6 +249,7 @@ export const useGameStore = create(
             if (winCount === 4) {
               state.meta.winLast += 1
               winPosn = state.meta.winLast;
+              console.log('WinPosition updated: ',winPosn)
             }
           }
 
@@ -374,18 +375,18 @@ export const useGameStore = create(
       )
     },
 
-    updateHome: (idx) => {
-      set({
-        ...get(),
-        players: {
-          ...get().players,
-          [idx]: {
-            ...get().players[idx],
-            homeCount: get().players[idx].homeCount - 1,
-          },
-        },
-      });
-    },
+    // updateHome: (idx) => {
+    //   set({
+    //     ...get(),
+    //     players: {
+    //       ...get().players,
+    //       [idx]: {
+    //         ...get().players[idx],
+    //         homeCount: get().players[idx].homeCount - 1,
+    //       },
+    //     },
+    //   });
+    // },
     setMoving:(val)=>{
       set({
         ...get(),

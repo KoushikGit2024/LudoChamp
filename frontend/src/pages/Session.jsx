@@ -7,7 +7,7 @@ const Session = () => {
   useEffect(()=>{
     const gameObj={
       type:'offline',
-      players:['R','Y','G'],
+      players:['R','B','Y','G'],
       names:['KKdsbsdscssxjjdjddddddvvnnnfdnf','Player2','MK dknj jfjdfjk jjbbdb','TK nscjsd bjjsbb sdsvdvh']
     };
     initiate(gameObj);
