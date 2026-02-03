@@ -1,15 +1,13 @@
 {
   "name": "ludochamp",
-  "version": "1.0.0",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "build": "npm run build --prefix frontend",
-    "start": "npm run start --prefix backend",
-    "develop": "nodemon backend/index.js"
+    "start": "npm run dev --prefix backend",
+    "build": "npm run build --prefix frontend"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "type": "commonjs",
-  "description": ""
+  "license": "ISC",
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
 }

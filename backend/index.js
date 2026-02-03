@@ -1,17 +1,23 @@
-import express from "express"
+import express from "express";
 import http from "http";
 import { Server } from "socket.io";
-import dotenv from "dotenv"
-import path from "path"
-import cookieParser from "cookie-parser"
-import cors from 'cors'
+import dotenv from "dotenv";
+import path from "path";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import { fileURLToPath } from "url";
 
-dotenv.config()
+dotenv.config();
 
-const app = express()
-const server=http.createServer(app);
-const __dirname = path.resolve()
-const PORT = process.env.PORT || 8000
+const app = express();
+const server = http.createServer(app);
+
+// ES module safe __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const PORT = process.env.PORT || 8000;
+
 const io = new Server(server, {
   cors: {
     origin: "*", // change in production
@@ -19,27 +25,28 @@ const io = new Server(server, {
   }
 });
 
-app.use(cors())
-app.use(express.json())
-app.use(cookieParser())
+app.use(cors());
+app.use(express.json());
+app.use(cookieParser());
 
 app.get("/api", (req, res) => {
-  res.send("Hi")
-})
+  res.send("Hi");
+});
 
-app.get("/test",(req,res)=>{
-  res.send({msg:"Server running well!!!"})
-})
-  //  n
-if (process.env.NODE_ENV === "production"||true) {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")))
+app.get("/test", (req, res) => {
+  res.send({ msg: "Server running well!!!" });
+});
 
-  // SPA fallback — MUST be RegExp
+// ✅ Serve frontend only in production
+if (process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+
+  // SPA fallback
   app.get(/.*/, (req, res) => {
     res.sendFile(
       path.join(__dirname, "../frontend/dist/index.html")
-    )
-  })
+    );
+  });
 }
 
 io.on("connection", (socket) => {
@@ -49,13 +56,10 @@ io.on("connection", (socket) => {
     console.log("Received:", data);
     socket.emit("message", "Hello from server");
   });
-  socket.on("join-room",(room)=>{
-    // console.log(room+5)
-  })
-  socket.on("message",(a)=>{
-    console.log(a)
 
-  })
+  socket.on("join-room", (room) => {
+    // room logic
+  });
 
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
@@ -63,5 +67,5 @@ io.on("connection", (socket) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`Server running on port: ${PORT}`)
-})
+  console.log(`Server running on port: ${PORT}`);
+});

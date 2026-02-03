@@ -1,3 +1,25 @@
 .menu-container::-webkit-scrollbar {
   display: none;
 }
+
+/* Card Glow Effect */
+.group:hover > div > div {
+    box-shadow: 0 0 30px -5px var(--hover-glow), 0 0 15px -5px var(--hover-glow);
+}
+
+/* Text Neon Bloom */
+.group:hover span {
+    text-shadow: 0 0 8px var(--neon-color), 0 0 12px var(--neon-color);
+    letter-spacing: 0.1em;
+}
+
+/* Power Bar Animation */
+.group:hover [data-bar-idx] {
+    opacity: 0.8 !important;
+    transform: translateY(0) !important;
+}
+
+/* Smooth 3D Feel */
+.perspective-1000 {
+    perspective: 1000px;
+}

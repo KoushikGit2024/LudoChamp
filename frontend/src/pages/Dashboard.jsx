@@ -1,192 +1,159 @@
-import ElectricBorder from '@/components/ElectricBorder'
-// import FloatingLines from '@/components/FloatingLines'
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Particles from '@/components/Particles';
-// import MagicBento from '@/reactbits/MagicBento'
-import React, { useEffect, useState } from 'react'
-import "../styles/menu.css"
-import "../styles/cell.css"
-// import SplashCursor from '@/components/SplashCursor';
-import TargetCursor from '@/components/TargetCursor';
-// import GlitchText from '@/components/GlitchText';
+import ElectricBorder from '@/components/ElectricBorder';
 import GradientText from '@/components/GradientText';
 import AnimatedContent from '@/components/AnimatedContent';
-import { Link } from 'react-router-dom';
-// import StarBorder from '@/components/StarBorder';
+import "../styles/menu.css";
+import "../styles/cell.css";
+
+// 1. Centralized Theme Configuration
+const MENU_ITEMS = [
+  { label: "Play With Bot", color: "#ff0505", route: "/session/bot", img: "/TempPhoto.png" },
+  { label: "Offline Board", color: "#2b01ff", route: "/session/offline", img: "/TempPhoto.png" },
+  { label: "Play On Internet", color: "#fff200", route: "/session/poi", img: "/TempPhoto.png" },
+  { label: "Play With Friends", color: "#00ff3c", route: "/session/pof", img: "/TempPhoto.png" }
+];
+
+const SUB_OPTIONS = [
+  { label: "Profile", path: "/options/profile" },
+  { label: "Sign In", path: "/options/signin" },
+  { label: "Settings", path: "/options/setting" },
+  { label: "Sign Up", path: "/options/signup" }
+];
 
 const Dashboard = () => {
-  const [profileHover,setProfileHover]=useState(false);
-  useEffect(()=>{
-    console.log(profileHover);
-  },[profileHover])
-  const options = ["Play With Bot", "Offline Board", "Play On Internet","Play With Friends"];
-  const colors =["#ff0505","#2b01ff","#fff200","#00ff3c"]
-  const routes =["/session/bot","/session/offline","/session/poi","/session/pof"];
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
-
-  const subOptions=["Profile","SignIn","Setting","SignUp"];
   return (
-    <div className='wholepage bg-transparent h-full w-full flex items-center justify-center'>
-      {/* <ElectricBorder */}
-      <Particles
-        particleColors={["#ffffff"]}
-        particleCount={300}
-        particleSpread={10}
-        speed={0.1}
-        particleBaseSize={100}
-        moveParticlesOnHover={true}
-        alphaParticles={true}
-        disableRotation={false}
-        pixelRatio={1}
-      />
-      {/* <SplashCursor/> */}
-      <div className="hero-section top-0 flex flex-row justify-between bg-green-3000 absolute w-full pt-[1%]">
-        <div className="name-section pl-[6%]">
-          <GradientText
-            colors={["red","blue","yellow","green"]}
-            animationSpeed={1}
-            showBorder={false}
-            className="custom-class text-[60px]"
-          >
-            Ludo Neo
-          </GradientText>
-        </div>
-      </div>
-      <button 
-        className="profile-container absolute z-10 right-0 xl:w-[5%] lg:w-[6%] md:w-[7%] sm:w-[8%] w-16 h-auto aspect-square bg-[#2e2e2ec2] rounded-l-2xl top-[4%] box-border border-2 border-r-0"
-        onClick={()=>setProfileHover(true)}
-        onBlur={()=>setProfileHover(false)}
-      >
-        <div className="w-full h-full flex items-center justify-center">
-          <div className='w-[80%] p-[2px] aspect-square rounded-full hover:bg-red-600 border-2 border-[#425568] flex items-center justify-center box-border'
-            style={{
-              background: "repeating-conic-gradient(black 0 11.25deg,white 11.25deg 22.5deg)",
-            }}
-          >
-            <div className="image-container w-full h-full border-2 border-[#425568] bg-amber-400 rounded-full box-border">
-              <img src="/TempPhoto.png" alt="profile" className='h-full w-full rounded-full'/>
-            </div>
-          </div>  
-        </div>
-        
-        {/* <Activity></Activity> */}
-        { !profileHover && 
-          <div className="absolute sub-options top-[110%] self-end justify-self-end flex flex-col justify-end items-end">
-            {Array.from({length:4},(_,idx)=>(
-              <AnimatedContent
-                distance={100}
-                direction="horizontal"
-                duration={0.8}
-                ease="power3.out"
-                initialOpacity={0}
-                animateOpacity
-                scale={1}
-                threshold={0.1}
-                delay={0}
-                key={idx}
-              >
-                <div className='mt-1 p-1 rounded-l-[6px]  box-border border-2 border-r-0 bg-[#2e2e2ec2] text-[#acacac94] font-semibold'>
-                  <Link to={`/options/${(subOptions[idx]).toLocaleLowerCase()}`}>{subOptions[idx]}</Link>
-                </div>
-              </AnimatedContent>
-            ))}
-            {/* <AnimatedContent
-              distance={100}
-              direction="horizontal"
-              duration={0.8}
-              ease="power3.out"
-              initialOpacity={0}
-              animateOpacity
-              scale={1}
-              threshold={0.1}
-              delay={0}
-            >
-              <div className='mt-1 p-1 rounded-l-[6px]  box-border border-2 border-r-0 bg-[#2e2e2ec2] text-[#acacac94] font-semibold'>
-                Profile
-              </div>
-            </AnimatedContent>
-            <AnimatedContent
-              distance={100}
-              direction="horizontal"
-              duration={0.8}
-              ease="power3.out"
-              initialOpacity={0}
-              animateOpacity
-              scale={1}
-              threshold={0.1}
-              delay={0.5}
-            >
-              <div className='mt-1 p-1 rounded-l-[6px] w-fit box-border border-2 border-r-0 bg-[#2e2e2ec2] text-[#acacac94] font-semibold'>
-                Sign In
-              </div>
-            </AnimatedContent>
-            <AnimatedContent
-              distance={100}
-              direction="horizontal"
-              duration={0.8}
-              ease="power3.out"
-              initialOpacity={0}
-              animateOpacity
-              scale={1}
-              threshold={0.1}
-              delay={1}
-            >
-              <div className='mt-1 p-1 rounded-l-[6px] w-fit box-border border-2 border-r-0 bg-[#2e2e2ec2] text-[#acacac94] font-semibold'>
-                Setting
-              </div>
-            </AnimatedContent>
-            <AnimatedContent
-              distance={100}
-              direction="horizontal"
-              duration={0.8}
-              ease="power3.out"
-              initialOpacity={0}
-              animateOpacity
-              scale={1}
-              threshold={0.1}
-              delay={1.5}
-            >
-              <div className='mt-1 p-1 rounded-l-[6px]  box-border border-2 border-r-0 bg-[#2e2e2ec2] text-[#acacac94] font-semibold text-nowrap'>
-                Sign Up  
-              </div>
-            </AnimatedContent> */}
-          </div>  
-        }
-        
-      </button>
-      <div className="menu-container absolute h-full w-full flex flex-wrap items-center justify-around px-[5%] overflow-y-scroll overflow-x-hidden pt-[15vh]">
-        <TargetCursor 
-          spinDuration={2}
-          hideDefaultCursor
-          parallaxOn
-          hoverDuration={0.2}
+    <div className='wholepage bg-[#020205] h-screen w-full flex items-center justify-center overflow-hidden relative'>
+      {/* Background Particles */}
+      <div className="absolute inset-0 z-0">
+        <Particles
+          particleColors={["#ffffff", "#425568"]}
+          particleCount={200}
+          speed={0.1}
+          moveParticlesOnHover={true}
+          alphaParticles={true}
         />
-        {
-          Array.from({length:4},(_,idx)=>(
-            <div key={idx} className="container cursor-target relative bg-[#eeff0100] m-5 xl:w-1/5 lg:w-1/5  md:w-1/3 sm:w-1/3  w-1/2 aspect-[3/4]">
+      </div>
+
+      {/* Header / Title */}
+      <div className="absolute top-0 w-full pt-8 z-20 flex justify-center">
+        <GradientText
+          colors={["#ff0505", "#2b01ff", "#fff200", "#00ff3c"]}
+          animationSpeed={3}
+          showBorder={false}
+          className="text-6xl md:text-8xl font-black tracking-tighter"
+        >
+          LUDO NEO
+        </GradientText>
+      </div>
+
+      {/* Profile Sidebar Toggle */}
+      <div 
+        className="absolute z-30 right-0 top-8 flex flex-col items-end"
+        onMouseEnter={() => setIsProfileOpen(true)}
+        onMouseLeave={() => setIsProfileOpen(false)}
+      >
+        <button className="xl:w-20 lg:w-16 w-14 aspect-square bg-white/10 backdrop-blur-md rounded-l-2xl border-2 border-r-0 border-white/20 flex items-center justify-center transition-all hover:bg-white/20">
+          <div className='w-[80%] aspect-square rounded-full border-2 border-white/30 overflow-hidden p-1 bg-gradient-to-tr from-gray-800 to-black'>
+             <img src="/TempPhoto.png" alt="profile" className='h-full w-full rounded-full object-cover'/>
+          </div>
+        </button>
+
+        {/* Sub Options Dropdown */}
+        <div className={`flex flex-col items-end transition-all duration-300 ${isProfileOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10 pointer-events-none'}`}>
+          {SUB_OPTIONS.map((opt, idx) => (
+            <Link 
+              key={opt.label}
+              to={opt.path}
+              className='mt-2 py-2 px-6 rounded-l-lg bg-black/60 backdrop-blur-xl border border-r-0 border-white/10 text-gray-300 hover:text-white hover:bg-white/10 transition-colors font-medium text-sm'
+            >
+              {opt.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Menu Grid */}
+      <div className="menu-container relative z-10 w-full h-full flex flex-wrap items-center justify-center gap-8 px-10 pt-24 overflow-y-auto">
+        {MENU_ITEMS.map((item, idx) => (
+          <AnimatedContent
+            key={item.label}
+            distance={50}
+            direction="vertical"
+            delay={idx * 0.1}
+            className="xl:w-1/5 lg:w-1/4 md:w-1/3 w-full max-w-[280px]"
+          >
+            <Link to={item.route} className="block group perspective-1000">
               <ElectricBorder
-                color={colors[idx]}
-                speed={2}
-                chaos={0.15}
-                thickness={2}
-                style={{ borderRadius: 6 ,padding:"6px",display:"non"}}
+                color={item.color}
+                speed={3}
+                chaos={0.1}
+                thickness={3}
+                style={{ borderRadius: '16px' }}
               >
-                <div className="relative w-full aspect-[3/4] p-[10%] bg-[#06001e] rounded-[4px] flex flex-col items-center justify-between">
-                  <div className="image w-full aspect-[7/8] bg-amber-300 rounded-[4px] overflow-hidden">
-                    <img src="/TempPhoto.png" alt="image" className='overflow-hidden h-full w-full'/>
+                <div 
+                  className="relative w-full aspect-[3/4] p-5 bg-[#0a0a0f] rounded-[14px] flex flex-col items-center justify-between transition-all duration-500 ease-out group-hover:scale-[1.05] group-hover:-translate-y-2"
+                  style={{
+                    // Dynamic Neon Glow on hover
+                    '--hover-glow': `${item.color}44`, // 44 is hex alpha for transparency
+                    '--neon-color': item.color
+                  }}
+                >
+                  {/* Inner Glow Overlay */}
+                  <div className="absolute inset-0 rounded-[14px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+                      style={{ boxShadow: `inset 0 0 20px ${item.color}33` }} />
+
+                  {/* Image Container */}
+                  <div className="relative w-full aspect-square rounded-lg overflow-hidden border border-white/5 bg-gray-900 z-10">
+                    <img 
+                      src={item.img} 
+                      alt={item.label} 
+                      className='h-full w-full object-cover opacity-60 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700 ease-in-out grayscale-[50%] group-hover:grayscale-0'
+                    />
                   </div>
-                  <div className="text xl:text-[18px] lg:text-[18px] md:text-[15px] sm:text-[14px] text-[15px] font-semibold text-white ">
-                    <Link to={routes[idx]}>{options[idx]}</Link> 
+                  
+                  {/* Text Section */}
+                  <div className="relative z-10 mb-2 text-center">
+                    <span 
+                      className="text-lg font-bold tracking-widest text-gray-400 uppercase transition-all duration-300 group-hover:text-white"
+                      style={{
+                        // Text glow on hover
+                        textShadow: `0 0 0px transparent`,
+                      }}
+                    >
+                      {item.label}
+                    </span>
+                    
+                    {/* The "Power Bar" instead of an underline */}
+                    <div className="flex justify-center gap-1 mt-2">
+                      {[...Array(3)].map((_, i) => (
+                        <div 
+                            key={i}
+                            className="h-1 w-4 rounded-full bg-white/10 transition-all duration-500"
+                            style={{ 
+                              backgroundColor: `var(--neon-color)`,
+                              boxShadow: `0 0 10px var(--neon-color)`,
+                              opacity: 0,
+                              transform: `translateY(10px)`,
+                              transitionDelay: `${i * 100}ms`
+                            }}
+                            // Note: In real CSS we use the group-hover class below
+                            data-bar-idx={i}
+                        />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </ElectricBorder>  
-            </div>
-          ))
-        }
+              </ElectricBorder>
+            </Link>
+          </AnimatedContent>
+        ))}
       </div>
-      
-
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;
