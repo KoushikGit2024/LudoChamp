@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import Particles from '@/components/Particles';
-import ElectricBorder from '@/components/ElectricBorder';
-import GradientText from '@/components/GradientText';
-import AnimatedContent from '@/components/AnimatedContent';
+import Particles from '@/components/customComponents/Particles';
+import ElectricBorder from '@/components/customComponents/ElectricBorder';
+import GradientText from '@/components/customComponents/GradientText';
+import AnimatedContent from '@/components/customComponents/AnimatedContent';
 import "../styles/menu.css";
 import "../styles/cell.css";
 
@@ -64,7 +64,7 @@ const Dashboard = () => {
 
         {/* Sub Options Dropdown */}
         <div className={`flex flex-col items-end transition-all duration-300 ${isProfileOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-10 pointer-events-none'}`}>
-          {SUB_OPTIONS.map((opt, idx) => (
+          {SUB_OPTIONS.map((opt) => (
             <Link 
               key={opt.label}
               to={opt.path}

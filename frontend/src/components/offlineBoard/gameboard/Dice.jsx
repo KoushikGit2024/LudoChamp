@@ -1,29 +1,144 @@
-import { useEffect, useRef, useState } from "react";
+// import { useEffect, useRef, useState } from "react";
+// import DiceFace from "./DiceFace";
+// import '../../../styles/dice.css'
+// import { useGameStore } from "../../../store/useGameStore";
+// import DiceRoll from "../../../assets/DiceRoll.mp3"
+// const Dice = ({ pieceIdx,ticks,gameFinished,homeCount,rollAllowed,turn,winState,sound }) => {
+//   const [rolling, setRolling] = useState(false);
+//   const [value, setValue] = useState(1);
+//   const pathCount=useGameStore((state)=>state.players[turn]?.pathCount)  
+//   const updateMoveCount=useGameStore((state)=>state.updateMoveCount)
+//   const transferTurn=useGameStore((state)=>state.transferTurn)
+//   const timeOut=useGameStore((state)=>state.move.timeOut)
+//   const updateTimeOut=useGameStore((state)=>state.updateTimeOut)
+//   const audioRef=useRef(null);
+//   // console.log('moveAllowed in dice',moveAllowed);
+//   const playSound=()=>{
+//     if(!audioRef.current|| !sound ) return
+//     audioRef.current.currentTime = 0;
+//     audioRef.current.play();
+//   }
+
+//   const rollDice =() => {
+//     if (rolling||!rollAllowed) return;
+//     if(winState[turn]!==0){
+//       console.log('Player won transfer next');
+//       console.log(winState)
+//       transferTurn(1);
+//       return;
+//     }
+//     setRolling(true);
+//     playSound();
+//     const interval = setInterval(() => {
+//       setValue(Math.floor(Math.random() * 6) + 1);
+//       // console.log("hi")
+//     }, 100);
+//     setTimeout(() => {
+//       clearInterval(interval);
+//       let final;
+//       do {
+//         final = Math.floor(Math.random() * 6) + 1;
+//       } while (ticks>=2 && final===6);
+//       setValue(final);
+//       setRolling(false);
+//       setTimeout(() => {
+//         afterDiceRoll(final);
+//       }, 500);
+//     }, 1900);
+//   };
+//   const afterDiceRoll = (final) => {
+//     updateMoveCount(final);
+
+//     if ((homeCount === 4 && final !== 6) || pathCount === 0) {
+//       transferTurn(1);
+//       // console.log('hi')
+//       return;
+//     }
+
+//     const pieces = pieceIdx[turn];
+//     const canMove = pieces.some(
+//       val =>
+//         (val !== -1 && 56 - val >= final) ||
+//         (val === -1 && final === 6)
+//     );
+
+
+//     if (!canMove) {
+//       // console.log('move cannot be made')
+//       transferTurn(1);
+//     } else {
+//       // console.log('move can be made')
+//     }
+//   };
+//   // console.log(pieceIdx)
+  
+//   useEffect(()=>{
+    
+//     if(gameFinished){
+//       alert('game is Finished');
+//       return;
+//     }
+//     if(!timeOut||gameFinished) return;
+//     // console.log(gameFinished)
+//     if(rollAllowed){
+//       rollDice();
+//       updateTimeOut(false);//console.log("auto roll triggered");
+//     }
+
+//   },[timeOut]);
+
+//   // useEffect(()=>{
+//   //   console.log('hi')
+//   // },[]);
+//   return (
+//     <div
+//       className="dice-cover mySquare min-h-full"
+//       onClick={rollDice}
+//       style={{
+//         cursor: (rollAllowed)? 'pointer':'not-allowed',
+//       }}
+//     >
+//       <div
+//         className={`dice-container w-[80%] h-[80%] rounded-[20%] flex items-center justify-center bg-white ${rolling ? "rolling" : ""}`}
+//       >
+//         <DiceFace value={value} />
+//       </div>
+//       <audio ref={audioRef} src={DiceRoll} preload="auto"/>
+//     </div>
+//   );
+// };
+
+// export default Dice;
+import { useEffect, useRef, useState, useMemo } from "react";
 import DiceFace from "./DiceFace";
-import '../../../styles/dice.css'
+import '../../../styles/dice.css'; // Preserving your CSS import
 import { useGameStore } from "../../../store/useGameStore";
-import DiceRoll from "../../../assets/DiceRoll.mp3"
-const Dice = ({ pieceIdx,ticks,gameFinished,homeCount,rollAllowed,turn,winState,sound }) => {
+import DiceRoll from "../../../assets/DiceRoll.mp3";
+import { Sparkles, Lock } from "lucide-react"; // Icons for status
+
+const Dice = ({ pieceIdx, ticks, gameFinished, homeCount, rollAllowed, turn, winState, sound }) => {
   const [rolling, setRolling] = useState(false);
   const [value, setValue] = useState(1);
-  const pathCount=useGameStore((state)=>state.players[turn]?.pathCount)  
-  const updateMoveCount=useGameStore((state)=>state.updateMoveCount)
-  const transferTurn=useGameStore((state)=>state.transferTurn)
-  const timeOut=useGameStore((state)=>state.move.timeOut)
-  const updateTimeOut=useGameStore((state)=>state.updateTimeOut)
-  const audioRef=useRef(null);
-  // console.log('moveAllowed in dice',moveAllowed);
-  const playSound=()=>{
-    if(!audioRef.current|| !sound ) return
+  
+  // --- STORE HOOKS (Unchanged) ---
+  const pathCount = useGameStore((state) => state.players[turn]?.pathCount);
+  const updateMoveCount = useGameStore((state) => state.updateMoveCount);
+  const transferTurn = useGameStore((state) => state.transferTurn);
+  const timeOut = useGameStore((state) => state.move.timeOut);
+  const updateTimeOut = useGameStore((state) => state.updateTimeOut);
+  const audioRef = useRef(null);
+
+  // --- LOGIC (Unchanged) ---
+  const playSound = () => {
+    if (!audioRef.current || !sound) return;
     audioRef.current.currentTime = 0;
     audioRef.current.play();
-  }
+  };
 
-  const rollDice =() => {
-    if (rolling||!rollAllowed) return;
-    if(winState[turn]!==0){
+  const rollDice = () => {
+    if (rolling || !rollAllowed) return;
+    if (winState[turn] !== 0) {
       console.log('Player won transfer next');
-      console.log(winState)
       transferTurn(1);
       return;
     }
@@ -31,14 +146,13 @@ const Dice = ({ pieceIdx,ticks,gameFinished,homeCount,rollAllowed,turn,winState,
     playSound();
     const interval = setInterval(() => {
       setValue(Math.floor(Math.random() * 6) + 1);
-      // console.log("hi")
     }, 100);
     setTimeout(() => {
       clearInterval(interval);
       let final;
       do {
         final = Math.floor(Math.random() * 6) + 1;
-      } while (ticks>=2 && final===6);
+      } while (ticks >= 2 && final === 6);
       setValue(final);
       setRolling(false);
       setTimeout(() => {
@@ -46,12 +160,12 @@ const Dice = ({ pieceIdx,ticks,gameFinished,homeCount,rollAllowed,turn,winState,
       }, 500);
     }, 1900);
   };
+
   const afterDiceRoll = (final) => {
     updateMoveCount(final);
 
     if ((homeCount === 4 && final !== 6) || pathCount === 0) {
       transferTurn(1);
-      // console.log('hi')
       return;
     }
 
@@ -62,48 +176,81 @@ const Dice = ({ pieceIdx,ticks,gameFinished,homeCount,rollAllowed,turn,winState,
         (val === -1 && final === 6)
     );
 
-
     if (!canMove) {
-      // console.log('move cannot be made')
       transferTurn(1);
-    } else {
-      // console.log('move can be made')
     }
   };
-  // console.log(pieceIdx)
-  
-  useEffect(()=>{
-    
-    if(gameFinished){
+
+  useEffect(() => {
+    if (gameFinished) {
       alert('game is Finished');
       return;
     }
-    if(!timeOut||gameFinished) return;
-    // console.log(gameFinished)
-    if(rollAllowed){
+    if (!timeOut || gameFinished) return;
+    if (rollAllowed) {
       rollDice();
-      updateTimeOut(false);//console.log("auto roll triggered");
+      updateTimeOut(false);
     }
+  }, [timeOut]);
 
-  },[timeOut]);
+  // --- VISUAL & THEME CONSTANTS ---
+  const DICE_COLORS = useMemo(() => ({
+    R: "#ff0505", // Red
+    B: "#2b01ff", // Blue
+    Y: "#fff200", // Yellow
+    G: "#00ff3c"  // Green
+  }), []);
 
-  // useEffect(()=>{
-  //   console.log('hi')
-  // },[]);
+  const activeColor = DICE_COLORS[turn] || "#ffffff";
+
   return (
     <div
-      className="dice-cover mySquare min-h-full"
+      className="dice-cover relative w-full h-full flex items-center justify-center p-[10%]"
       onClick={rollDice}
       style={{
-        cursor: (rollAllowed)? 'pointer':'not-allowed',
+        cursor: (rollAllowed) ? 'pointer' : 'not-allowed',
       }}
     >
-      <div
-        className={`dice-container w-[80%] h-[80%] rounded-[20%] flex items-center justify-center bg-white ${rolling ? "rolling" : ""}`}
-      >
-        <DiceFace value={value} />
+      {/* 1. Ambient Glow Ring (Pulses when active) */}
+      <div 
+        className={`absolute inset-0 rounded-full transition-all duration-500 blur-xl opacity-20`}
+        style={{
+          background: rollAllowed ? `radial-gradient(circle, ${activeColor}, transparent 70%)` : 'transparent',
+          transform: rolling ? 'scale(1.2)' : 'scale(1)'
+        }}
+      />
+
+      {/* 2. Status Icons (Floating above) */}
+      <div className="absolute -top-1 right-0 z-20">
+         {!rollAllowed && <Lock size={12} className="text-gray-500 opacity-50" />}
+         {rollAllowed && !rolling && <Sparkles size={12} className="animate-ping" style={{color: activeColor}} />}
       </div>
-      <audio ref={audioRef} src={DiceRoll} preload="auto"/>
+
+      {/* 3. The Dice Cube Container */}
+      <div
+        className={`dice-container relative z-10 w-full aspect-square rounded-xl flex items-center justify-center transition-all duration-300
+          ${rolling ? "rolling" : ""} 
+          ${!rollAllowed ? "grayscale opacity-50 scale-90" : "scale-100"}
+        `}
+        style={{
+          backgroundColor: '#e6e6e6', // Slight off-white to act as a "light source"
+          boxShadow: rollAllowed 
+            ? `0 0 20px ${activeColor}, inset 0 0 10px white` 
+            : 'inset 0 0 10px black',
+          border: `2px solid ${rollAllowed ? 'white' : '#333'}`,
+        }}
+      >
+        {/* Dice Face Render */}
+        <div className="w-full h-full flex items-center justify-center p-1">
+          {/* We wrap the Face to control color tinting if needed via mix-blend-mode or just let it sit */}
+           <DiceFace value={value} />
+        </div>
+
+        {/* Glossy Overlay for "Glass" effect */}
+        <div className="absolute inset-0 rounded-xl bg-gradient-to-tr from-white/40 to-transparent pointer-events-none" />
+      </div>
+
+      <audio ref={audioRef} src={DiceRoll} preload="auto" />
     </div>
   );
 };

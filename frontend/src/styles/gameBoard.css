@@ -28,6 +28,7 @@
 
 .cell {
   position: relative;
+  aspect-ratio: 1/1;
 }
 
 /* shared pseudo layer */
@@ -53,7 +54,36 @@
   background-image: var(--bg-img);
 }
 
+/* Container for the whole board */
+.boardContainer {
+  background: rgba(10, 10, 15, 0.8) !important;
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+}
 
+/* Individual Cell Styling */
+.cell-neo {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+/* Active Player Pulse */
+.active-turn-glow {
+  animation: pulse-neon 2s infinite;
+}
+
+@keyframes pulse-neon {
+  0% { box-shadow: inset 0 0 5px var(--color); }
+  50% { box-shadow: inset 0 0 15px var(--color); }
+  100% { box-shadow: inset 0 0 5px var(--color); }
+}
+
+/* Star and Arrow Glows */
+.neo-icon {
+  filter: drop-shadow(0 0 5px var(--color, #fff));
+}
 
 .box1 { grid-area: box1; }
 .box2 { grid-area: box2; }
@@ -149,7 +179,7 @@
 .bg-Y { background: var(--color); }
 .bg-G { background: var(--color); }
 
-.homeR1 {grid-area: homeR1; }
+/* .homeR1 {grid-area: homeR1; }
 .homeR2 {grid-area: homeR2; }
 .homeR3 {grid-area: homeR3; }
 .homeR4 {grid-area: homeR4; }
@@ -167,4 +197,4 @@
 .homeG1 {grid-area: homeG1; }
 .homeG2 {grid-area: homeG2; }
 .homeG3 {grid-area: homeG3; }
-.homeG4 {grid-area: homeG4; }
+.homeG4 {grid-area: homeG4; } */

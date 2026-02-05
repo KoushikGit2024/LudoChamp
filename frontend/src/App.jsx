@@ -6,7 +6,8 @@ import Home from './pages/Home'
 import Profile from './pages/Profile'
 import Dashboard from './pages/Dashboard'
 import Session from './pages/Session'
-import ElectricBorder from './components/ElectricBorder'
+import ElectricBorder from './components/customComponents/ElectricBorder'
+import Options from './pages/Options'
 // import LudoOffline from './components/LudoOffline'
 // import LudoGame from './assets/New'
 //---------------------------------------
@@ -23,6 +24,7 @@ function App() {
           <Route path='/profile' element={<Profile/>}/>
           <Route path='/dashboard' element={<Dashboard/>}/>
           <Route path='/session' element={<Session/>}/>
+          <Route path='/options/:subOption' element={<Options/>}/>
         </Routes>  
         
       {/* </div> */}
