@@ -31,28 +31,6 @@
   aspect-ratio: 1/1;
 }
 
-/* shared pseudo layer */
-.cell::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background-repeat: no-repeat;
-  background-position: center;
-  /* background-image: var(--bg-size, 70%); */
-  background-size: var(--bg-size, 70%);
-  transform: rotate(var(--bg-rotate, 0deg));
-  pointer-events: none;
-}
-
-/* safe star */
-.cell::before {
-  background-image: var(--bg-img);
-}
-
-/* home pointer arrow */
-.cell.home-pointer::before {
-  background-image: var(--bg-img);
-}
 
 /* Container for the whole board */
 .boardContainer {
@@ -85,6 +63,15 @@
   filter: drop-shadow(0 0 5px var(--color, #fff));
 }
 
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 8s linear infinite;
+}
+
 .box1 { grid-area: box1; }
 .box2 { grid-area: box2; }
 .boxC2 { grid-area: box2; background-color: var(--color); background-image: '../../public/safeStar.png';}
@@ -115,7 +102,7 @@
 .box26 { grid-area: box26; }
 .box27 { grid-area: box27; }
 .box28 { grid-area: box28; }
-.boxC28 { grid-area: box28; background-color: var(--color); background-image: '../../public/safeStar.png';}
+.boxC28 { grid-area: box28;}
 .box29 { grid-area: box29; }
 .box30 { grid-area: box30; }
 .box31 { grid-area: box31; }
@@ -129,7 +116,7 @@
 .box39 { grid-area: box39; }
 .box40 { grid-area: box40; }
 .box41 { grid-area: box41; }
-.boxC41 { grid-area: box41; background-color: var(--color); background-image: '../../public/safeStar.png';}
+.boxC41 { grid-area: box41;}
 .box42 { grid-area: box42; }
 .box43 { grid-area: box43; }
 .box44 { grid-area: box44; }

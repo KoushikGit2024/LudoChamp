@@ -6,7 +6,7 @@ import SlideEffect from '../../../assets/SlideEffect.mp3';
 import FinishSound from '../../../assets/FinishSound.mp3';
 import gsap from "gsap";
 import debounce from '../../../derivedFuncs/debounce.js';
-import Cell from "./Cell.jsx";
+import Cell from "../../sharedBoardComponents/Cell.jsx";
 import { useGameStore } from "../../../store/useGameStore";
 import { useShallow } from "zustand/shallow";
 import piecePath from "../../../contexts/PiecePath.js";
@@ -123,7 +123,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
       ref: 73,
       rotate: "rotate-135",
     },
-  ]), []);
+  ]), [COLORS.R,COLORS.B,COLORS.Y,COLORS.G]);
 
   const SAFE_CELLS = new Set([1, 9, 14, 22, 27, 35, 40, 48]);
   const homePointer = new Map([
@@ -145,17 +145,24 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
 
   const pathPointCalculator = () => {
     if (!pathRefs.current[0] || !boardRef.current) return;
+
     const boardRect = boardRef.current.getBoundingClientRect();
-    const tempPts = pathRefs.current.map((el) => {
-      const cellRect = el.getBoundingClientRect();
+
+    const tempPts = pathRefs.current.map(el => {
+      if (!el) return null;
+      const rect = el.getBoundingClientRect();
+
       return {
-        x: cellRect.left - boardRect.left,
-        y: cellRect.top - boardRect.top,
-        width: cellRect.width,
+        // Use the center relative to the board
+        cx: rect.left - boardRect.left + (rect.width / 2)-1.8,
+        cy: rect.top - boardRect.top + (rect.height / 2)-1.8,
+        w: rect.width,
+        h: rect.height
       };
-    });
+    }).filter(Boolean);
+    
     setPathPoints(tempPts);
-  }
+  };
 
   useEffect(() => {
     pathPointCalculator();
@@ -168,35 +175,74 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
 
   const [chariotColor, setChariotColor] = useState('R');
   
+  // const oneStepAnimation = (from, to) => {
+  //   return new Promise(resolve => {
+  //     const finalCells = new Set([72, 73, 74, 75]);
+  //     if (!pathPoints[from] || !pathPoints[to]) {
+  //       resolve();
+  //       return;
+  //     }
+  //     gsap.fromTo(
+  //       chariotRef.current,
+  //       {
+  //         x: pathPoints[from].x,
+  //         y: pathPoints[from].y,
+  //         width: pathPoints[from].width,
+  //       },
+  //       {
+  //         x: pathPoints[to].x,
+  //         y: pathPoints[to].y,
+  //         width: pathPoints[to].width,
+  //         duration: 0.5,
+  //         ease: "power2.inOut",
+  //         onComplete: resolve
+  //       }
+  //     );
+  //     if (finalCells.has(to))
+  //       playSound(2);
+  //     else
+  //       playSound(1)
+  //   });
+  // };
+
   const oneStepAnimation = (from, to) => {
     return new Promise(resolve => {
-      const finalCells = new Set([72, 73, 74, 75]);
-      if (!pathPoints[from] || !pathPoints[to]) {
+      if (!pathPoints[from] || !pathPoints[to] || !chariotRef.current) {
         resolve();
         return;
       }
+      // from=to=80
+      // Use the target cell's width/height to center the chariot
+      // instead of measuring the chariot itself, which might be unstable
+      const targetW = pathPoints[to].w;
+      const targetH = pathPoints[to].h;
+
       gsap.fromTo(
         chariotRef.current,
         {
-          x: pathPoints[from].x,
-          y: pathPoints[from].y,
-          width: pathPoints[from].width,
+          x: pathPoints[from].cx - targetW / 2,
+          y: pathPoints[from].cy - targetH / 2,
+          width: pathPoints[from].w,
+          height: pathPoints[from].h
         },
         {
-          x: pathPoints[to].x,
-          y: pathPoints[to].y,
-          width: pathPoints[to].width,
-          duration: 0.5,
-          ease: "power2.inOut",
+          x: pathPoints[to].cx - targetW / 2,
+          y: pathPoints[to].cy - targetH / 2,
+          width: pathPoints[to].w,
+          height: pathPoints[to].h,
+          duration: 0.5, // Lower duration for snappier feel
+          ease: "power1.inOut",
           onComplete: resolve
         }
       );
-      if (finalCells.has(to))
-        playSound(2);
-      else
-        playSound(1)
+      
+      // Play sounds here based on target cell index
+      const finalCells = new Set([72, 73, 74, 75]);
+      if (finalCells.has(to)) playSound(2);
+      else playSound(1);
     });
   };
+
 
   const setMoving = useGameStore(state => state.setMoving);
   const reRoll = useRef(1);
@@ -313,6 +359,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
 
   const determineAndProcessClickCell = async (refNum) => {
     if (!moveAllowed || moving || inputLockedRef.current) return;
+    console.log(pathPoints[refNum])
     inputLockedRef.current = true;
     reRoll.current = 1;
     const pieceCount = pieceState[turn].get(refNum) ?? 0;
@@ -371,7 +418,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
 
   return (
     <div
-      className="boardContainer relative grid gap-[2px] rounded-xl max-w-full max-h-full p-2 overflow-hidden shadow-2xl aspect-square"
+      className="boardContainer relative grid gap-[2px] rounded-xl max-w-full max-h-full p-0 overflow-hidden shadow-2xl aspect-square"
       style={{ background: '#020205', boxShadow: '0 0 50px rgba(0,0,0,0.8)' }}
       ref={boardRef}
     >
@@ -391,16 +438,17 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
         return (
           <div
             key={i}
-            className={`box${i + 1} relative flex items-center justify-center rounded-[4px] transition-all duration-300 hover:bg-white/10 cursor-pointer`}
+            className={`box${i + 1} relative flex items-center justify-center rounded-[4px] transition-all duration-300 hover:bg-white/10 cursor-pointer box-border`}
             onClick={() => determineAndProcessClickCell(i)}
+            
           >
             <div
-              className={`cell w-full h-full flex items-center justify-center rounded-[3px] bg-white/5 backdrop-blur-sm border`}
-              ref={(el) => (pathRefs.current[i] = el)}
+              className={`cell w-full h-full flex items-center justify-center rounded-[3px] bg-white/5 backdrop-blur-sm border  box-border`}
               style={{
                 borderColor: neonColor ? neonColor : cellBorderColor,
                 boxShadow: neonColor ? `inset 0 0 15px ${neonColor}33` : 'none',
               }}
+              ref={(el) => (pathRefs.current[i] = el)}
             >
               {/* Visual Markers for Safe/Arrow */}
               {isSafe && !neonColor && (
@@ -438,14 +486,15 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
             <div
               className={`track${c}${n} relative flex items-center justify-center rounded-[4px] aspect-square`}
               key={`${c}${n}`}
+              
             >
               <div
-                ref={(el) => (pathRefs.current[i * 5 + j + 52] = el)}
                 className={`cell w-full h-full rounded-[3px] flex items-center justify-center bg-black/40 border transition-all`}
                 style={{
                   borderColor: trackColor,
                   boxShadow: `inset 0 0 8px ${trackColor}44` // Internal neon glow
                 }}
+                ref={(el) => (pathRefs.current[i * 5 + j + 52] = el)}
               >
                 {/* Small indicator dot in track */}
                 <div className="absolute w-1 h-1 rounded-full opacity-50" style={{backgroundColor: trackColor}}/>
@@ -545,74 +594,76 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
       ))}
 
       {/* --- FINISH (Center) --- */}
-      <div className="relative finish rounded-xl overflow-hidden m-1 bg-[#050508] border border-white/5 shadow-inner">
-         <div className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none">
-             {/* Center Logo Glow */}
-             <div className="w-8 h-8 rounded-full bg-white/5 blur-md"></div>
-         </div>
+{/* --- FINISH (Center) --- */}
+      <div className="relative finish rounded-xl overflow-hidden m-1 bg-[#050508] border border-white/10 shadow-[inset_0_0_20px_rgba(0,0,0,0.9)]">
+        
+        {/* 1. Deep Background Glow (Core Pulse) */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="w-24 h-24 rounded-full bg-white/5 blur-3xl animate-pulse" />
+        </div>
 
-        {/* The Colored Triangles */}
+        {/* 2. Tech-Grid Overlay */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none" 
+            style={{ backgroundImage: `radial-gradient(circle at center, white 1px, transparent 1px)`, backgroundSize: '12px 12px' }} />
+
+        {/* 3. The Colored Triangles with Conic Gradient Effect */}
         <div className="w-full h-full relative">
           {FinishTriangles.map(({ color, clip, align, ref, rotate }) => (
             <div
               key={ref}
-              className={`absolute inset-0 ${align} transition-opacity duration-500`}
+              className={`absolute inset-0 ${align} transition-all duration-700`}
               style={{ 
                   backgroundColor: color, 
                   clipPath: clip,
-                  opacity: 0.15 // Subtle background
+                  opacity: turn === (ref === 72 ? 'R' : ref === 73 ? 'B' : ref === 74 ? 'Y' : 'G') ? 0.4 : 0.15,
+                  filter: turn === (ref === 72 ? 'R' : ref === 73 ? 'B' : ref === 74 ? 'Y' : 'G') ? `drop-shadow(0 0 15px ${color})` : 'none'
               }}
             >
-               {/* Highlight the active triangle slightly more */}
-               <div className="w-full h-full bg-gradient-to-t from-transparent to-white/20"/>
+              {/* Neon Edge Highlight */}
+              <div className="w-full h-full bg-gradient-to-br from-white/30 via-transparent to-black/40" />
             </div>
           ))}
           
-           {/* Invisible ref holders for the center cells logic */}
-           {FinishTriangles.map(({ ref, align, rotate }) => (
-               <div key={`ref-${ref}`} className={`absolute inset-0 ${align} pointer-events-none`}>
+          {/* 4. Piece Ref Holders (Centered in triangles) */}
+          {FinishTriangles.map(({ ref, align, rotate }) => (
+              <div key={`ref-${ref}`} className={`absolute inset-0 ${align} pointer-events-none`}>
                   <div
-                    ref={el => (pathRefs.current[ref] = el)}
-                    className={`h-1/4 aspect-square ${rotate} flex items-center justify-center`}
+                  ref={el => (pathRefs.current[ref] = el)}
+                  className={`h-1/3 aspect-square flex items-center justify-center`}
                   >
-                     {/* Render winning pieces in center */}
+                      {/* Center Winning Piece display */}
                       <Cell
-                        R={(ref === 72) && WinCount['R']}
-                        B={(ref === 73) && WinCount['B']}
-                        Y={(ref === 74) && WinCount['Y']}
-                        G={(ref === 75) && WinCount['G']}
-                        COLORS={COLORS}
+                      R={(ref === 72) && WinCount['R']}
+                      B={(ref === 73) && WinCount['B']}
+                      Y={(ref === 74) && WinCount['Y']}
+                      G={(ref === 75) && WinCount['G']}
+                      COLORS={COLORS}
+                      // Applied a scale up for pieces in the center
+                      className="scale-125 drop-shadow-[0_0_8px_rgba(255,255,255,0.6)]"
                       />
                   </div>
-               </div>
-           ))}
+              </div>
+          ))}
         </div>
 
-        {/* Central SVG Overlay (The Logo) */}
-        {/* <div className="absolute inset-0 pointer-events-none">
-           I've kept your SVG paths but applied neon styling classes
-          <svg
-            viewBox="-32.5 -10 320 260"
-            preserveAspectRatio="xMidYMid meet"
-            className="w-full h-full block opacity-90"
-            style={{ filter: 'drop-shadow(0 0 2px rgba(255,255,255,0.3))' }}
-          >
-            The paths are exactly as you provided, just changing fill/style logic
-            <path fill={COLORS.G} style={{filter: `drop-shadow(0 0 5px ${COLORS.G})`}} d="M0 0 C1.62890625 0.828125 1.62890625 0.828125 3.87890625 2.328125... (rest of huge path) ...Z" transform="translate(136.12109375,34.671875)" />
-            <path fill={COLORS.Y} style={{filter: `drop-shadow(0 0 5px ${COLORS.Y})`}} d="M0 0 C2.625 0.375 2.625 0.375 5 1... (rest of path) ...Z" transform="translate(78,172)" />
-            <path fill={COLORS.B} style={{filter: `drop-shadow(0 0 5px ${COLORS.B})`}} d="M0 0 C1 1 1 1 1.125 3.5... (rest of path) ...Z" transform="translate(177,173)" />
-            Note: I truncated the paths for readability here, but in your file KEEP THE FULL PATHS
-            ... Imagine full paths here ...
-          </svg>
-        </div> */}
+        {/* 5. Central Hub Ornament (The "Logo" spot) */}
+        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+            {/* Outer Rotating Ring */}
+            <div className="w-12 h-12 rounded-full border border-white/10 border-t-white/40 animate-spin-slow" />
+            
+            {/* Inner Solid Core */}
+            <div className="absolute w-6 h-6 rounded-full bg-[#0a0a0f] border border-white/20 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                <Zap size={12} className="text-white/80 animate-pulse" />
+            </div>
+        </div>
       </div>
 
       {/* --- CHARIOT (The Moving Piece Animation Layer) --- */}
       <div
         ref={chariotRef}
-        className="piece absolute z-50 pointer-events-none flex items-center justify-center"
+        className="piece absolute z-[100] pointer-events-none text-white bg-amber-2000 flex items-center justify-center aspect-square"
         style={{
-           width: `auto`,
+           width: pathPoints[1]?.width || `auto`,
            display: (showChariot) ? "flex" : "none",
            filter: 'drop-shadow(0 0 15px white)' // Hologram effect
         }}

@@ -1,6 +1,6 @@
 import React, { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import '../../../styles/cell.css';
+import '../../styles/cell.css';
 
 // Offsets relative to the CENTER of the cell
 const OFFSETS = [
@@ -52,12 +52,8 @@ const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0, activeColor = '', COLORS = {}, 
           const zIndex = isActive && moveAllowed ? 50 : 10 + i;
 
           return (
-            <motion.div
+            <div
               key={piece.id}
-              layoutId={piece.id}
-              variants={tokenVariants}
-              initial="initial"
-              animate="enter"
               // Removed exit="exit" prop here
               className="absolute inset-0 m-auto aspect-square flex items-center justify-center rounded-full"
               style={{
@@ -97,7 +93,7 @@ const Cell = memo(({ R = 0, B = 0, Y = 0, G = 0, activeColor = '', COLORS = {}, 
                    <span className="absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping bg-white/30"></span>
                 )}
               </div>
-            </motion.div>
+            </div>
           );
         })}
       </AnimatePresence>

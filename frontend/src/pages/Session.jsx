@@ -8,7 +8,7 @@ const Session = () => {
     const gameObj={
       type:'offline',
       players:['R','B','G'],
-      names:['KKdsbsdscssxjjdjddddddvvnnnfdnf','Player2','MK dknj jfjdfjk jjbbdb','TK nscjsd bjjsbb sdsvdvh']
+      names:['Player1','Player2','Player3','Player4']
     };
     initiate(gameObj);
     // eslint-disable-next-line react-hooks/exhaustive-deps
