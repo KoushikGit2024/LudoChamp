@@ -6,8 +6,5 @@
     "build": "npm run build --prefix frontend"
   },
   "type": "commonjs",
-  "license": "ISC",
-  "devDependencies": {
-    "concurrently": "^9.2.1"
-  }
+  "license": "ISC"
 }

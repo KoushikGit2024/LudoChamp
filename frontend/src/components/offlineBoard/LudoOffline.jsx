@@ -89,8 +89,8 @@ const LudoOffline = memo(() => {
         ref={ref}
         className={`relative z-10 flex flex-col items-center justify-between transition-all duration-300
           ${screen
-            ? 'w-full max-w-[500px] aspect-[9/16] py-2 px-1' // Mobile Portrait
-            : 'h-full max-h-[90vh] aspect-[9/16] py-4'       // Desktop/Tablet
+            ? 'w-full max-w-[500px] aspect-[12/16] py-2 px-1' // Mobile Portrait
+            : 'h-full max-h-[80vh] aspect-[1/1] py-4 bgg-amber-400'       // Desktop/Tablet
           }
         `}
       >

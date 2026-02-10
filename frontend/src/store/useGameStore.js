@@ -1,5 +1,13 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
+import {
+  initiateOfflineGameLogic,
+  updateMoveCountLogic,
+  updatePieceStateLogic,
+  transferTurnLogic,
+  updateTimeOutLogic,
+  setMovingLogic,
+} from "./gameLogic";
 
 export const useGameStore = create(
   devtools((set, get) => ({
@@ -90,95 +98,11 @@ export const useGameStore = create(
        INITIALIZATION
     ========================== */
     initiateGame: (gameObj) => {
-      if (get().meta.status !== "WAITING"){ return;}
-      
-      function shortId(length = 6) {
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        const bytes = new Uint8Array(length);
-        crypto.getRandomValues(bytes);
-        return Array.from(bytes, b => chars[b % chars.length]).join("");
-      }
-      const genId = shortId(16);
-      if (gameObj.type === "offline") {
-        const player = {};
-        const colors = ["#FF3131", "#00D4FF", "#ffc400", "#00FF14"];
-        const onBoardSet = new Set(gameObj.players);
-
-        ['R','B','Y','G'].forEach((el,idx)=> {
-          let startIdx;
-          if(el==='R') startIdx=79;
-          if(el==='B') startIdx=83;
-          if(el==='Y') startIdx=87;
-          if(el==='G') startIdx=91;
-          if (onBoardSet.has(el)) {
-            player[el] = {
-              ...get().players[el],
-              name: gameObj.names[idx],
-              userId:'',
-              profile: "/defaultProfile.png",
-              pieceIdx:[-1,-1,-1,-1],
-              pieceRef: new Map([[startIdx,1],[startIdx-1,1],[startIdx-2,1],[startIdx-3,1]]),
-              homeCount: 4,
-              outCount: 0,
-              winCount: 0,
-              winPosn:0,
-              color: colors[idx],
-            };
-          } else {
-            player[el] = {
-              ...get().players[el],
-              color: colors[idx],
-            };
-          }
-        });
-        const startTime=structuredClone(get().meta.gameStartedAt);
-        startTime.push(Date.now());
-        set((state) => ({
-          // pieceState:[...map],
-          move:{
-            playerIdx:0,
-            turn:gameObj.players[0],
-            rollAllowed:true,
-            moveCount:0,
-            ticks:0,
-            moveAllowed:false,
-            moving:false,
-            timeOut:false,
-          },
-          meta: {
-            ...state.meta,
-            playerCount: gameObj.players.length,
-            onBoard:new Set(gameObj.players),
-            gameId:genId,
-            status: "RUNNING",
-            currentTurn: gameObj.players[0],
-            gameStartedAt: startTime,
-            type:"offline",
-            winLast:0,
-          },
-          players: {
-            ...state.players,
-            ...player,
-          },
-        }));
-      }
-
-      // 
+      set((state) => initiateOfflineGameLogic(state, gameObj));
     },
 
     updateMoveCount:(moveCount=0)=>{
-      if(moveCount!==0){
-        set((state)=>({
-          ...state,
-          move:{
-            ...state.move,
-            moveCount:moveCount,
-            moveAllowed:true,
-            rollAllowed:false,
-            ticks:state.move.ticks+1,
-          }
-        }))
-      }
+      set((state) => updateMoveCountLogic(state, moveCount));
     },
     // updatePieceState:(curColor,pieceIdx,pieceRef,newVal,updateBy=0)=>{
     //   const newArr=[...get().players[curColor].pieceIdx];
@@ -210,169 +134,21 @@ export const useGameStore = create(
       curColor,
       pieceIdx,
       pieceRef,
-      deltaRef = 0,   // +1 add, -1 remove
-      deltaIdx = 0    // +n / -n movement
+      deltaRef = 0,
+      deltaIdx = 0
     ) => {
-      set((state) => {
-        const player = state.players[curColor];
-
-        // Clone state safely
-        const pieceIdxArr = [...player.pieceIdx];
-        const pieceRefMap = new Map(player.pieceRef);
-
-        let homeCount = player.homeCount;
-        let outCount  = player.outCount;
-        let winCount  = player.winCount;
-        let winPosn   = player.winPosn;
-
-
-        
-        /* ---------- UPDATE pieceIdx ---------- */
-        // if(deltaRef===-1){
-
-        // }
-        if (pieceIdx >= 0 && deltaIdx === 1) {
-          const prevIdx = pieceIdxArr[pieceIdx];
-          const nextIdx = prevIdx + deltaIdx;
-
-          // Home → board
-          if (prevIdx === -1 && nextIdx === 0) {
-            homeCount -= 1;
-            outCount += 1;
-          }
-
-          // Board → win
-          if (nextIdx === 56) {
-            outCount -= 1;
-            winCount += 1;
-
-            if (winCount === 4) {
-              state.meta.winLast += 1
-              winPosn = state.meta.winLast;
-              console.log('WinPosition updated: ',winPosn)
-            }
-          }
-
-          pieceIdxArr[pieceIdx] = nextIdx;
-        } else if(pieceIdx >= 0 && deltaIdx === -2){
-
-          outCount -= 1;
-          homeCount += 1;
-
-
-          pieceIdxArr[pieceIdx] = -1;
-          // console.log(pieceIdxArr)
-        }
-
-        /* ---------- UPDATE pieceRef ---------- */
-        if (pieceRef !== null && deltaRef !==0) {
-          const prevCount = pieceRefMap.get(pieceRef) ?? 0;
-          const nextCount = prevCount + deltaRef;
-
-          if (nextCount <= 0) {
-            pieceRefMap.delete(pieceRef);
-          } else {
-            pieceRefMap.set(pieceRef, nextCount);
-          }
-        } 
-        // else if (pieceRef !== null && deltaRef ===-1){
-        //   const baseStart =
-        //   turnColor === 'R' ? 79 :
-        //   turnColor === 'B' ? 83 :
-        //   turnColor === 'Y' ? 87 : 91;
-        // }
-
-        return {
-          ...state,
-          meta:{
-            ...state.meta,
-            winLast:winPosn,
-          },
-          players: {
-            ...state.players,
-            [curColor]: {
-              ...player,
-              homeCount,
-              outCount,
-              winCount,
-              winPosn,
-              pieceIdx: pieceIdxArr,
-              pieceRef: pieceRefMap,
-            },
-          },
-        };
-      });
+      set((state) =>
+        updatePieceStateLogic(state, curColor, pieceIdx, pieceRef, deltaRef, deltaIdx)
+      );
     },
 
 
     transferTurn:(turnCase =-1)=>{
-      if(turnCase===-1) return;
-      let Obj={move:get().move,meta:get().meta};
-      let playerIdx;
-      let onBoardArray = Array.from(Obj.meta.onBoard);
-      let turn
-      if(turnCase===0){
-        playerIdx=Obj.move.playerIdx;
-        turn=onBoardArray[playerIdx];
-        Obj.move={
-          playerIdx,
-          turn,
-          rollAllowed:true,
-          moveCount:0,
-          ticks:Obj.move.ticks+1,
-          moveAllowed:false,
-          moving:false,
-          timeOut:false,
-        }
-      }
-      else if(turnCase===1){
-        playerIdx=(Obj.move.playerIdx+1)%Obj.meta.playerCount;
-        turn=onBoardArray[playerIdx];
-        Obj.move={
-          playerIdx,
-          turn,
-          rollAllowed:true,
-          moveCount:0,
-          ticks:0,
-          moveAllowed:false,
-          moving:false,
-          timeOut:false,
-        }
-      }
-      else if(turnCase===2){
-        playerIdx=Obj.move.playerIdx;
-        turn=onBoardArray[playerIdx];
-        Obj.move={
-          playerIdx,
-          turn,
-          rollAllowed:true,
-          moveCount:0,
-          ticks:0,
-          moveAllowed:false,
-          moving:false,
-          timeOut:false,
-        }
-      }
-      // Convert Set to Array for index access
-      
-      set((state)=>({
-        ...state,
-        move:{
-          ...Obj.move,
-        }
-      }));
+      set((state) => transferTurnLogic(state, turnCase));
     },
 
     updateTimeOut:(newState)=>{
-      set(
-        {
-          ...get(),
-          move:{
-            ...get().move,
-            timeOut:newState,
-          }
-        }
-      )
+      set((state) => updateTimeOutLogic(state, newState));
     },
 
     // updateHome: (idx) => {
@@ -388,13 +164,7 @@ export const useGameStore = create(
     //   });
     // },
     setMoving:(val)=>{
-      set({
-        ...get(),
-        move:{ 
-          ...get().move,
-          moving:val
-        }
-      })
+      set((state) => setMovingLogic(state, val));
     },
   }))
 );

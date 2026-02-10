@@ -1,6 +1,6 @@
 
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
-import { Shield, ChevronRight, Zap } from "lucide-react"; // Import Icons
+import { Shield, ChevronRight, Zap, Trophy, Ban } from "lucide-react"; // Import Icons
 import "../../../styles/gameBoard.css"; // Preserving your Grid Layout CSS
 import SlideEffect from '../../../assets/SlideEffect.mp3';
 import FinishSound from '../../../assets/FinishSound.mp3';
@@ -561,7 +561,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
                   >
                     {/* Placeholder Icon if empty */}
                     {!(onBoard.has(keyId)) && 
-                      <Zap size={10} className="opacity-50 absolute" />
+                      <Ban size={10} className="opacity-50 absolute" />
                     }
 
                     {/* Active Piece */}
@@ -583,7 +583,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
                // WIN STATE DISPLAY
               <div className="relative w-full h-full flex flex-col items-center justify-center">
                  <div className="absolute inset-0 animate-pulse opacity-20 bg-gradient-to-t from-transparent to-white/10"/>
-                 <Shield size={48} color={color} className="mb-2 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"/>
+                 <Trophy size={48} color={color} className="mb-2 drop-shadow-[0_0_10px_rgba(255,255,255,0.5)]"/>
                  <span className="text-2xl font-black" style={{color: color, textShadow: `0 0 10px ${color}`}}>
                     {winState[keyId]}
                  </span>
@@ -626,10 +626,10 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
           
           {/* 4. Piece Ref Holders (Centered in triangles) */}
           {FinishTriangles.map(({ ref, align, rotate }) => (
-              <div key={`ref-${ref}`} className={`absolute inset-0 ${align} pointer-events-none`}>
+              <div key={`ref-${ref}`} className={`absolute inset-0 ${align} pointer-events-none p-2`}>
                   <div
                   ref={el => (pathRefs.current[ref] = el)}
-                  className={`h-1/3 aspect-square flex items-center justify-center`}
+                  className={`h-1/3 aspect-square flex items-center justify-center ${rotate}`}
                   >
                       {/* Center Winning Piece display */}
                       <Cell
@@ -652,8 +652,8 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
             <div className="w-12 h-12 rounded-full border border-white/10 border-t-white/40 animate-spin-slow" />
             
             {/* Inner Solid Core */}
-            <div className="absolute w-6 h-6 rounded-full bg-[#0a0a0f] border border-white/20 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)]">
-                <Zap size={12} className="text-white/80 animate-pulse" />
+            <div className="absolute w-1/3 h-1/3 rounded-full bg-[#0a0a0f] border border-white/20 flex items-center justify-center shadow-[0_0_15px_rgba(255,255,255,0.1)]">
+                <Zap className="text-white/80 animate-pulse w-2/3" />
             </div>
         </div>
       </div>

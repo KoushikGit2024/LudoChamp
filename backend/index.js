@@ -18,12 +18,32 @@ const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3000;
 
-const io = new Server(server, {
-  cors: {
-    origin: "*", // change in production
-    methods: ["GET", "POST"]
-  }
-});
+// ---- Security‑aware CORS configuration ----
+// In development: allow all origins for convenience.
+// In production: require explicit origins via CORS_ORIGIN env (comma‑separated list).
+const rawOrigins = process.env.CORS_ORIGIN || "";
+const allowedOrigins = rawOrigins
+  .split(",")
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+const corsOptions = {
+  origin:
+    process.env.NODE_ENV === "production"
+      ? (origin, cb) => {
+          // Allow same-origin (no Origin header, e.g. curl) and explicitly listed origins
+          if (!origin) return cb(null, true);
+          if (allowedOrigins.length === 0) {
+            // Fail closed in production if no origins are configured
+            return cb(new Error("CORS is not configured"), false);
+          }
+          if (allowedOrigins.includes(origin)) return cb(null, true);
+          return cb(new Error("Origin not allowed by CORS"), false);
+        }
+      : true,
+  credentials: true,
+  methods: ["GET", "POST", "OPTIONS"],
+};
 
 app.use(cors());
 app.use(express.json());
@@ -48,6 +68,10 @@ if (process.env.NODE_ENV === "production") {
     );
   });
 }
+
+const io = new Server(server, {
+  cors: corsOptions,
+});
 
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);

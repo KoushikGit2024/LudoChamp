@@ -81,6 +81,7 @@ const Dice = ({ pieceIdx, ticks, gameFinished, homeCount, rollAllowed, turn, win
       rollDice();
       updateTimeOut(false);
     }
+    console.log('hi')
   }, [timeOut]);
 
   // --- VISUAL & THEME CONSTANTS ---
@@ -111,10 +112,10 @@ const Dice = ({ pieceIdx, ticks, gameFinished, homeCount, rollAllowed, turn, win
       />
 
       {/* 2. Status Icons (Floating above) */}
-      <div className="absolute -top-1 right-0 z-20">
+      {/* <div className="absolute -top-1 right-0 z-20">
          {!rollAllowed && <Lock size={12} className="text-gray-500 opacity-50" />}
          {rollAllowed && !rolling && <Sparkles size={12} className="animate-ping" style={{color: activeColor}} />}
-      </div>
+      </div> */}
 
       {/* 3. The Dice Cube Container */}
       <div
