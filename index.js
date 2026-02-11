@@ -16,6 +16,7 @@ const server = http.createServer(app);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+
 const PORT = process.env.PORT || 3000;
 
 // ---- Security‑aware CORS configuration ----
@@ -59,12 +60,12 @@ app.get("/test", (req, res) => {
 
 // ✅ Serve frontend only in production
 if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  app.use(express.static(path.join(__dirname, "frontend/dist")));
 
   // SPA fallback
   app.get(/.*/, (req, res) => {
     res.sendFile(
-      path.join(__dirname, "../frontend/dist/index.html")
+      path.join(__dirname, "frontend/dist/index.html")
     );
   });
 }
