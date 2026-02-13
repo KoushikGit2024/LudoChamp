@@ -23,7 +23,7 @@ function App() {
           <Route path='/' element={<Home/>}/>
           <Route path='/profile' element={<Profile/>}/>
           <Route path='/dashboard' element={<Dashboard/>}/>
-          <Route path='/session' element={<Session/>}/>
+          <Route path='/session/:boardType' element={<Session/>}/>
           <Route path='/options/:subOption' element={<Options/>}/>
         </Routes>  
         
