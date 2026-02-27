@@ -6,6 +6,9 @@ import path from "path";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import { fileURLToPath } from "url";
+import connect from "./connection.js";
+import authRoute from "./src/routes/authRoute.js";
+import User from "./src/models/userModel.js";
 
 dotenv.config();
 
@@ -27,7 +30,7 @@ const allowedOrigins = rawOrigins
   .split(",")
   .map((o) => o.trim())
   .filter(Boolean);
-
+console.log(rawOrigins);
 const corsOptions = {
   origin:
     process.env.NODE_ENV === "production"
@@ -50,28 +53,40 @@ app.use(cors());
 app.use(express.json());
 app.use(cookieParser());
 
-app.get("/api", (req, res) => {
-  res.send("Hi");
+//===== MongoDB connection =====
+  connect();
+
+app.get("/api",async (req, res) => {
+  const user =await User.create({
+    fullname:"Koushik kar",
+    email:"koushikkar712@gmail.com",
+    username:"chidanand013",
+    password:"kou98753",
+    mobile:"kkk"
+  })
+  res.json(user);
 });
+
+app.get('/api/auth',authRoute);
 
 app.get("/test", (req, res) => {
   res.send({ msg: "Server running well!!!" });
 });
 
 // ✅ Serve frontend only in production
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "frontend/dist")));
+// if (process.env.NODE_ENV === "production") {
+//   app.use(express.static(path.join(__dirname, "frontend/dist")));
 
-  // SPA fallback
-  app.get(/.*/, (req, res) => {
-    res.sendFile(
-      path.join(__dirname, "frontend/dist/index.html")
-    );
-  });
-}
+//   // SPA fallback
+//   app.get(/.*/, (req, res) => {
+//     res.sendFile(
+//       path.join(__dirname, "frontend/dist/index.html")
+//     );
+//   });
+// }
 
 const io = new Server(server, {
-  cors: corsOptions,
+  cors: corsOptions, 
 });
 
 io.on("connection", (socket) => {
