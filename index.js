@@ -16,8 +16,8 @@ const app = express();
 const server = http.createServer(app);
 
 // ES module safe __dirname
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 
 const PORT = process.env.PORT || 3000;
