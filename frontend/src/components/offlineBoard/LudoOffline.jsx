@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from 'react';
 import { Volume2, VolumeX, Zap } from 'lucide-react'; 
-import GameBoard1 from '../../../dumpyard/GameBoard.jsx';
+
 import GameBoard from './gameboard/GameBoard.jsx';
 import Dice from './gameboard/Dice';
 import PlayerBoard from './gameboard/PlayerBoard';
