@@ -112,13 +112,14 @@
 import React, { memo, useEffect, useRef } from "react";
 import gsap from "gsap";
 // import '../../../styles/playerBoard.css' // Replaced with inline Tailwind/Neo styles
-import { useGameStore } from "../../../store/useGameStore";
+import useGameStore from '@/store/useGameStore'
+import gameActions from '@/store/gameLogic'
 import { User, Cpu } from "lucide-react"; // Icons for fallback
 
 const PlayerBoard = memo(({ playing, left, turn = 0, idx, timeOut, moveAllowed, rollAllowed, online = false }) => {
   const timerRef = useRef(null);
   const animRef = useRef(null);
-  const updateTimeOut = useGameStore((state) => state.updateTimeOut);
+  const updateTimeOut = gameActions.updateTimeOut;
 
   // --- Logic Layer (Unchanged) ---
   const animeFunc = () => {

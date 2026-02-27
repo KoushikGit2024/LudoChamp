@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard'
 import Session from './pages/Session'
 import ElectricBorder from './components/customComponents/ElectricBorder'
 import Options from './pages/Options'
+import { ToastContainer } from 'react-toastify'
+import "react-toastify/dist/ReactToastify.css";
 // import LudoOffline from './components/LudoOffline'
 // import LudoGame from './assets/New'
 //---------------------------------------

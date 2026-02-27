@@ -7,7 +7,8 @@ import FinishSound from '../../../assets/FinishSound.mp3';
 import gsap from "gsap";
 import debounce from '../../../derivedFuncs/debounce.js';
 import Cell from "../../sharedBoardComponents/Cell.jsx";
-import { useGameStore } from "../../../store/useGameStore";
+import useGameStore from '@/store/useGameStore'
+import gameActions from '@/store/gameLogic'
 import { useShallow } from "zustand/shallow";
 import piecePath from "../../../contexts/PiecePath.js";
 
@@ -44,12 +45,11 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
   const audioRef = useRef(null);
   const audioRefFinish = useRef(null);
   
-  const { turn, moveAllowed, onBoard, updatePieceState, clrR, clrB, clrY, clrG, homeR, homeB, homeY, homeG, winR, winB, winY, winG } = useGameStore(
+  const { turn, moveAllowed, onBoard, clrR, clrB, clrY, clrG, homeR, homeB, homeY, homeG, winR, winB, winY, winG } = useGameStore(
     useShallow(state => ({
       turn: state.move.turn,
       moveAllowed: state.move.moveAllowed,
       onBoard: state.meta.onBoard,
-      updatePieceState: state.updatePieceState,
       clrR: state.players.R.color,
       clrB: state.players.B.color,
       clrY: state.players.Y.color,
@@ -85,8 +85,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
   const pieceState = {
     R: pieceR, B: pieceB, Y: pieceY, G: pieceG
   }
-  const transferTurn = useGameStore((state) => state.transferTurn)
-
+  const transferTurn = gameActions.transferTurn;
   const [pathPoints, setPathPoints] = useState([])
   const [showChariot, setShowChariotDisplay] = useState(false)
 
@@ -244,7 +243,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
   };
 
 
-  const setMoving = useGameStore(state => state.setMoving);
+  const setMoving = gameActions.setMoving;
   const reRoll = useRef(1);
   const inputLockedRef = useRef(false);
 
@@ -261,31 +260,31 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
         turnColor === 'B' ? 83 :
         turnColor === 'Y' ? 87 : 91;
       to = baseStart - idx;
-      updatePieceState(turnColor, idx, from, -1, 0);
+      gameActions.updatePieceState(turnColor, idx, from, -1, 0);
       setShowChariotDisplay(true);
       setMoving(true);
       await oneStepAnimation(from, to);
       setMoving(false);
       setShowChariotDisplay(false);
-      updatePieceState(turnColor, idx, to, +1, -2);
+      gameActions.updatePieceState(turnColor, idx, to, +1, -2);
       reRoll.current = turnColor === turn && moveCount !== 6 ? 1 : 2;
       return;
     }
 
     // Normal Move
     let indexVal = pieceIdxArr[turnColor][idx];
-    updatePieceState(turnColor, idx, refNum, -1, 0);
+    gameActions.updatePieceState(turnColor, idx, refNum, -1, 0);
     setShowChariotDisplay(true);
     setMoving(true);
     for (let step = 1; step <= stepCount; step++) {
       from = step === 1 ? refNum : piecePath[turnColor][indexVal + step - 1];
       to = piecePath[turnColor][indexVal + step];
-      updatePieceState(turnColor, idx, null, 0, 1);
+      gameActions.updatePieceState(turnColor, idx, null, 0, 1);
       await oneStepAnimation(from, to);
     }
     setMoving(false);
     setShowChariotDisplay(false);
-    updatePieceState(turnColor, idx, to, +1, 0);
+    gameActions.updatePieceState(turnColor, idx, to, +1, 0);
     afterPieceMove(turnColor, idx, to, refNum);
   };
 
@@ -418,7 +417,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
 
   return (
     <div
-      className="boardContainer relative grid gap-[2px] rounded-xl max-w-full max-h-full p-0 overflow-hidden shadow-2xl aspect-square"
+      className="boardContainer relative grid gap-[2px] rounded-xl max-w-full max-h-full p-0  shadow-2xl aspect-square"
       style={{ background: '#020205', boxShadow: '0 0 50px rgba(0,0,0,0.8)' }}
       ref={boardRef}
     >
@@ -515,7 +514,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
       )}
 
       {/* --- HOMES (The 4 Corners) --- */}
-      {Homes.map(({ keyId, color, base, bg }) => (
+      {Homes.map(({ keyId, color, base }) => (
         <div
           className={`home${keyId} relative p-2 flex flex-col items-center justify-center rounded-[10%] bg-black/20 `}
           key={keyId}
@@ -608,7 +607,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState, sou
 
         {/* 3. The Colored Triangles with Conic Gradient Effect */}
         <div className="w-full h-full relative">
-          {FinishTriangles.map(({ color, clip, align, ref, rotate }) => (
+          {FinishTriangles.map(({ color, clip, align, ref }) => (
             <div
               key={ref}
               className={`absolute inset-0 ${align} transition-all duration-700`}

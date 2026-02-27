@@ -23,7 +23,7 @@ const SUB_OPTIONS = [
 
 const Dashboard = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-
+  const [profileImg,setProfile]=useState('https://ik.imagekit.io/z41edgv2n/myImg.heic?updatedAt=1772117843812' || '/defaultProfile.png');
   return (
     <div className='wholepage bg-[#020205] h-[100dvh] w-full relative overflow-hidden'>
       
@@ -31,7 +31,7 @@ const Dashboard = () => {
       <div className="absolute inset-0 z-0 pointer-events-none">
         <Particles
           particleColors={["#ffffff", "#425568"]}
-          particleCount={200}
+          particleCount={500}
           speed={0.1}
           moveParticlesOnHover={true}
           alphaParticles={true}
@@ -42,7 +42,7 @@ const Dashboard = () => {
       {/* This sits ON TOP of the cards (z-20) but below the text. 
           It fades from Solid Black -> Transparent */}
       <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-[#020205] via-[#020205]/90 to-transparent z-20 pointer-events-none" />
-
+        
       {/* 3. Header / Title (Highest Layer z-30) */}
       <div className="absolute top-0 w-full pt-10 z-30 flex justify-center pointer-events-none">
         <GradientText
@@ -63,7 +63,21 @@ const Dashboard = () => {
       >
         <button className="xl:w-20 lg:w-16 w-14 aspect-square bg-white/10 backdrop-blur-md rounded-l-2xl border-2 border-r-0 border-white/20 flex items-center justify-center transition-all hover:bg-white/20">
           <div className='w-[80%] aspect-square rounded-full border-2 border-white/30 overflow-hidden p-1 bg-gradient-to-tr from-gray-800 to-black'>
-              <img src={0||"/defaultProfile.png"} alt="profile" className='h-full w-full rounded-full object-cover'/>
+            {/* <Image
+              urlEndpoint="https://ik.imagekit.io/z41edgv2n/myImg.heic?updatedAt=1772117843812"
+              src="/defaultProfile.png"
+              className='h-full w-full rounded-full object-cover'
+            /> */}
+              <img 
+                src={profileImg} 
+                alt="profile" 
+                className='h-full w-full rounded-full object-cover'
+                onError={(err)=>{
+                  console.log(err)
+                  if(profileImg!=='/defaultProfile.png')
+                    setProfile('/defaultProfile.png');
+                }}
+              />
           </div>
         </button>
 

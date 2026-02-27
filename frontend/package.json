@@ -12,9 +12,9 @@
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
+    "@imagekit/react": "^5.0.2",
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
-    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.26",
     "gsap": "^3.14.2",
@@ -26,8 +26,9 @@
     "react-dom": "^19.1.1",
     "react-image-crop": "^11.0.10",
     "react-router-dom": "^7.9.1",
+    "react-toastify": "^11.0.5",
     "socket.io-client": "^4.8.1",
-    "tailwind-merge": "^3.4.0",
+    "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.1.13",
     "three": "^0.167.1",
     "zustand": "^5.0.9"

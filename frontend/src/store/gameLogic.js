@@ -2,14 +2,17 @@
 // These functions are state updaters that do not depend on React,
 // so they can be imported and tested directly without causing rerenders.
 
-export function shortId(length = 6) {
+import { Bounce, toast } from "react-toastify";
+import useGameStore from "./useGameStore";
+
+function shortId(length = 6) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const bytes = new Uint8Array(length);
   crypto.getRandomValues(bytes);
   return Array.from(bytes, (b) => chars[b % chars.length]).join("");
 }
 
-export function initiateOfflineGameLogic(state, gameObj) {
+function initiateOfflineGameLogic(state, gameObj) {
   if (state.meta.status !== "WAITING") return state;
 
   const genId = shortId(16);
@@ -89,7 +92,7 @@ export function initiateOfflineGameLogic(state, gameObj) {
   };
 }
 
-export function updateMoveCountLogic(state, moveCount = 0) {
+function updateMoveCountLogic(state, moveCount = 0) {
   if (moveCount === 0) return state;
   return {
     ...state,
@@ -103,7 +106,7 @@ export function updateMoveCountLogic(state, moveCount = 0) {
   };
 }
 
-export function updatePieceStateLogic(
+function updatePieceStateLogic(
   state,
   curColor,
   pieceIdx,
@@ -182,7 +185,17 @@ export function updatePieceStateLogic(
   };
 }
 
-export function transferTurnLogic(state, turnCase = -1) {
+function transferTurnLogic(state, turnCase = -1) {
+  // toast('Toast is on!', {
+  //             position: "bottom-left",
+  //             autoClose: 3000,
+  //             hideProgressBar: true,
+  //             closeOnClick: true,
+  //             pauseOnHover: true,
+  //             draggable: false,
+  //             theme: "dark",
+  //             transition: Bounce,
+  //             })
   if (turnCase === -1) return state;
 
   const Obj = { move: state.move, meta: state.meta };
@@ -239,7 +252,7 @@ export function transferTurnLogic(state, turnCase = -1) {
   };
 }
 
-export function updateTimeOutLogic(state, newState) {
+function updateTimeOutLogic(state, newState) {
   return {
     ...state,
     move: {
@@ -249,7 +262,7 @@ export function updateTimeOutLogic(state, newState) {
   };
 }
 
-export function setMovingLogic(state, val) {
+function setMovingLogic(state, val) {
   return {
     ...state,
     move: {
@@ -259,3 +272,55 @@ export function setMovingLogic(state, val) {
   };
 }
 
+const initialState = {
+  meta: {
+    gameId: "",
+    status: "WAITING",
+    type: "offline",
+    gameStartedAt: [],
+    winLast: 0,
+    playerCount: 4,
+    onBoard: new Set(['R', 'B', 'Y', 'G']),
+  },
+  move: {
+    playerIdx: 0,
+    turn: 'R',
+    rollAllowed: true,
+    moveCount: 0,
+    ticks: 0,
+    moveAllowed: false,
+    moving: false,
+    timeOut: false,
+  },
+  players: {
+    R: { socketId: '', name: "", userId: "", profile: "", online: false, pieceIdx: [], pieceRef: new Map(), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#FF3131" },
+    B: { socketId: '', name: "", userId: "", profile: "", online: false, pieceIdx: [], pieceRef: new Map(), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#00D4FF" },
+    Y: { socketId: '', name: "", userId: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map(), homeCount: 2, outCount: 0, winCount: 0, winPosn: 0, color: "#ffc400" },
+    G: { socketId: '', name: "", userId: "", profile: "", online: false, pieceIdx: [], pieceRef: new Map(), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#39FF14" },
+  },
+};
+
+const gameActions = {
+  initiateGame: (gameObj) => 
+    useGameStore.setState((state) => initiateOfflineGameLogic(state, gameObj), false, "initiateGame"),
+
+  updateMoveCount: (moveCount = 0) => 
+    useGameStore.setState((state) => updateMoveCountLogic(state, moveCount), false, "updateMoveCount"),
+
+  updatePieceState: (curColor, pieceIdx, pieceRef, deltaRef = 0, deltaIdx = 0) => 
+    useGameStore.setState((state) => updatePieceStateLogic(state, curColor, pieceIdx, pieceRef, deltaRef, deltaIdx), false, "updatePieceState"),
+
+  transferTurn: (turnCase = -1) => 
+    useGameStore.setState((state) => transferTurnLogic(state, turnCase), false, "transferTurn"),
+
+  updateTimeOut: (newState) => 
+    useGameStore.setState((state) => updateTimeOutLogic(state, newState), false, "updateTimeOut"),
+
+  setMoving: (val) => 
+    useGameStore.setState((state) => setMovingLogic(state, val), false, "setMoving"),
+    
+  resetStore: () => useGameStore.setState(initialState, false, "resetStore")
+};
+
+
+export default gameActions;

@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react'
 // import  MoveProvider  from '../contexts/MoveProvider'
 import LudoOffline from '../components/offlineBoard/LudoOffline'
-import { useGameStore } from '../store/useGameStore'
+// import useGameStore from '@/store/useGameStore'
+import gameActions from '@/store/gameLogic'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ToastContainer } from 'react-toastify'
 const Session = () => {
-  const initiate = useGameStore((state)=>(state.initiateGame));
+  const initiate = gameActions.initiateGame;
   const { boardType }=useParams();
   const navigate=useNavigate();
   useEffect(()=>{
@@ -27,6 +29,7 @@ const Session = () => {
       {/* <MoveProvider> */}
         <LudoOffline/>
       {/* </MoveProvider> */}
+      <ToastContainer/>
     </div>
   )
 }

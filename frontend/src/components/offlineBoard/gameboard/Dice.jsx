@@ -2,9 +2,11 @@
 import { useEffect, useRef, useState, useMemo } from "react";
 import DiceFace from "../../sharedBoardComponents/DiceFace";
 import '../../../styles/dice.css'; // Preserving your CSS import
-import { useGameStore } from "../../../store/useGameStore";
+import useGameStore from '@/store/useGameStore'
+import gameActions from '@/store/gameLogic'
 import DiceRoll from "../../../assets/DiceRoll.mp3";
 import { Sparkles, Lock } from "lucide-react"; // Icons for status
+import { Bounce, toast } from "react-toastify";
 
 const Dice = ({ pieceIdx, ticks, gameFinished, homeCount, rollAllowed, turn, winState, sound }) => {
   const [rolling, setRolling] = useState(false);
@@ -12,10 +14,13 @@ const Dice = ({ pieceIdx, ticks, gameFinished, homeCount, rollAllowed, turn, win
   
   // --- STORE HOOKS (Unchanged) ---
   const pathCount = useGameStore((state) => state.players[turn]?.pathCount);
-  const updateMoveCount = useGameStore((state) => state.updateMoveCount);
-  const transferTurn = useGameStore((state) => state.transferTurn);
   const timeOut = useGameStore((state) => state.move.timeOut);
-  const updateTimeOut = useGameStore((state) => state.updateTimeOut);
+
+
+  const updateMoveCount = gameActions.updateMoveCount;
+  const transferTurn = gameActions.transferTurn;
+  
+  const updateTimeOut = gameActions.updateTimeOut
   const audioRef = useRef(null);
 
   // --- LOGIC (Unchanged) ---
@@ -67,6 +72,7 @@ const Dice = ({ pieceIdx, ticks, gameFinished, homeCount, rollAllowed, turn, win
     );
 
     if (!canMove) {
+      
       transferTurn(1);
     }
   };
@@ -112,10 +118,10 @@ const Dice = ({ pieceIdx, ticks, gameFinished, homeCount, rollAllowed, turn, win
       />
 
       {/* 2. Status Icons (Floating above) */}
-      {/* <div className="absolute -top-1 right-0 z-20">
+      <div className="absolute -top-1 right-0 z-20">
          {!rollAllowed && <Lock size={12} className="text-gray-500 opacity-50" />}
          {rollAllowed && !rolling && <Sparkles size={12} className="animate-ping" style={{color: activeColor}} />}
-      </div> */}
+      </div>
 
       {/* 3. The Dice Cube Container */}
       <div

@@ -4,9 +4,12 @@ import GameBoard1 from '../../../dumpyard/GameBoard.jsx';
 import GameBoard from './gameboard/GameBoard.jsx';
 import Dice from './gameboard/Dice';
 import PlayerBoard from './gameboard/PlayerBoard';
-import { useGameStore } from '../../store/useGameStore';
+import useGameStore from '@/store/useGameStore'
+// import gameActions from '@/store/gameLogic'
 import { useShallow } from 'zustand/shallow';
 import ErrorBoundary from '../../ErrorBoundary';
+import { toast, ToastContainer,Bounce } from 'react-toastify'
+import "react-toastify/dist/ReactToastify.css";
 
 const LudoOffline = memo(() => {
   const [screen, setScreen] = useState(window.innerWidth <= window.innerHeight);
@@ -60,7 +63,7 @@ const LudoOffline = memo(() => {
   }, []);
 
   return (
-    <div className="w-full h-full min-h-screen bg-[#020205] flex items-center justify-center overflow-hidden relative">
+    <div className="w-full h-full min-h-screen bg-[#050502] flex items-center justify-center relative">
       
       {/* Background Ambience */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#020205] to-[#020205] z-0 pointer-events-none" />
@@ -76,7 +79,8 @@ const LudoOffline = memo(() => {
           ${sound 
             ? 'bg-[#00ff3c]/10 border-[#00ff3c]/50 text-[#00ff3c] shadow-[0_0_15px_rgba(0,255,60,0.3)]' 
             : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}
-        `}>
+        `}
+        >
           {sound ? <Volume2 size={14} /> : <VolumeX size={14} />}
           <span className="text-[10px] sm:text-xs font-bold tracking-widest uppercase hidden sm:block">
             {sound ? 'ON' : 'OFF'}
@@ -90,15 +94,14 @@ const LudoOffline = memo(() => {
         className={`relative z-10 flex flex-col items-center justify-between transition-all duration-300
           ${screen
             ? 'w-full max-w-[500px] aspect-[12/16] py-2 px-1' // Mobile Portrait
-            : 'h-full max-h-[80vh] aspect-[1/1] py-4 bgg-amber-400'       // Desktop/Tablet
+            : 'h-full max-h-[95vh] aspect-[1/1] py-4 bgg-amber-400'       // Desktop/Tablet
           }
         `}
       >
         
         {/* === TOP ROW (Player B | Dice | Player Y) === */}
         {/* Changed h-[15%] to h-[10%] sm:h-[12%] to reduce size */}
-        <div className='flex flex-row items-center justify-between w-full h-[10%] sm:h-[12%] px-1 gap-2 sm:gap-4'>
-          
+        <div className='flex flex-row items-center justify-between w-full h-[10%] sm:h-[10%] px-1 gap-2 sm:gap-4'>  
           <div className="h-full flex-1 max-w-[35%] min-w-0">
              <PlayerBoard
                playing={playersSet?.has('B')}
@@ -198,7 +201,7 @@ const LudoOffline = memo(() => {
 
         {/* === BOTTOM ROW (Player R | Deco | Player G) === */}
         {/* Changed h-[15%] to h-[10%] sm:h-[12%] */}
-        <div className='flex flex-row items-center justify-between w-full h-[10%] sm:h-[12%] px-1 gap-2 sm:gap-4'>
+        <div className='flex flex-row items-center justify-between w-full h-[10%] sm:h-[10%] px-1 gap-2 sm:gap-4'>
           <div className="h-full flex-1 max-w-[35%] min-w-0">
             <PlayerBoard
               playing={playersSet?.has('R')}
@@ -233,6 +236,19 @@ const LudoOffline = memo(() => {
         </div>
 
       </div>
+      {/* <ToastContainer
+      position="bottom-left"
+      autoClose={5000}
+      hideProgressBar={false}
+      newestOnTop={false}
+      closeOnClick={false}
+      rtl={false}
+      pauseOnFocusLoss
+      draggable
+      pauseOnHover
+      theme="dark"
+      transition={"Bounce"}
+      /> */}
     </div>
   )
 });
