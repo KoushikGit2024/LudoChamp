@@ -1,13 +1,5 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-// import {
-//   initiateOfflineGameLogic,
-//   updateMoveCountLogic,
-//   updatePieceStateLogic,
-//   transferTurnLogic,
-//   updateTimeOutLogic,
-//   setMovingLogic,
-// } from "./gameLogic";
 
 // Initial State only
 const initialState = {
@@ -15,6 +7,7 @@ const initialState = {
     gameId: "",
     status: "WAITING",
     type: "offline",
+    version: 0,
     gameStartedAt: [],
     winLast: 0,
     playerCount: 4,

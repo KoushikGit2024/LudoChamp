@@ -1,35 +1,31 @@
 {
-  "name": "ludochamp",
+  "name": "ludochampserver",
   "version": "1.0.0",
   "description": "Ludo Champ",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node index.js",
-    "devback": "nodemon index.js",
-    "build": "npm run build --prefix frontend",
-    "dev": "npm run dev --prefix frontend"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/KoushikGit2024/LudoChamp.git"
+    "dev": "nodemon index.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
-  "bugs": {
-    "url": "https://github.com/KoushikGit2024/LudoChamp/issues"
-  },
-  "homepage": "https://github.com/KoushikGit2024/LudoChamp#readme",
   "dependencies": {
     "@imagekit/nodejs": "^7.3.0",
+    "bcrypt": "^6.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "imagekit": "^6.0.0",
+    "ioredis": "^5.10.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.2",
+    "multer": "^2.0.2",
+    "nodemailer": "^8.0.1",
+    "redis": "^5.11.0",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {

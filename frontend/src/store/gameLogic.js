@@ -70,6 +70,7 @@ function initiateOfflineGameLogic(state, gameObj) {
       rollAllowed: true,
       moveCount: 0,
       ticks: 0,
+      version: 0,
       moveAllowed: false,
       moving: false,
       timeOut: false,
