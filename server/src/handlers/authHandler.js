@@ -43,8 +43,9 @@ const registerHandler = async (req, res, next) => {
                 folder: "/ludo_neo/avatars"
             });
             avatarUrl = uploadResponse.url;
+            console.log("avatarUrl1",avatarUrl);
         }
-
+        console.log("avatarUrl2",avatarUrl);
         // Generate and store OTP in Upstash (Expires in 10 mins)
         const otp = generateOTP();
         await redis.setex(`otp:${email}`, 600, otp);

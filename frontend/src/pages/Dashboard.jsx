@@ -4,6 +4,7 @@ import Particles from '@/components/customComponents/Particles';
 import ElectricBorder from '@/components/customComponents/ElectricBorder';
 import GradientText from '@/components/customComponents/GradientText';
 import AnimatedContent from '@/components/customComponents/AnimatedContent';
+import useUserStore from '@/store/userStore';
 import "../styles/menu.css";
 import "../styles/cell.css";
 
@@ -23,7 +24,7 @@ const SUB_OPTIONS = [
 
 const Dashboard = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [profileImg,setProfile]=useState('https://ik.imagekit.io/z41edgv2n/myImg.heic?updatedAt=1772117843812' || '/defaultProfile.png');
+  const profile = useUserStore((state) => state.info.avatar);
   return (
     <div className='wholepage bg-[#020205] h-[100dvh] w-full relative overflow-hidden'>
       
@@ -69,12 +70,12 @@ const Dashboard = () => {
               className='h-full w-full rounded-full object-cover'
             /> */}
               <img 
-                src={profileImg} 
+                src={profile} 
                 alt="profile" 
                 className='h-full w-full rounded-full object-cover'
                 onError={(err)=>{
                   console.log(err)
-                  if(profileImg!=='/defaultProfile.png')
+                  if(profile!=='/defaultProfile.png')
                     setProfile('/defaultProfile.png');
                 }}
               />
