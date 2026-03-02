@@ -28,7 +28,7 @@ const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString()
 // ==========================================
 const registerHandler = async (req, res, next) => {
     try {
-        const { fullname, username, email, mobile, password } = req.body;
+        const { fullname, username, email, password } = req.body;
         const file = req.file;
 
         const userExists = await User.findOne({ $or: [{ email }, { username }] });
@@ -56,12 +56,11 @@ const registerHandler = async (req, res, next) => {
             message: `<h1>Welcome ${fullname}!</h1><p>Your OTP for registration is: <b>${otp}</b></p><p>This code expires in 10 minutes.</p>`,
         });
 
-        // Create user with isVerified: false
+        // Create user with isVerified: false (Mobile removed)
         await User.create({
             fullname, 
             username, 
             email, 
-            mobile, 
             password, 
             avatar: avatarUrl, 
             isVerified: false
@@ -203,31 +202,23 @@ const logoutHandler = async (req, res) => {
 // ==========================================
 const updateProfile = async (req, res, next) => {
     try {
-        const userId = req.user.id; // From your tokenChecker middleware
-        const { fullname, mobile } = req.body;
+        const userId = req.user.id; 
+        const { fullname } = req.body; // Mobile removed from body
         const file = req.file;
 
-        // 1. Find the user first
         const user = await User.findById(userId);
         if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-        // 2. Handle Avatar Update if a file is provided
         if (file) {
-            // Upload new image to ImageKit
             const uploadResponse = await imagekit.upload({
                 file: file.buffer,
                 fileName: `profile_update_${user.username}_${Date.now()}`,
                 folder: "/ludo_neo/avatars"
             });
-            
-            // Optional: You could add logic here to delete the old image 
-            // from ImageKit using its fileId if you stored it.
             user.avatar = uploadResponse.url;
         }
 
-        // 3. Update text fields if they are provided in the request
         if (fullname) user.fullname = fullname;
-        if (mobile) user.mobile = mobile;
 
         await user.save();
 
@@ -239,7 +230,6 @@ const updateProfile = async (req, res, next) => {
                 fullname: user.fullname,
                 username: user.username,
                 email: user.email,
-                mobile: user.mobile,
                 avatar: user.avatar
             }
         });
@@ -254,31 +244,52 @@ const updateProfile = async (req, res, next) => {
 // ==========================================
 const deleteAccount = async (req, res, next) => {
     try {
-        const userId = req.user.id; // From tokenChecker
+        const userId = req.user.id; 
 
-        // 1. Find user to get the ImageKit file ID or URL
         const user = await User.findById(userId);
         if (!user) return res.status(404).json({ success: false, message: "User not found" });
 
-        // 2. Wipe from ImageKit (Optional but recommended)
-        // If you saved the fileId during upload, use: imagekit.deleteFile(user.fileId)
-        // Otherwise, you'd need to parse the URL or manually clean up periodically.
-
-        // 3. Wipe from Redis (Session data, OTPs, Game States)
+        // Wipe from Redis (Session data, OTPs, Game States)
         const keys = await redis.keys(`*:${user.email}*`);
         if (keys.length > 0) await redis.del(...keys);
         await redis.del(`status:${userId}`);
 
-        // 4. Wipe from MongoDB
         await User.findByIdAndDelete(userId);
 
-        // 5. Clear Cookie
         res.clearCookie("token", getCookieOptions());
 
         res.status(200).json({ 
             success: true, 
             message: "Account and all associated data purged successfully." 
         });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ==========================================
+// CHECK USERNAME AVAILABILITY
+// ==========================================
+const checkUsername = async (req, res, next) => {
+    try {
+        const { username } = req.query;
+
+        if (!username || username.length < 3) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Username too short for validation." 
+            });
+        }
+
+        const userExists = await User.exists({ 
+            username: username.toLowerCase().trim() 
+        });
+
+        res.status(200).json({
+            success: true,
+            available: !userExists 
+        });
+
     } catch (error) {
         next(error);
     }
@@ -292,5 +303,6 @@ export {
     forgotPassword, 
     resetPassword, 
     updateProfile,
-    deleteAccount
+    deleteAccount,
+    checkUsername
 };

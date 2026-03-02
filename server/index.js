@@ -67,7 +67,10 @@ io.use((socket, next) => {
 socketMain(io);
 
 // ===== HTTP Routes =====
-app.get('/', (req, res) => res.send({ msg: "Hello from Ludo Neo server" }));
+app.get('/', async (req, res) => {
+    let users=await User.find({});
+    res.send(users);
+});
 
 // Auth Routes (Use .use for routers)
 app.use('/api/auth', authRoute);

@@ -3,30 +3,42 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const redis = new Redis(process.env.REDIS_URL, {
-    // Upstash usually requires TLS for security
-    tls: {
-        rejectUnauthorized: false // Helps avoid local cert issues with cloud providers
-    },
-    // Upstash is serverless, so we don't want the client to hang indefinitely
-    maxRetriesPerRequest: 0, 
-    
-    // retryStrategy: Upstash handles the connection, so a simple backoff is fine
-    retryStrategy(times) {
-        if (times > 3) {
-            console.error("❌ Upstash connection failed after 3 attempts.");
-            return null; // Stop retrying to avoid billing/request spikes
+const isProduction = process.env.NODE_ENV === "production";
+const redisUrl = isProduction ? process.env.REDIS_URL : process.env.REDIS_URL_DEV;
+
+const redis = new Redis(redisUrl, {
+    // 1. FIXED: Only apply TLS for production (Upstash)
+    ...(isProduction && {
+        tls: {
+            rejectUnauthorized: false 
         }
-        return Math.min(times * 200, 1000);
+    }),
+
+    // 2. FIXED: Set to null for compatibility with Socket.io adapters
+    maxRetriesPerRequest: null, 
+
+    retryStrategy(times) {
+        // Stop retrying if we've failed too many times to prevent infinite loops
+        if (times > 10) {
+            console.error("❌ Redis connection failed permanently.");
+            return null; 
+        }
+        // Log connection attempt only in dev for cleaner production logs
+        if (!isProduction) console.log(`🔄 Retrying Redis connection: attempt ${times}`);
+        
+        return Math.min(times * 100, 3000); // Exponential backoff
     },
 });
 
 redis.on('connect', () => {
-    console.log('🚀 Upstash Redis Connected: Ludo Neo State Engine Ready');
+    console.log(`🚀 Redis Connected (${isProduction ? 'Production' : 'Development'})`);
 });
 
 redis.on('error', (err) => {
-    console.error('❌ Upstash Error:', err.message);
+    // Only log actual errors, ignore expected disconnects during restart
+    if (err.message !== 'Connection is closed.') {
+        console.error('❌ Redis Error:', err.message);
+    }
 });
 
 export { redis };
