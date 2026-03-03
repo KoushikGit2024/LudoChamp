@@ -3,11 +3,12 @@ import { io } from "socket.io-client";
 
 // Prefer configuring the backend URL via env in production.
 // e.g. VITE_BACKEND_URL="https://api.yourdomain.com"
-const SOCKET_URL =
-  import.meta.env.VITE_BACKEND_URL ||
-  (window.location && window.location.origin) ||
-  "/";
-
+// const SOCKET_URL = import.meta.env.VITE_MODE === 'production'
+//         ? import.meta.env.VITE_BASE_URL
+//         : 
+//         import.meta.env.VITE_BASE_URL_DEV;
+const SOCKET_URL = import.meta.env.VITE_BASE_URL_DEV;
+console.log(SOCKET_URL);
 const Profile = () => {
   const [connected, setConnected] = useState(false);
   const socketRef = useRef(null);

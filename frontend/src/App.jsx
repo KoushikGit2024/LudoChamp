@@ -13,6 +13,7 @@ import "react-toastify/dist/ReactToastify.css";
 import {useEffect} from 'react'
 import api from './api/axiosConfig'
 import { updateUserInfo } from './store/userActions'
+import GameSetup from './components/pageComponents/GameSetup'
 // import LudoOffline from './components/LudoOffline'
 // import LudoGame from './assets/New'
 //---------------------------------------
@@ -32,7 +33,7 @@ function App() {
     <main className='bg-[#000000] flex flex-col items-center justify-center p-0 m-0 w-screen h-screen md:overflow-hidden'>
       {/* <div className='min-h-full bg-amber-300 min-w-full'> */}
         <Routes>
-          <Route path='/' element={<Home/>}/>
+          <Route path='/' element={<GameSetup/>}/>
           <Route path='/profile' element={<Profile/>}/>
           <Route path='/dashboard' element={<Dashboard/>}/>
           <Route path='/session/:boardType' element={<Session/>}/>

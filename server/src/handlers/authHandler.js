@@ -380,6 +380,33 @@ const resetPassword = async (req, res, next) => {
     } catch (error) { next(error); }
 };
 
+// Add this to server/src/handlers/authHandler.js
+const searchUsers = async (req, res, next) => {
+    try {
+        const { query } = req.query;
+        if (!query || query.length < 2) {
+            return res.status(200).json({ success: true, users: [] });
+        }
+
+        // Search by username or fullname (case-insensitive)
+        const users = await User.find({
+            $or: [
+                { username: { $regex: query, $options: "i" } },
+                { fullname: { $regex: query, $options: "i" } }
+            ]
+        })
+        .limit(5)
+        .select("username fullname avatar"); // Only return necessary data
+
+        res.status(200).json({ success: true, users });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// Update your authRoute.js to include:
+// authRoute.get("/search-users", tokenChecker, searchUsers);
+
 /* Keep loginHandler, logoutHandler, updateProfile, deleteAccount, and checkUsername the same */
 export { 
     loginHandler, 
@@ -391,5 +418,6 @@ export {
     updateProfile,
     deleteAccount,
     checkUsername,
-    initialFetch
+    initialFetch,
+    searchUsers
 };

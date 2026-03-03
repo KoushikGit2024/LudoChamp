@@ -1,37 +1,40 @@
-import React, { useEffect } from 'react'
-// import  MoveProvider  from '../contexts/MoveProvider'
+import React, { useEffect, useState } from 'react'
 import LudoOffline from '../components/offlineBoard/LudoOffline'
-// import useGameStore from '@/store/useGameStore'
 import gameActions from '@/store/gameLogic'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ToastContainer } from 'react-toastify'
+import { ToastContainer, toast } from 'react-toastify'
+import GameSetup from '@/components/pageComponents/GameSetup'
+import { useShallow } from 'zustand/shallow'
+import useUserStore from '@/store/userStore'
+
 const Session = () => {
-  const initiate = gameActions.initiateGame;
-  const { boardType }=useParams();
-  const navigate=useNavigate();
-  useEffect(()=>{
-    const gameObj={
-      type:'offline',
-      players:['R','Y'],
-      names:['Player1','Player2','Player3','Player4']
-    };
-    initiate(gameObj);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[]) // initiate is a stable Zustand action, no need in deps
-  //bot offline poi pof
-  if(boardType==="poi" || boardType==="pof"){
-    1;
-  }
-  
-  
+  const { boardType } = useParams();
+  const navigate = useNavigate();
+
+  const [showBoard, setShowBoard] = useState(false);
+
+  const userInfo = useUserStore(
+    useShallow((state) => state.info)
+  );
+
+  // ✅ FIX: Side effects must be inside useEffect
+  useEffect(() => {
+    if ((boardType === "poi" || boardType === "pof") && !userInfo?.email) {
+      toast.info("User registration required!");
+      navigate("/options/signin");
+    }
+  }, [boardType, navigate]);
+
   return (
     <div className='bg-black h-screen w-screen flex items-center justify-center'>
-      {/* <MoveProvider> */}
-        <LudoOffline/>
-      {/* </MoveProvider> */}
-      <ToastContainer/>
+      {showBoard ? (
+        <LudoOffline />
+      ) : (
+        <GameSetup info={userInfo} />
+      )}
+      {/* <ToastContainer /> */}
     </div>
-  )
-}
+  );
+};
 
-export default Session
+export default Session;

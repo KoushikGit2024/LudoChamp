@@ -8,7 +8,8 @@ import {
     resetPassword,
     updateProfile,
     checkUsername ,
-    initialFetch
+    initialFetch,
+    searchUsers
 } from "../handlers/authHandler.js";
 import tokenChecker from "../middlewares/tokenCheker.js";
 import upload from "../middlewares/multerSetup.js";
@@ -39,6 +40,7 @@ authRoute.post("/logout", logoutHandler);
 
 authRoute.get("/check-username", checkUsername);
 
+authRoute.get("/search-users", tokenChecker, searchUsers);
 // --- System Diagnostics ---
 // authRoute.post("/test-email", async (req, res) => {
 //     try {
