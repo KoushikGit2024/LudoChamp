@@ -10,13 +10,23 @@ import ElectricBorder from './components/customComponents/ElectricBorder'
 import Options from './pages/Options'
 import { ToastContainer } from 'react-toastify'
 import "react-toastify/dist/ReactToastify.css";
+import {useEffect} from 'react'
+import api from './api/axiosConfig'
+import { updateUserInfo } from './store/userActions'
 // import LudoOffline from './components/LudoOffline'
 // import LudoGame from './assets/New'
 //---------------------------------------
-
+const getUser = async () => {
+  const res =await api.get("/api/auth/me");
+  // console.log(res.data);
+  updateUserInfo(res.data.user);
+}
 
 function App() {
-  // const [count, setCount] = useState(0)
+
+  useEffect(()=>{
+    getUser();
+  }, []);
 
   return (
     <main className='bg-[#000000] flex flex-col items-center justify-center p-0 m-0 w-screen h-screen md:overflow-hidden'>

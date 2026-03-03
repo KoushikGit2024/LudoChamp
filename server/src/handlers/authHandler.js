@@ -33,9 +33,9 @@ const loginHandler = async (req, res, next) => {
         res.status(200).json({
             success: true,
             message: `Welcome back, ${user.fullname}`,
-            user: { 
-                id: user._id, 
+            user: {
                 username: user.username, 
+                fullname: user.fullname,
                 email: user.email, 
                 avatar: user.avatar 
             }
@@ -87,7 +87,6 @@ const updateProfile = async (req, res, next) => {
             success: true,
             message: "Profile updated successfully",
             user: {
-                id: user._id,
                 fullname: user.fullname,
                 username: user.username,
                 email: user.email,
@@ -127,6 +126,27 @@ const deleteAccount = async (req, res, next) => {
         next(error);
     }
 };
+
+
+const initialFetch = async(req, res, next)=>{
+    try {
+        const userId = req.user.id;
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+        res.status(200).json({
+            success: true,
+            user: {
+                fullname: user.fullname,
+                username: user.username,
+                email: user.email,
+                avatar: user.avatar
+            },
+            message: "User fetched successfully"
+        });
+    } catch (error) {
+        next(error);
+    }
+}
 
 // // ==========================================
 // // CHECK USERNAME AVAILABILITY
@@ -204,13 +224,43 @@ const registerHandler = async (req, res, next) => {
 
         await sendEmail({
             email,
-            subject: "Initialize your Ludo Neo Pilot Identity",
+            subject: `SYSTEM: Identity Uplink Required for Pilot ${fullname}`,
             message: `
-                <div style="font-family: monospace; background: #020205; color: #fff; padding: 20px; border: 1px solid #00ff3c;">
-                    <h1 style="color: #00ff3c;">WELCOME PILOT ${fullname}</h1>
-                    <p>To finalize your uplink to the Ludo Neo grid, click the authentication node below:</p>
-                    <a href="${verificationUrl}" style="background: #00ff3c; color: #000; padding: 10px 20px; text-decoration: none; font-weight: bold; display: inline-block;">AUTHENTICATE_IDENTITY</a>
-                    <p style="font-size: 10px; color: #555; margin-top: 20px;">Link valid for 60 minutes. If you did not request this, ignore this transmission.</p>
+                <div style="background-color: #020205; color: #ffffff; font-family: 'Courier New', Courier, monospace; padding: 40px; border: 2px solid #00ff3c; border-radius: 8px; max-width: 600px; margin: auto;">
+                    <div style="border-bottom: 1px solid #1a1a1a; padding-bottom: 20px; margin-bottom: 20px;">
+                        <h2 style="color: #00ff3c; text-transform: uppercase; letter-spacing: 3px; margin: 0;">
+                            [ UPLINK_PROTOCOL: v3.0 ]
+                        </h2>
+                        <p style="font-size: 12px; color: #555; margin: 5px 0 0 0;">TIMESTAMP: ${new Date().toISOString()}</p>
+                    </div>
+
+                    <div style="line-height: 1.6;">
+                        <h1 style="font-size: 22px; color: #ffffff; text-transform: uppercase; margin-top: 0;">
+                            Welcome to the Grid, <span style="color: #00ff3c;">Pilot ${fullname}</span>
+                        </h1>
+                        
+                        <p style="font-size: 14px; color: #a0a0a0;">
+                            Your neural signature has been detected. To finalize your integration into the 
+                            <strong style="color: #fff;">Ludo Neo System</strong>, you must authenticate your 
+                            pilot identity through our secure verification node.
+                        </p>
+
+                        <div style="text-align: center; margin: 40px 0;">
+                            <a href="${verificationUrl}" 
+                            style="background: #00ff3c; color: #000; padding: 15px 30px; text-decoration: none; font-weight: 900; font-size: 16px; border-radius: 4px; box-shadow: 0 0 15px rgba(0, 255, 60, 0.5); display: inline-block; text-transform: uppercase;">
+                            INITIALIZE_NEURAL_LINK
+                            </a>
+                        </div>
+
+                        <div style="background: rgba(255, 255, 255, 0.05); padding: 15px; border-left: 3px solid #00ff3c; font-size: 12px; color: #888;">
+                            <strong>SECURITY_NOTICE:</strong> This transmission link expires in <span style="color: #fff;">60 minutes</span>. 
+                            If this uplink was not requested by you, please terminate the connection and ignore this data packet.
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 1px;">
+                        &copy; 2026 Ludo Neo Grid Operations // Sector 7
+                    </div>
                 </div>
             `,
         });
@@ -260,19 +310,49 @@ const forgotPassword = async (req, res, next) => {
         const resetToken = generateToken();
         await redis.setex(`reset:${resetToken}`, 3600, email);
 
-        const resetUrl = `http://localhost:5173/options/signin?token=${resetToken}&mode=reset`;
+        const resetUrl = `http://localhost:5173/options/signin?reset=${resetToken}&id=${user.email}&mode=reset`;
 
-        await sendEmail({
-            email,
-            subject: "Recovery Cipher Request - Ludo Neo",
-            message: `
-                <div style="font-family: monospace; background: #020205; color: #fff; padding: 20px; border: 1px solid #ff0505;">
-                    <h2 style="color: #ff0505;">CIPHER_RESET_REQUEST</h2>
-                    <p>A recovery cipher has been requested. Use the bypass link to override your access node:</p>
-                    <a href="${resetUrl}" style="background: #ff0505; color: #fff; padding: 10px 20px; text-decoration: none; font-weight: bold; display: inline-block;">OVERRIDE_CIPHER</a>
+    await sendEmail({
+        email,
+        subject: "SYSTEM: Access Cipher Recovery - Ludo Neo",
+        message: `
+            <div style="background-color: #020205; color: #ffffff; font-family: 'Courier New', Courier, monospace; padding: 40px; border: 2px solid #fff200; border-radius: 8px; max-width: 600px; margin: auto;">
+                <div style="border-bottom: 1px solid #332b00; padding-bottom: 20px; margin-bottom: 20px;">
+                    <h2 style="color: #fff200; text-transform: uppercase; letter-spacing: 3px; margin: 0;">
+                        [ CONFIG_PROTOCOL: CIPHER_SYNC ]
+                    </h2>
+                    <p style="font-size: 12px; color: #665500; margin: 5px 0 0 0;">ACCESS_RECOVERY_NODE: ${new Date().toISOString()}</p>
                 </div>
-            `,
-        });
+
+                <div style="line-height: 1.6;">
+                    <h1 style="font-size: 22px; color: #ffffff; text-transform: uppercase; margin-top: 0;">
+                        Neural <span style="color: #fff200;">Cipher Reset</span> Initiated
+                    </h1>
+                    
+                    <p style="font-size: 14px; color: #a0a0a0;">
+                        A request to reconfigure your access credentials has been authorized. 
+                        To override your current identity node and establish a new secure cipher, click the terminal link below:
+                    </p>
+
+                    <div style="text-align: center; margin: 40px 0;">
+                        <a href="${resetUrl}" 
+                        style="background: #fff200; color: #000; padding: 15px 30px; text-decoration: none; font-weight: 900; font-size: 16px; border-radius: 4px; box-shadow: 0 0 20px rgba(255, 242, 0, 0.4); display: inline-block; text-transform: uppercase;">
+                        OVERRIDE_CIPHER_NOW
+                        </a>
+                    </div>
+
+                    <div style="background: rgba(255, 242, 0, 0.05); padding: 15px; border-left: 3px solid #fff200; font-size: 12px; color: #888;">
+                        <strong>CONFIG_ALERT:</strong> This override link is valid for <span style="color: #fff;">60 minutes</span>. 
+                        If this configuration change was not authorized by your pilot identity, please ignore this transmission to maintain current cipher integrity.
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px; text-align: center; font-size: 10px; color: #444; text-transform: uppercase; letter-spacing: 1px;">
+                    &copy; 2026 Ludo Neo Grid Operations // Access Division
+                </div>
+            </div>
+        `,
+    });
 
         res.status(200).json({ success: true, message: "Recovery link broadcast to node." });
     } catch (error) { next(error); }
@@ -295,7 +375,7 @@ const resetPassword = async (req, res, next) => {
 
         await User.findOneAndUpdate({ email }, { password: hashedPassword });
         await redis.del(`reset:${token}`);
-
+        // console.log(newPassword)
         res.status(200).json({ success: true, message: "Access cipher updated successfully." });
     } catch (error) { next(error); }
 };
@@ -310,5 +390,6 @@ export {
     resetPassword, 
     updateProfile,
     deleteAccount,
-    checkUsername
+    checkUsername,
+    initialFetch
 };

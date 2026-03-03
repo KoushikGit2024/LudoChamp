@@ -5,7 +5,7 @@ export const updateUserInfo = (updates) =>
     useUserStore.setState((state) => ({ 
         info: { ...state.info, ...updates } 
     }), false, "identity/update");
-
+    console.log(useUserStore.getState().info);
 // --- PROGRESSION LOGIC ---
 export const addXP = (amount) => 
     useUserStore.setState((state) => {

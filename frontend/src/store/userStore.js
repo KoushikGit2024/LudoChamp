@@ -3,7 +3,7 @@ import { devtools, persist } from "zustand/middleware";
 
 const useUserStore = create(
     devtools(
-        persist(
+        // persist(
             (set, get) => ({
                 // --- USER IDENTITY (From Registration) ---
                 info: {
@@ -83,7 +83,7 @@ const useUserStore = create(
             {
                 name: "ludo-neo-user-storage", // Unique name for LocalStorage
             }
-        )
+        // )
     )
 );
 
