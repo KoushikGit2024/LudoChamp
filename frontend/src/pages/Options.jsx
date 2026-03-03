@@ -1,19 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { 
   ArrowLeft, User, Settings, LogIn, UserPlus, 
   CheckCircle, XCircle, Loader2, Mail, Fingerprint, X, Crop, Upload, 
-  ShieldCheck, Eye, EyeOff, KeyRound, Save, RefreshCcw, Trash2, Activity, Cpu, Globe
+  ShieldCheck, Eye, EyeOff, Save, RefreshCcw, Trash2, Activity, Cpu, Globe
 } from 'lucide-react';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import GradientText from '@/components/customComponents/GradientText';
 import Particles from '@/components/customComponents/Particles';
 import api from '@/api/axiosConfig'; 
 import { updateUserInfo, resetUserStore } from "@/store/userActions"; 
-import "../styles/options.css";
 import { useShallow } from 'zustand/shallow';
 import useUserStore from '@/store/userStore';
+import "../styles/options.css";
 
 // --- Helpers ---
 const dataURLtoBlob = (dataurl) => {
@@ -39,14 +41,14 @@ async function getCroppedImg(image, crop) {
 
 const Options = () => {
   const { subOption } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   // --- States ---
-  const [formData, setFormData] = useState({ fullname: '', username: '', email: '', password: '', otp: '', newPassword: '' });
+  const [formData, setFormData] = useState({ fullname: '', username: '', email: '', password: '', newPassword: '' });
   const [loading, setLoading] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false); 
-  const [verifyMode, setVerifyMode] = useState('signup'); 
-  const [forgotPassMode, setForgotPassMode] = useState(false);
+  const [isEmailSent, setIsEmailSent] = useState(false); 
+  const [forgotPassMode, setForgotPassMode] = useState(false); // FIXED: Restored state
   const [showPass, setShowPass] = useState(false);
   const [imgSrc, setImgSrc] = useState('');
   const [crop, setCrop] = useState();
@@ -68,35 +70,42 @@ const Options = () => {
 
   const activeTheme = subOptionsMap[subOption] || subOptionsMap.profile;
   const info = useUserStore(useShallow((state) => state.info));
-  // --- Lifecycle Handlers ---
+
+  // --- Handle Magic Link Verification ---
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (token) {
+      handleVerifyLink(token);
+    }
+  }, [searchParams]);
+
+  const handleVerifyLink = async (token) => {
+    setLoading(true);
+    try {
+      await api.get(`/api/auth/verify-email?token=${token}`);
+      toast.success("NEURAL LINK VERIFIED. SYSTEM ACCESS GRANTED.");
+      navigate('/options/signin');
+    } catch (err) {
+      toast.error(err.response?.data?.message || "LINK EXPIRED OR INVALID.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- Sync Store to Local State ---
   useEffect(() => {
     if (!subOptionsMap[subOption]) navigate('/dashboard');
-    
-    // Set the neon theme color
     document.documentElement.style.setProperty('--active-neon', activeTheme.color);
-    
     if (subOption === 'profile') {
-      // Sync local form with Zustand store values
-      setFormData(prev => ({
-        ...prev,
-        fullname: info?.fullname || '',
-        username: info?.username || '',
-        email: info?.email || ''
-      }));
-      
-      // Specifically sync the avatar preview
+      setFormData(prev => ({ ...prev, fullname: info?.fullname || '', username: info?.username || '', email: info?.email || '' }));
       setFinalImage(info?.avatar || "/defaultProfile.png");
-
-      // Background refresh from backend to ensure store is fresh
       fetchCurrentProfile();
     }
-    
-    setIsVerifying(false);
-    setForgotPassMode(false);
-
-    // Dependency on subOption (tab change) and the specific fields from the store
+    setIsEmailSent(false);
+    setForgotPassMode(false); // Reset mode on tab change
   }, [subOption, info.fullname, info.username, info.email, info.avatar]);
 
+  // --- Debounced Username Check ---
   useEffect(() => {
     if (!formData.username || formData.username.length < 3 || subOption !== 'signup') {
       setUserStatus(null);
@@ -113,15 +122,12 @@ const Options = () => {
     return () => clearTimeout(timeoutId);
   }, [formData.username, subOption]);
 
-  const handleInput = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleInput = (e) => setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
   const handleSelectFile = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const reader = new FileReader();
-      reader.addEventListener('load', () => {
-        setImgSrc(reader.result?.toString() || '');
-        setIsCropModalOpen(true);
-      });
+      reader.addEventListener('load', () => { setImgSrc(reader.result?.toString() || ''); setIsCropModalOpen(true); });
       reader.readAsDataURL(e.target.files[0]);
     }
   };
@@ -134,16 +140,12 @@ const Options = () => {
     }
   };
 
-  // --- API Logic ---
+  // --- Handlers ---
   const fetchCurrentProfile = async () => {
     try {
       const res = await api.get('/api/auth/me');
-      if (res.data.success) {
-        setFormData(prev => ({ ...prev, fullname: res.data.user.fullname, username: res.data.user.username, email: res.data.user.email }));
-        setFinalImage(res.data.user.avatar);
-        updateUserInfo(res.data.user);
-      }
-    } catch (err) { console.log("Profile node offline"); }
+      if (res.data.success) updateUserInfo(res.data.user);
+    } catch (err) { console.log("Node status: Offline"); }
   };
 
   const handleRegister = async (e) => {
@@ -154,9 +156,9 @@ const Options = () => {
       Object.keys(formData).forEach(key => form.append(key, formData[key]));
       if (finalImage?.startsWith('data:')) form.append('avatar', dataURLtoBlob(finalImage), `${formData.username}.jpg`);
       await api.post('/api/auth/register', form);
-      setVerifyMode('signup');
-      setIsVerifying(true);
-    } catch (err) { alert(err.response?.data?.message || "Registration Error"); }
+      setIsEmailSent(true); 
+      toast.success("INITIALIZATION LINK BROADCAST TO NODE.");
+    } catch (err) { toast.error(err.response?.data?.message || "REGISTRATION FAILURE."); }
     finally { setLoading(false); }
   };
 
@@ -166,37 +168,30 @@ const Options = () => {
     try {
       const res = await api.post('/api/auth/login', { email: formData.email, password: formData.password });
       updateUserInfo(res.data.user);
+      toast.success(`PILOT ${res.data.user.username} ACCESS GRANTED.`);
       navigate('/dashboard');
     } catch (err) {
-      if (err.response?.status === 403) { setVerifyMode('signup'); setIsVerifying(true); }
-      else alert(err.response?.data?.message || "Denied");
+      if (err.response?.status === 403) {
+        setIsEmailSent(true);
+        toast.warning("IDENTITY UNVERIFIED. CHECK UPLINK.");
+      } else {
+        toast.error(err.response?.data?.message || "ACCESS DENIED.");
+      }
     } finally { setLoading(false); }
-  };
-
-  const handleOTPVerify = async () => {
-    setLoading(true);
-    try {
-      const endpoint = verifyMode === 'signup' ? '/api/auth/verify-email' : '/api/auth/reset-password';
-      const payload = verifyMode === 'signup' ? { email: formData.email, otp: formData.otp } : { email: formData.email, otp: formData.otp, newPassword: formData.newPassword };
-      await api.post(endpoint, payload);
-      alert("Neural Link Verified");
-      if (subOption === 'profile') setIsVerifying(false);
-      else navigate('/options/signin');
-    } catch (err) { alert("Invalid Cipher"); }
-    finally { setLoading(false); }
   };
 
   const handleForgotPasswordRequest = async () => {
     setLoading(true);
     try {
       await api.post('/api/auth/forgot-password', { email: formData.email });
-      setVerifyMode('reset');
-      setIsVerifying(true);
-    } catch (err) { alert("Identity not found"); }
+      setIsEmailSent(true);
+      toast.success("RECOVERY LINK BROADCAST.");
+    } catch (err) { toast.error("IDENTITY NODE NOT FOUND."); }
     finally { setLoading(false); }
   };
 
-  const handleUpdateProfile = async () => {
+  const handleUpdateProfile = async (e) => {
+    if(e) e.preventDefault();
     setLoading(true);
     try {
       const form = new FormData();
@@ -204,20 +199,27 @@ const Options = () => {
       if (finalImage?.startsWith('data:')) form.append('avatar', dataURLtoBlob(finalImage), 'update.jpg');
       const res = await api.put('/api/auth/update-profile', form);
       updateUserInfo(res.data.user);
-      alert("Neural Profile Synced");
-    } catch (err) { alert("Sync Failed"); }
+      toast.success("NEURAL PROFILE SYNCHRONIZED.");
+    } catch (err) { toast.error("SYNC FAILURE."); }
     finally { setLoading(false); }
   };
 
   const handleDeleteAccount = async () => {
-    if (!window.confirm("Purge Identity?")) return;
+    if (!window.confirm("PURGE IDENTITY? DATA WIPEOUT IS PERMANENT.")) return;
     setLoading(true);
-    try { await api.delete('/api/auth/delete-account'); resetUserStore(); navigate('/options/signup'); }
-    catch (err) { alert("Purge Failed"); } finally { setLoading(false); }
+    try { 
+      await api.delete('/api/auth/delete-account'); 
+      resetUserStore(); 
+      toast.error("IDENTITY PURGED FROM GRID.");
+      navigate('/options/signup'); 
+    } catch (err) { toast.error("PURGE SEQUENCE FAILED."); } 
+    finally { setLoading(false); }
   };
 
   return (
     <div className="h-screen w-full bg-[#020205] text-white flex flex-col items-center justify-center p-2 sm:p-4 md:p-8 relative overflow-hidden">
+      <ToastContainer position="top-right" autoClose={3000} theme="dark" />
+      
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
         <Particles particleColors={[activeTheme.color, "#ffffff"]} particleCount={80} />
       </div>
@@ -225,7 +227,7 @@ const Options = () => {
       {isCropModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 backdrop-blur-md p-4">
           <div className="bg-[#0a0a0f] border border-white/10 rounded-2xl p-4 w-full max-w-lg flex flex-col max-h-[90vh] shadow-2xl">
-             <div className="flex justify-between items-center mb-4"><span className="text-[10px] font-black tracking-[0.3em] text-[#00ff3c]">IDENTITY_CROP_INTERFACE</span><X className="cursor-pointer text-gray-500 hover:text-white" onClick={() => setIsCropModalOpen(false)}/></div>
+             <div className="flex justify-between items-center mb-4"><span className="text-[10px] font-black tracking-[0.3em] text-[#00ff3c]">DNA_CROP_INTERFACE</span><X className="cursor-pointer text-gray-500 hover:text-white" onClick={() => setIsCropModalOpen(false)}/></div>
              <div className="flex-1 overflow-auto rounded-lg border border-white/5 bg-black custom-scrollbar">
                <ReactCrop crop={crop} onChange={c => setCrop(c)} onComplete={c => setCompletedCrop(c)} aspect={1}>
                  <img ref={imgRef} src={imgSrc} onLoad={(e) => {
@@ -234,9 +236,7 @@ const Options = () => {
                  }} alt="Crop" crossOrigin='anonymous' className="w-full h-auto" />
                </ReactCrop>
              </div>
-             <button onClick={handleConfirmCrop} className="w-full mt-4 py-3 bg-[#00ff3c] text-black font-black text-xs tracking-widest rounded-lg flex items-center justify-center gap-2">
-               <Crop size={16}/> CONFIRM_SCAN
-             </button>
+             <button onClick={handleConfirmCrop} className="w-full mt-4 py-3 bg-[#00ff3c] text-black font-black text-xs rounded-lg active:scale-95 transition-all">CONFIRM_DNA_SCAN</button>
           </div>
         </div>
       )}
@@ -261,91 +261,89 @@ const Options = () => {
           <div className="flex-1 flex flex-col overflow-hidden">
             <div className="p-8 pb-0 flex-shrink-0">
               <GradientText colors={[activeTheme.color, "#ffffff"]} className="text-3xl md:text-5xl font-black uppercase tracking-tighter leading-tight">
-                {isVerifying ? "IDENTITY_VERIFICATION" : activeTheme.title}
+                {isEmailSent ? "TRANS_PENDING" : activeTheme.title}
               </GradientText>
               <div className="h-1 w-12 mt-2" style={{ backgroundColor: activeTheme.color, boxShadow: `0 0 10px ${activeTheme.color}` }} />
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar p-8 pt-6">
               
-              {isVerifying ? (
-                <div className="max-w-sm space-y-6 animate-in slide-in-from-bottom-4">
-                  <div className="p-4 bg-[#00ff3c]/10 border border-[#00ff3c]/20 rounded-xl">
-                    <p className="text-[10px] text-[#00ff3c] font-mono leading-relaxed">Cipher broadcast to node: <br/> <span className="text-white bg-[#00ff3c]/20 px-1">{formData.email}</span></p>
+              {/* --- TRANSMISSION SCREEN --- */}
+              {isEmailSent && (
+                <div className="max-w-md space-y-6 animate-in slide-in-from-bottom-4">
+                  <div className="p-6 bg-[#00ff3c]/10 border border-[#00ff3c]/20 rounded-2xl flex flex-col items-center text-center space-y-4">
+                    <div className="w-16 h-16 bg-[#00ff3c]/20 rounded-full flex items-center justify-center animate-pulse"><Mail size={32} className="text-[#00ff3c]"/></div>
+                    <p className="text-sm font-mono text-[#00ff3c] uppercase tracking-widest">Verification Link Broadcast:<br/><span className="text-white bg-[#00ff3c]/20 px-2">{formData.email}</span></p>
+                    <p className="text-[10px] text-gray-500 italic">Authenticate your pilot identity via the neural uplink sent to your inbox. Valid for 60m.</p>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-[9px] uppercase tracking-widest text-gray-500 ml-1">Input 6-Digit Code</label>
-                    <div className="relative group"><KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-[#00ff3c]" size={18}/><input type="text" maxLength="6" placeholder="0 0 0 0 0 0" name="otp" onChange={handleInput} className="w-full bg-white/5 border border-[#00ff3c]/30 rounded-xl py-4 pl-12 text-center text-xl tracking-[0.4em] font-black outline-none focus:bg-[#00ff3c]/5" /></div>
-                  </div>
-                  {verifyMode === 'reset' && (
-                    <div className="space-y-1 animate-in fade-in"><label className="text-[9px] uppercase tracking-widest text-gray-500 ml-1">New Cipher</label><input type="password" name="newPassword" placeholder="••••••••" onChange={handleInput} className="w-full bg-white/5 border border-white/10 rounded-xl py-4 px-5 outline-none text-sm" /></div>
+                  <button onClick={() => setIsEmailSent(false)} className="w-full py-4 border border-gray-800 text-gray-500 hover:text-white font-black uppercase text-[10px] rounded-xl transition-all">Abort Transmission</button>
+                </div>
+              )}
+
+              {/* --- SIGNIN --- */}
+              {!isEmailSent && subOption === 'signin' && (
+                <div className="max-w-md space-y-6 animate-in fade-in slide-in-from-right-4">
+                  <div className="space-y-1"><label className="text-[9px] uppercase tracking-widest text-gray-500 ml-1">Identity Email</label><div className="relative group"><Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#2b01ff]" size={18}/><input name="email" value={formData.email || ''} onChange={handleInput} type="email" placeholder="Email Address" className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-4 outline-none text-sm transition-all focus:border-[#2b01ff]/40" /></div></div>
+                  {!forgotPassMode ? (
+                    <>
+                      <div className="space-y-1"><label className="text-[9px] uppercase tracking-widest text-gray-500 ml-1">Security Cipher</label><div className="relative group"><ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#2b01ff]" size={18}/><input name="password" value={formData.password || ''} onChange={handleInput} type={showPass ? "text" : "password"} placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-12 outline-none text-sm transition-all focus:border-[#2b01ff]/40" /><button onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white">{showPass ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></div>
+                      <button onClick={handleSignin} disabled={loading} className="w-full py-4 bg-[#2b01ff] font-black uppercase text-xs tracking-widest rounded-xl hover:shadow-[0_0_20px_#2b01ff] transition-all active:scale-95">{loading ? <Loader2 className="animate-spin mx-auto"/> : "INITIALIZE_ACCESS"}</button>
+                      <button onClick={() => setForgotPassMode(true)} className="w-full text-[9px] text-gray-500 hover:text-[#2b01ff] uppercase tracking-widest">Forgotten Cipher?</button>
+                    </>
+                  ) : (
+                    <div className="space-y-4 animate-in slide-in-from-bottom-4"><button onClick={handleForgotPasswordRequest} className="w-full py-4 bg-[#fff200] text-black font-black uppercase text-xs rounded-xl hover:shadow-[0_0_15px_#fff200] transition-all">SEND_RECOVERY_LINK</button><button onClick={() => setForgotPassMode(false)} className="w-full text-[9px] text-gray-500 hover:text-white uppercase tracking-widest">Back</button></div>
                   )}
-                  <button onClick={handleOTPVerify} disabled={loading} className="w-full py-4 bg-[#00ff3c] text-black font-black uppercase text-xs rounded-xl hover:shadow-[0_0_20px_#00ff3c] transition-all">{loading ? <Loader2 className="animate-spin mx-auto"/> : "AUTHENTICATE_IDENTITY"}</button>
                 </div>
-              ) : subOption === 'signin' ? (
-                <div className="max-w-md space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
-                  <div className="space-y-1"><label className="text-[9px] uppercase tracking-widest text-gray-500 ml-1">Identity Email</label><div className="relative group"><Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#2b01ff]" size={18}/><input name="email" onChange={handleInput} type="email" placeholder="Email Address" className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 outline-none focus:border-[#2b01ff]/50 text-sm transition-all" /></div></div>
-                  {!forgotPassMode ? (<><div className="space-y-1"><label className="text-[9px] uppercase tracking-widest text-gray-500 ml-1">Security Cipher</label><div className="relative group"><ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#2b01ff]" size={18}/><input name="password" onChange={handleInput} type={showPass ? "text" : "password"} placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-12 outline-none focus:border-[#2b01ff]/50 text-sm transition-all" /><button onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white">{showPass ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></div><button onClick={handleSignin} disabled={loading} className="w-full py-4 bg-[#2b01ff] font-black uppercase text-xs rounded-xl hover:shadow-[0_0_20px_#2b01ff] transition-all">{loading ? <Loader2 className="animate-spin mx-auto"/> : "INITIALIZE_ACCESS"}</button><button onClick={() => setForgotPassMode(true)} className="w-full text-[9px] text-gray-500 hover:text-[#2b01ff] uppercase tracking-widest transition-colors">Forgotten Cipher?</button></>) : (<div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500"><button onClick={handleForgotPasswordRequest} className="w-full py-4 bg-[#fff200] text-black font-black uppercase text-xs rounded-xl hover:shadow-[0_0_15px_#fff200] transition-all">{loading ? <Loader2 className="animate-spin mx-auto"/> : "SEND_RECOVERY_LINK"}</button><button onClick={() => setForgotPassMode(false)} className="w-full text-[9px] text-gray-500 hover:text-white uppercase tracking-widest">Back</button></div>)}
-                </div>
-              ) : subOption === 'signup' ? (
+              )}
+
+              {/* --- SIGNUP --- */}
+              {!isEmailSent && subOption === 'signup' && (
                 <div className="max-w-4xl mx-auto w-full">
                   <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-8 pb-10 animate-in slide-in-from-right-4">
                     <div className="space-y-6">
                        <div className="flex flex-col items-center"><div className={`relative w-36 h-36 rounded-[2rem] border-2 transition-all overflow-hidden cursor-pointer group ${finalImage ? 'border-[#00ff3c]' : 'border-dashed border-white/20'}`} onClick={() => fileInputRef.current.click()}>{finalImage ? <img src={finalImage} className="w-full h-full object-cover" alt="Avatar" /> : <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 group-hover:bg-white/5 transition-colors"><Upload size={24} className="mb-1"/><span className="text-[7px] font-black uppercase tracking-widest">SCAN_DNA</span></div>}</div></div>
-                       <div className="space-y-1"><label className="text-[9px] text-gray-500 ml-1 uppercase font-bold tracking-widest">Identity Node (Username)</label><div className="relative group"><User className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${userStatus === 'available' ? 'text-[#00ff3c]' : userStatus === 'taken' ? 'text-red-500' : 'text-gray-600'}`} size={16}/><input name="username" value={formData.username} onChange={handleInput} required type="text" placeholder="Unique ID..." className={`w-full bg-white/5 border rounded-xl py-3.5 pl-12 pr-12 outline-none text-sm transition-all ${userStatus === 'available' ? 'border-[#00ff3c]/40' : userStatus === 'taken' ? 'border-red-500/40' : 'border-white/10'}`} /><div className="absolute right-4 top-1/2 -translate-y-1/2">{isChecking ? <Loader2 className="animate-spin text-gray-500" size={14}/> : <>{userStatus === 'available' && <CheckCircle className="text-[#00ff3c]" size={14}/>}{userStatus === 'taken' && <XCircle className="text-red-500" size={14}/>}</>}</div></div></div>
-                       <div className="space-y-1"><label className="text-[9px] text-gray-500 ml-1 uppercase font-bold tracking-widest">Pilot Designation (Full Name)</label><div className="relative group"><Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#00ff3c] transition-colors" size={16}/><input name="fullname" value={formData.fullname} onChange={handleInput} required type="text" placeholder="Your Name" className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 outline-none text-sm focus:border-[#00ff3c]/40 transition-all" /></div></div>
+                       <div className="space-y-1"><label className="text-[9px] text-gray-500 ml-1 uppercase font-bold tracking-widest">Identity Node</label><div className="relative group"><User className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors duration-300 ${userStatus === 'available' ? 'text-[#00ff3c]' : userStatus === 'taken' ? 'text-red-500' : 'text-gray-600'}`} size={16}/><input name="username" value={formData.username || ''} onChange={handleInput} required type="text" placeholder="Unique ID..." className={`w-full bg-white/5 border rounded-xl py-3.5 pl-12 pr-12 outline-none text-sm transition-all ${userStatus === 'available' ? 'border-[#00ff3c]/40' : userStatus === 'taken' ? 'border-red-500/40' : 'border-white/10'}`} /><div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">{isChecking ? <Loader2 className="animate-spin text-gray-500" size={14}/> : <>{userStatus === 'available' && <CheckCircle className="text-[#00ff3c]" size={14}/>}{userStatus === 'taken' && <XCircle className="text-red-500" size={14}/>}</>}</div></div></div>
+                       <div className="space-y-1"><label className="text-[9px] text-gray-500 ml-1 uppercase font-bold tracking-widest">Pilot Designation</label><div className="relative group"><Fingerprint className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#00ff3c] transition-colors" size={16}/><input name="fullname" value={formData.fullname || ''} onChange={handleInput} required type="text" placeholder="Your Name" className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 outline-none text-sm focus:border-[#00ff3c]/40 transition-all" /></div></div>
                     </div>
                     <div className="space-y-6 flex flex-col justify-end">
-                       <div className="space-y-1"><label className="text-[9px] text-gray-500 ml-1 uppercase font-bold tracking-widest">Communication Uplink (Email)</label><div className="relative group"><Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#00ff3c]" size={16}/><input name="email" value={formData.email} onChange={handleInput} required type="email" placeholder="neo@ludo.com" autoComplete='email' className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 outline-none text-sm focus:border-[#00ff3c]/40 transition-all" /></div></div>
-                       <div className="space-y-1"><label className="text-[9px] text-gray-500 ml-1 uppercase font-bold tracking-widest">Access Cipher (Password)</label><div className="relative group"><ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#00ff3c]" size={16}/><input name="password" value={formData.password} onChange={handleInput} required type={showPass ? "text" : "password"} placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-12 outline-none text-sm focus:border-[#00ff3c]/40 transition-all" autoComplete='new-password'/><button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white">{showPass ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></div>
-                       <button type="submit" disabled={loading || userStatus === 'taken' || isChecking} className="w-full py-4 mt-2 bg-[#00ff3c] text-black font-black uppercase text-[10px] tracking-widest rounded-xl hover:shadow-[0_0_20px_#00ff3c] transition-all active:scale-95 disabled:opacity-30">INITIALIZE_PILOT_SEQUENCE</button>
+                       <div className="space-y-1"><label className="text-[9px] text-gray-500 ml-1 uppercase font-bold tracking-widest">Email Comms</label><div className="relative group"><Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#00ff3c]" size={16}/><input name="email" value={formData.email || ''} onChange={handleInput} required type="email" placeholder="neo@ludo.com" className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 outline-none text-sm focus:border-[#00ff3c]/40 transition-all" /></div></div>
+                       <div className="space-y-1"><label className="text-[9px] text-gray-500 ml-1 uppercase font-bold tracking-widest">Access Cipher</label><div className="relative group"><ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#00ff3c]" size={16}/><input name="password" value={formData.password || ''} onChange={handleInput} required type={showPass ? "text" : "password"} placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-12 pr-12 outline-none text-sm focus:border-[#00ff3c]/40 transition-all" /><button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white transition-colors">{showPass ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></div>
+                       <button type="submit" disabled={loading || userStatus === 'taken' || isChecking} className="w-full py-4 mt-2 bg-[#00ff3c] text-black font-black uppercase text-[10px] tracking-widest rounded-xl hover:shadow-[0_0_20px_#00ff3c] transition-all disabled:opacity-30">INITIALIZE_PILOT_SEQUENCE</button>
                     </div>
                   </form>
                 </div>
-              ) : subOption === 'profile' ? (
+              )}
+
+              {/* --- PROFILE --- */}
+              {!isEmailSent && subOption === 'profile' && (
                 <div className="max-w-4xl mx-auto space-y-6 animate-in slide-in-from-right-4 duration-500 pb-8">
-                  <div className="flex flex-col sm:flex-row items-center gap-5 p-5 bg-gradient-to-r from-white/[0.05] to-transparent border border-white/10 rounded-[1.5rem] relative overflow-hidden group">
-                    <div className="relative flex-shrink-0" onClick={() => fileInputRef.current.click()}>
-                      <div className="w-20 h-20 rounded-2xl border-2 border-[#ff0505] p-0.5 bg-black overflow-hidden cursor-pointer relative group/avatar">
-                        <img src={finalImage || "/defaultProfile.png"} className="w-full h-full object-cover rounded-[calc(1rem-2px)] group-hover:scale-105 transition-transform" alt="Profile" />
-                        <div className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
-                          <Upload size={16} className="text-[#ff0505]" />
-                        </div>
-                      </div>
-                      <div className="absolute -bottom-1 -right-1 bg-[#ff0505] p-1 rounded-lg shadow-lg border-[3px] border-[#0a0a0f]">
-                        <ShieldCheck size={10} className="text-white" />
-                      </div>
-                    </div>
-                    <div className="text-center sm:text-left space-y-0.5">
-                      <h4 className="text-[8px] font-black tracking-[0.3em] text-[#ff0505] uppercase opacity-70">Authenticated_Pilot</h4>
-                      <p className="text-2xl font-black uppercase tracking-tight text-white leading-tight">{info?.fullname || "Pilot Designation"}</p>
-                      <p className="text-[10px] font-mono text-gray-500 lowercase opacity-60">@{info?.username || "identity_pending"}</p>
-                    </div>
+                  <div className="flex flex-col sm:flex-row items-center gap-6 p-5 bg-gradient-to-r from-white/[0.05] to-transparent border border-white/10 rounded-[1.5rem] relative overflow-hidden group">
+                    <div className="relative flex-shrink-0" onClick={() => fileInputRef.current.click()}><div className="w-20 h-20 rounded-2xl border-2 border-[#ff0505] p-0.5 bg-black overflow-hidden cursor-pointer relative group/avatar"><img src={finalImage || "/defaultProfile.png"} className="w-full h-full object-cover rounded-[calc(1rem-2px)] group-hover:scale-105 transition-transform" alt="Profile" /><div className="absolute inset-0 bg-black/70 flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity"><Upload size={16} className="text-[#ff0505]" /></div></div><div className="absolute -bottom-1 -right-1 bg-[#ff0505] p-1 rounded-lg shadow-lg border-[3px] border-[#0a0a0f]"><ShieldCheck size={10} className="text-white" /></div></div>
+                    <div className="text-center sm:text-left space-y-0.5"><h4 className="text-[8px] font-black tracking-[0.3em] text-[#ff0505] uppercase opacity-70">Authenticated_Pilot</h4><p className="text-2xl font-black uppercase tracking-tight text-white leading-tight">{info?.fullname || "Pilot Designation"}</p><p className="text-[10px] font-mono text-gray-500 lowercase opacity-60">@{info?.username || "identity_pending"}</p></div>
                   </div>
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="space-y-6 bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] flex flex-col justify-between">
-                      <div className="space-y-5">
+                      <form onSubmit={handleUpdateProfile} className="space-y-5">
                         <div className="flex items-center gap-3"><Fingerprint size={18} className="text-[#ff0505]" /><h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">Pilot_Metadata</h5></div>
-                        <div className="space-y-1"><label className="text-[9px] uppercase tracking-widest text-gray-500 ml-1">Universal Designation</label><div className="relative group"><User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#ff0505] transition-colors" size={16}/><input name="fullname" value={info?.fullname||''} onChange={handleInput} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-11 outline-none text-sm focus:border-[#ff0505]/40 focus:bg-white/[0.08] transition-all" /></div></div>
+                        <div className="space-y-1"><label className="text-[9px] uppercase tracking-widest text-gray-500 ml-1">Universal Designation</label><div className="relative group"><User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#ff0505] transition-colors" size={16}/><input name="fullname" value={formData.fullname || ''} onChange={handleInput} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-11 outline-none text-sm focus:border-[#ff0505]/40 focus:bg-white/[0.08] transition-all" /></div></div>
                         <div className="p-4 bg-black/60 border border-white/5 rounded-2xl space-y-3 font-mono">
                            <div className="flex justify-between items-center"><div className="flex items-center gap-2"><Activity size={12} className="text-[#ff0505] animate-pulse"/><span className="text-[8px] text-gray-500 uppercase">Neural_Link</span></div><span className="text-[9px] text-[#00ff3c]">ENCRYPTED</span></div>
                            <div className="flex justify-between items-center"><div className="flex items-center gap-2"><Cpu size={12} className="text-[#ff0505]"/><span className="text-[8px] text-gray-500 uppercase">Node_Status</span></div><span className="text-[9px] text-white">LOCKED_01</span></div>
                            <div className="flex justify-between items-center"><div className="flex items-center gap-2"><Globe size={12} className="text-[#ff0505]"/><span className="text-[8px] text-gray-500 uppercase">Uplink_Node</span></div><span className="text-[9px] text-white">GLOBAL_ASIA</span></div>
                         </div>
-                      </div>
-                      <button onClick={handleUpdateProfile} disabled={loading} className="w-full py-4 mt-2 bg-[#ff0505] text-white font-black uppercase text-[10px] tracking-widest rounded-xl hover:shadow-[0_0_20px_rgba(255,5,5,0.3)] active:scale-95 transition-all">SYNC_NEURAL_PROFILE</button>
+                        <button type="submit" disabled={loading} className="w-full py-4 mt-2 bg-[#ff0505] text-white font-black uppercase text-[10px] tracking-widest rounded-xl hover:shadow-[0_0_20px_rgba(255,5,5,0.3)] active:scale-95 transition-all">SYNC_NEURAL_PROFILE</button>
+                      </form>
                     </div>
                     <div className="space-y-6">
                       <div className="bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] space-y-4 flex-1">
                         <div className="flex items-center gap-3"><ShieldCheck size={18} className="text-[#ff0505]" /><h5 className="text-[11px] font-black text-[#ff0505] uppercase tracking-[0.2em]">Cipher_Node</h5></div>
-                        <button onClick={handleForgotPasswordRequest} className="w-full py-4 border border-[#ff0505]/30 text-[#ff0505] hover:bg-[#ff0505] hover:text-white font-black uppercase text-[10px] rounded-xl transition-all flex items-center justify-center gap-2 group"><RefreshCcw size={14} className="group-hover:rotate-180 transition-transform duration-500"/> REQUEST_CIPHER_OTP</button>
+                        <p className="text-[10px] text-gray-500 leading-relaxed font-mono italic font-bold">Access cipher resets require node-broadcast authorization.</p>
+                        <button onClick={handleForgotPasswordRequest} className="w-full py-4 border border-[#ff0505]/30 text-[#ff0505] hover:bg-[#ff0505] hover:text-white font-black uppercase text-[10px] rounded-xl transition-all flex items-center justify-center gap-2 group"><RefreshCcw size={14} className="group-hover:rotate-180 transition-transform duration-500"/> REQUEST_CIPHER_LINK</button>
                       </div>
-                      <div className="bg-red-950/10 border border-red-900/10 p-6 rounded-[2rem] space-y-4"><div className="flex items-center gap-2 text-red-900/60"><Trash2 size={14} /><span className="text-[9px] font-black uppercase tracking-widest">Protocol: PURGE_ID</span></div><button onClick={handleDeleteAccount} className="w-full py-3.5 bg-transparent border border-red-900/30 text-red-900 hover:bg-red-900 hover:text-white font-black uppercase text-[10px] rounded-xl transition-all">TERMINATE_IDENTITY</button></div>
+                      <div className="bg-red-950/10 border border-red-900/10 p-6 rounded-[2rem] space-y-4"><div className="flex items-center gap-2 text-red-900/60"><Trash2 size={14} /><span className="text-[9px] font-black uppercase tracking-widest">Protocol: PURGE_ID</span></div><button onClick={handleDeleteAccount} className="w-full py-3.5 bg-transparent border border-red-900/30 text-red-900 hover:bg-red-900 hover:text-white font-black uppercase text-[10px] rounded-xl transition-all active:scale-95">TERMINATE_IDENTITY</button></div>
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="flex items-center justify-center h-full text-gray-700 font-mono text-xs uppercase tracking-[0.5em]">System_Idle...</div>
               )}
             </div>
           </div>

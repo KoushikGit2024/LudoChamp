@@ -96,7 +96,7 @@ app.use(async (err, req, res, next) => {
             method: req.method,
             url: req.originalUrl,
             userId: req.user?.id,
-            payload: req.body,
+            payload: {...(req.body),password:"[PASSWORD]"},
             metadata: { userAgent: req.get('User-Agent') }
         });
     } catch (logError) {

@@ -2,109 +2,18 @@ import jwt from "jsonwebtoken";
 import ImageKit from 'imagekit';
 import User from "../models/userModel.js";
 import { sendEmail } from "../utils/sendEmail.js";
-import { redis } from "../config/redis.js"; // Using Upstash for OTP storage
+import { redis } from "../config/redis.js"; 
 import bcrypt from "bcrypt";
+import crypto from "crypto"; // Native Node module for secure tokens
 
-// Initialize ImageKit
-const imagekit = new ImageKit({
-    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
-    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
-    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
-});
-
-// Helper for Cookie Options
-const getCookieOptions = () => ({
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production", 
-    sameSite: "strict",
-    maxAge: 30 * 24 * 60 * 60 * 1000, 
-});
-
-// Helper to generate a 6-digit OTP
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
-
-// ==========================================
-// REGISTER & SEND OTP
-// ==========================================
-const registerHandler = async (req, res, next) => {
-    try {
-        const { fullname, username, email, password } = req.body;
-        const file = req.file;
-
-        const userExists = await User.findOne({ $or: [{ email }, { username }] });
-        if (userExists) return res.status(400).json({ success: false, message: "User already exists" });
-
-        // Avatar Upload Logic
-        let avatarUrl = "/defaultProfile.png";
-        if (file) {
-            const uploadResponse = await imagekit.upload({
-                file: file.buffer,
-                fileName: `profile_${username}_${Date.now()}`,
-                folder: "/ludo_neo/avatars"
-            });
-            avatarUrl = uploadResponse.url;
-            console.log("avatarUrl1",avatarUrl);
-        }
-        console.log("avatarUrl2",avatarUrl);
-        // Generate and store OTP in Upstash (Expires in 10 mins)
-        const otp = generateOTP();
-        await redis.setex(`otp:${email}`, 600, otp);
-
-        // Send Verification Email
-        await sendEmail({
-            email,
-            subject: "Verify your Ludo Neo Account",
-            message: `<h1>Welcome ${fullname}!</h1><p>Your OTP for registration is: <b>${otp}</b></p><p>This code expires in 10 minutes.</p>`,
-        });
-
-        // Create user with isVerified: false (Mobile removed)
-        await User.create({
-            fullname, 
-            username, 
-            email, 
-            password, 
-            avatar: avatarUrl, 
-            isVerified: false
-        });
-
-        res.status(200).json({ 
-            success: true, 
-            message: "Registration successful. Please check your email for the OTP." 
-        });
-    } catch (error) { 
-        next(error); 
-    }
-};
-
-// ==========================================
-// VERIFY EMAIL OTP
-// ==========================================
-const verifyEmail = async (req, res, next) => {
-    try {
-        const { email, otp } = req.body;
-        const storedOtp = await redis.get(`otp:${email}`);
-
-        if (!storedOtp || storedOtp !== otp) {
-            return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
-        }
-
-        await User.findOneAndUpdate({ email }, { isVerified: true });
-        await redis.del(`otp:${email}`); // Clean up OTP after verification
-
-        res.status(200).json({ success: true, message: "Email verified successfully! You can now login." });
-    } catch (error) { 
-        next(error); 
-    }
-};
-
-// ==========================================
-// LOGIN LOGIC
-// ==========================================
+// // ==========================================
+// // LOGIN LOGIC
+// // ==========================================
 const loginHandler = async (req, res, next) => {
     try {
         const { email, password } = req.body;
 
-        const user = await User.findOne({ email }).select("+password");
+        const user = await User.findOne({ $or: [{ email }, { username:email }] }).select("+password");
         if (!user) return res.status(401).json({ success: false, message: "Invalid credentials" });
 
         // Block unverified users from playing
@@ -136,58 +45,9 @@ const loginHandler = async (req, res, next) => {
     }
 };
 
-// ==========================================
-// FORGOT PASSWORD (SEND OTP)
-// ==========================================
-const forgotPassword = async (req, res, next) => {
-    try {
-        const { email } = req.body;
-        const user = await User.findOne({ email });
-        if (!user) return res.status(404).json({ success: false, message: "User not found" });
-
-        const otp = generateOTP();
-        await redis.setex(`resetOtp:${email}`, 600, otp);
-
-        await sendEmail({
-            email,
-            subject: "Password Reset OTP - Ludo Neo",
-            message: `<p>You requested a password reset. Your OTP is: <b>${otp}</b></p><p>Valid for 10 minutes.</p>`,
-        });
-
-        res.status(200).json({ success: true, message: "Reset OTP sent to your email." });
-    } catch (error) { 
-        next(error); 
-    }
-};
-
-// ==========================================
-// RESET PASSWORD
-// ==========================================
-const resetPassword = async (req, res, next) => {
-    try {
-        const { email, otp, newPassword } = req.body;
-        const storedOtp = await redis.get(`resetOtp:${email}`);
-
-        if (!storedOtp || storedOtp !== otp) {
-            return res.status(400).json({ success: false, message: "Invalid or expired OTP" });
-        }
-
-        // Generate salt and hash for the new password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPassword, salt);
-
-        await User.findOneAndUpdate({ email }, { password: hashedPassword });
-        await redis.del(`resetOtp:${email}`);
-
-        res.status(200).json({ success: true, message: "Password updated successfully!" });
-    } catch (error) { 
-        next(error); 
-    }
-};
-
-// ==========================================
-// LOGOUT LOGIC
-// ==========================================
+// // ==========================================
+// // LOGOUT LOGIC
+// // ==========================================
 const logoutHandler = async (req, res) => {
     res.clearCookie("token", {
         httpOnly: true,
@@ -198,9 +58,9 @@ const logoutHandler = async (req, res) => {
     res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 
-// ==========================================
-// UPDATE PROFILE LOGIC
-// ==========================================
+// // ==========================================
+// // UPDATE PROFILE LOGIC
+// // ==========================================
 const updateProfile = async (req, res, next) => {
     try {
         const userId = req.user.id; 
@@ -240,9 +100,9 @@ const updateProfile = async (req, res, next) => {
     }
 };
 
-// ==========================================
-// DELETE ACCOUNT LOGIC (FULL WIPE)
-// ==========================================
+// // ==========================================
+// // DELETE ACCOUNT LOGIC (FULL WIPE)
+// // ==========================================
 const deleteAccount = async (req, res, next) => {
     try {
         const userId = req.user.id; 
@@ -268,9 +128,9 @@ const deleteAccount = async (req, res, next) => {
     }
 };
 
-// ==========================================
-// CHECK USERNAME AVAILABILITY
-// ==========================================
+// // ==========================================
+// // CHECK USERNAME AVAILABILITY
+// // ==========================================
 const checkUsername = async (req, res, next) => {
     try {
         const { username } = req.query;
@@ -296,6 +156,151 @@ const checkUsername = async (req, res, next) => {
     }
 };
 
+
+const imagekit = new ImageKit({
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY,
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY,
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT
+});
+
+const getCookieOptions = () => ({
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production", 
+    sameSite: "strict",
+    maxAge: 30 * 24 * 60 * 60 * 1000, 
+});
+
+// Helper to generate a secure random token
+const generateToken = () => crypto.randomBytes(32).toString("hex");
+
+// ==========================================
+// REGISTER & SEND VERIFICATION LINK
+// ==========================================
+const registerHandler = async (req, res, next) => {
+    try {
+        const { fullname, username, email, password } = req.body;
+        const file = req.file;
+
+        const userExists = await User.findOne({ $or: [{ email }, { username }] });
+        if (userExists) return res.status(400).json({ success: false, message: "User already exists" });
+
+        let avatarUrl = "/defaultProfile.png";
+        if (file) {
+            const uploadResponse = await imagekit.upload({
+                file: file.buffer,
+                fileName: `profile_${username}_${Date.now()}`,
+                folder: "/LudoChamp"
+            });
+            avatarUrl = uploadResponse.url;
+        }
+
+        // 1. Generate secure token
+        const verificationToken = generateToken();
+        // 2. Store in Redis (Token as key, Email as value) for 1 hour
+        await redis.setex(`verify:${verificationToken}`, 3600, email);
+
+        // 3. Create the verification URL (Pointing to your Frontend)
+        const verificationUrl = `http://localhost:5173/options/signin?token=${verificationToken}`;
+
+        await sendEmail({
+            email,
+            subject: "Initialize your Ludo Neo Pilot Identity",
+            message: `
+                <div style="font-family: monospace; background: #020205; color: #fff; padding: 20px; border: 1px solid #00ff3c;">
+                    <h1 style="color: #00ff3c;">WELCOME PILOT ${fullname}</h1>
+                    <p>To finalize your uplink to the Ludo Neo grid, click the authentication node below:</p>
+                    <a href="${verificationUrl}" style="background: #00ff3c; color: #000; padding: 10px 20px; text-decoration: none; font-weight: bold; display: inline-block;">AUTHENTICATE_IDENTITY</a>
+                    <p style="font-size: 10px; color: #555; margin-top: 20px;">Link valid for 60 minutes. If you did not request this, ignore this transmission.</p>
+                </div>
+            `,
+        });
+
+        await User.create({ fullname, username, email, password, avatar: avatarUrl, isVerified: false });
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Initialization link broadcast. Check your neural uplink (email)." 
+        });
+    } catch (error) { next(error); }
+};
+
+// ==========================================
+// VERIFY EMAIL LINK (Triggered by Frontend)
+// ==========================================
+const verifyEmail = async (req, res, next) => {
+    try {
+        const { token } = req.query; // Token sent from frontend via query params
+        
+        // 1. Find email associated with token
+        const email = await redis.get(`verify:${token}`);
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Link expired or invalid node." });
+        }
+
+        // 2. Mark user as verified
+        await User.findOneAndUpdate({ email }, { isVerified: true });
+        
+        // 3. Purge token
+        await redis.del(`verify:${token}`);
+
+        res.status(200).json({ success: true, message: "Neural link established. Access granted." });
+    } catch (error) { next(error); }
+};
+
+// ==========================================
+// FORGOT PASSWORD (SEND RECOVERY LINK)
+// ==========================================
+const forgotPassword = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ success: false, message: "Identity node not found." });
+
+        const resetToken = generateToken();
+        await redis.setex(`reset:${resetToken}`, 3600, email);
+
+        const resetUrl = `http://localhost:5173/options/signin?token=${resetToken}&mode=reset`;
+
+        await sendEmail({
+            email,
+            subject: "Recovery Cipher Request - Ludo Neo",
+            message: `
+                <div style="font-family: monospace; background: #020205; color: #fff; padding: 20px; border: 1px solid #ff0505;">
+                    <h2 style="color: #ff0505;">CIPHER_RESET_REQUEST</h2>
+                    <p>A recovery cipher has been requested. Use the bypass link to override your access node:</p>
+                    <a href="${resetUrl}" style="background: #ff0505; color: #fff; padding: 10px 20px; text-decoration: none; font-weight: bold; display: inline-block;">OVERRIDE_CIPHER</a>
+                </div>
+            `,
+        });
+
+        res.status(200).json({ success: true, message: "Recovery link broadcast to node." });
+    } catch (error) { next(error); }
+};
+
+// ==========================================
+// RESET PASSWORD (VIA TOKEN)
+// ==========================================
+const resetPassword = async (req, res, next) => {
+    try {
+        const { token, newPassword } = req.body;
+        const email = await redis.get(`reset:${token}`);
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Recovery link expired." });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        await User.findOneAndUpdate({ email }, { password: hashedPassword });
+        await redis.del(`reset:${token}`);
+
+        res.status(200).json({ success: true, message: "Access cipher updated successfully." });
+    } catch (error) { next(error); }
+};
+
+/* Keep loginHandler, logoutHandler, updateProfile, deleteAccount, and checkUsername the same */
 export { 
     loginHandler, 
     registerHandler, 
