@@ -50,8 +50,12 @@ const corsOptions = {
   credentials: true
 };
 
+console.log(allowedOrigins);
 // ===== Middlewares =====
-app.use(cors(corsOptions));
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+}));
 app.use(express.json());
 app.use(cookieParser());
 
