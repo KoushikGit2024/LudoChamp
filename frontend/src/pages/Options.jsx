@@ -58,7 +58,7 @@ async function getCroppedImg(image, crop) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(image, crop.x * scaleX, crop.y * scaleY, crop.width * scaleX, crop.height * scaleY, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg', 0.8); 
+  return canvas.toDataURL('image/jpeg', 0.5); 
 }
 
 const Options = () => {
@@ -88,7 +88,7 @@ const Options = () => {
   const [finalImage, setFinalImage] = useState(null);
   const [isChecking, setIsChecking] = useState(false);
   const [userStatus, setUserStatus] = useState(null);
-  const [imageSizeMB, setImageSizeMB] = useState(null);
+  const [imageSizeKB, setImageSizeKB] = useState(null);
   
   const [profileLoading, setProfileLoading] = useState(false); 
   const [isSyncing, setIsSyncing] = useState(false); 
@@ -155,7 +155,7 @@ const Options = () => {
       setFinalImage(null);
     }
     
-    setImageSizeMB(null);
+    setImageSizeKB(null);
     setIsEmailSent(false);
     setForgotPassMode(false); 
     
@@ -212,15 +212,15 @@ const Options = () => {
     if (imgRef.current && completedCrop) {
       const base64 = await getCroppedImg(imgRef.current, completedCrop);
       const blob = dataURLtoBlob(base64);
-      const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
+      const sizeInKB = (blob.size / (1024)).toFixed(2);
 
-      if (sizeInMB > 2.0) {
-         toast.error(`DATA_OVERLOAD: Image is ${sizeInMB}MB. Maximum limit is 2.00MB.`);
+      if (sizeInKB > 512) {
+         toast.error(`DATA_OVERLOAD: Image is ${sizeInKB}KB. Maximum limit is 512KB.`);
          return; 
       }
 
-      setFinalImage(base64);
-      setImageSizeMB(sizeInMB); 
+      setFinalImage(base64);    
+      setImageSizeKB(sizeInKB); 
       setIsCropModalOpen(false);
     }
   };
@@ -459,9 +459,9 @@ const Options = () => {
                     <div className="space-y-6">
                        <div className="flex flex-col items-center">
                         <div className={`relative w-36 h-36 rounded-[2rem] border-2 transition-all overflow-hidden cursor-pointer group ${finalImage ? 'border-[#00ff3c]' : 'border-dashed border-white/20'}`} onClick={() => fileInputRef.current.click()}>{finalImage ? <img src={finalImage} className="w-full h-full object-cover" alt="Avatar" /> : <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 group-hover:bg-white/5 transition-colors"><Upload size={24} className="mb-1"/><span className="text-[7px] font-black uppercase tracking-widest">SCAN_DNA</span></div>}</div>
-                        {imageSizeMB && (
+                        {imageSizeKB && (
                           <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-[#00ff3c] flex items-center gap-1.5">
-                            <CheckCircle size={10} className="text-[#00ff3c]" /> SCAN_SIZE: {imageSizeMB} MB
+                            <CheckCircle size={10} className="text-[#00ff3c]" /> SCAN_SIZE: {imageSizeKB} KB
                           </div>
                         )}
                       </div>
@@ -501,11 +501,11 @@ const Options = () => {
                         <p className="text-2xl font-black uppercase tracking-tight text-white leading-tight">{info?.fullname || "Pilot Designation"}</p>
                         <p className="text-[10px] font-mono text-gray-500 lowercase opacity-60">@{info?.username || "identity_pending"}</p>
                         
-                        {imageSizeMB && (
+                        {imageSizeKB && (
                           <div className="pt-2 flex items-center justify-center sm:justify-start gap-1.5">
                             <CheckCircle size={10} className="text-[#00ff3c]" />
                             <span className="text-[9px] font-black uppercase tracking-widest text-[#00ff3c]">
-                              SCAN_SIZE: {imageSizeMB} MB
+                              SCAN_SIZE: {imageSizeKB} KB
                             </span>
                           </div>
                         )}
