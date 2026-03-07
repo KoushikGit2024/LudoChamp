@@ -7,7 +7,7 @@ import { AudioContext } from "@/contexts/SoundContext";
 
 // Receives socket, gameId, and store states from LudoOnline
 const Dice = ({ turn, rollAllowed, gameFinished, socket, gameId, isOnline }) => {
-  const {sound}=useContext(AudioContext)
+  const { sound } = useContext(AudioContext);
   const [rolling, setRolling] = useState(false);
   const [value, setValue] = useState(1);
   const audioRef = useRef(null);
@@ -24,14 +24,29 @@ const Dice = ({ turn, rollAllowed, gameFinished, socket, gameId, isOnline }) => 
     // Prevent clicking if not allowed, already rolling, or game over
     if (rolling || !rollAllowed || gameFinished) return;
     
-    // Only allow clicking if we are online and have a socket
+    // Online Flow
     if (isOnline && socket) {
-       // Ask server to generate the roll
        socket.emit("roll-dice", { gameId, color: turn });
+    } 
+    // Offline Flow (If you reuse this component offline)
+    else if (!isOnline) {
+       setRolling(true);
+       playSound();
+       const interval = setInterval(() => {
+         setValue(Math.floor(Math.random() * 6) + 1);
+       }, 100);
+
+       setTimeout(() => {
+         clearInterval(interval);
+         const finalValue = Math.floor(Math.random() * 6) + 1;
+         setValue(finalValue);
+         setRolling(false);
+         // You would trigger your local Zustand action here
+       }, 500);
     }
   };
 
-  // --- SERVER RESPONSE LISTENER ---
+  // --- SERVER RESPONSE LISTENER (ONLINE ONLY) ---
   useEffect(() => {
     if (!isOnline || !socket) return;
 
@@ -52,8 +67,8 @@ const Dice = ({ turn, rollAllowed, gameFinished, socket, gameId, isOnline }) => 
         setValue(finalValue); // Set to server's true value
         setRolling(false);
         
-        // Note: LudoOnline handles syncing the new game state (moveAllowed, moveCount, etc.)
-        // immediately after this event is received, so we don't need to do it here.
+        // Note: LudoOnline handles syncing the new game state 
+        // via the 'syncArray' logic, so we don't dispatch Zustand here.
       }, 500); // 500ms animation duration
     };
 

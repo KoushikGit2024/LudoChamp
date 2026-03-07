@@ -24,9 +24,9 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
 
   const findIdxByref = (color, ref) => {
     let baseStartIdx =
-      turn === 'R' ? 79 :
-      turn === 'B' ? 83 :
-      turn === 'Y' ? 87 :
+      color === 'R' ? 79 :
+      color === 'B' ? 83 :
+      color === 'Y' ? 87 :
       91;
     let foundIdx = pieceIdxArr[color].findIndex((el, idx) => {
       if (el === -1) {
@@ -50,18 +50,18 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
       turn: state.move.turn,
       moveAllowed: state.move.moveAllowed,
       onBoard: state.meta.onBoard,
-      clrR: state.players.R.color,
-      clrB: state.players.B.color,
-      clrY: state.players.Y.color,
-      clrG: state.players.G.color,
-      homeR: state.players.R.homeCount,
-      homeB: state.players.B.homeCount,
-      homeY: state.players.Y.homeCount,
-      homeG: state.players.G.homeCount,
-      winR: state.players.R.winCount,
-      winB: state.players.B.winCount,
-      winY: state.players.Y.winCount,
-      winG: state.players.G.winCount,
+      clrR: state.players.R?.color,
+      clrB: state.players.B?.color,
+      clrY: state.players.Y?.color,
+      clrG: state.players.G?.color,
+      homeR: state.players.R?.homeCount,
+      homeB: state.players.B?.homeCount,
+      homeY: state.players.Y?.homeCount,
+      homeG: state.players.G?.homeCount,
+      winR: state.players.R?.winCount,
+      winB: state.players.B?.winCount,
+      winY: state.players.Y?.winCount,
+      winG: state.players.G?.winCount,
     }))
   );
 
@@ -77,10 +77,10 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
     R: winR, B: winB, Y: winY, G: winG
   }), [winR, winB, winY, winG]);
 
-  const pieceR = useGameStore(state => state.players.R.pieceRef);
-  const pieceB = useGameStore(state => state.players.B.pieceRef);
-  const pieceY = useGameStore(state => state.players.Y.pieceRef);
-  const pieceG = useGameStore(state => state.players.G.pieceRef);
+  const pieceR = useGameStore(state => state.players.R?.pieceRef);
+  const pieceB = useGameStore(state => state.players.B?.pieceRef);
+  const pieceY = useGameStore(state => state.players.Y?.pieceRef);
+  const pieceG = useGameStore(state => state.players.G?.pieceRef);
 
   const pieceState = {
     R: pieceR, B: pieceB, Y: pieceY, G: pieceG
@@ -144,22 +144,20 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
 
   const pathPointCalculator = () => {
     if (!pathRefs.current[0] || !boardRef.current) return;
-
     const boardRect = boardRef.current.getBoundingClientRect();
-
-    const tempPts = pathRefs.current.map(el => {
-      if (!el) return null;
-      const rect = el.getBoundingClientRect();
-
-      return {
-        // Use the center relative to the board
-        cx: rect.left - boardRect.left + (rect.width / 2)-1.8,
-        cy: rect.top - boardRect.top + (rect.height / 2)-1.8,
-        w: rect.width,
-        h: rect.height
-      };
-    }).filter(Boolean);
     
+    const tempPts = [];
+    pathRefs.current.forEach((el, index) => {
+      if (el) {
+        const rect = el.getBoundingClientRect();
+        tempPts[index] = {
+          cx: rect.left - boardRect.left + (rect.width / 2) - 1.8,
+          cy: rect.top - boardRect.top + (rect.height / 2) - 1.8,
+          w: rect.width,
+          h: rect.height
+        };
+      }
+    });
     setPathPoints(tempPts);
   };
 
@@ -200,7 +198,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
           y: pathPoints[to].cy - targetH / 2,
           width: pathPoints[to].w,
           height: pathPoints[to].h,
-          duration: 0.005, // Lower duration for snappier feel //0.5
+          duration: 0.5, // Lower duration for snappier feel //0.5
           ease: "power1.inOut",
           onComplete: resolve
         }
@@ -261,18 +259,25 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
 
   const afterPieceMove = async (curColor = '', curArrIdx = -1, curPieceRef = -1, prePieceRef = -1) => {
     if (!curColor || curArrIdx < 0 || curPieceRef < 0 || prePieceRef < 0) return;
+    const freshState = useGameStore.getState().players;
+    const currentPieceState = {
+      R: freshState.R?.pieceRef,
+      B: freshState.B?.pieceRef,
+      Y: freshState.Y?.pieceRef,
+      G: freshState.G?.pieceRef
+    };
     const safeSet = new Set([1, 9, 14, 22, 27, 35, 40, 48, 52]);
 
     // Landing Logic
     if (!safeSet.has(curPieceRef)) {
-      let myCount = pieceState[curColor].get(curPieceRef) ?? 0;
+      let myCount = currentPieceState[curColor].get(curPieceRef) ?? 0;
       let opponentTotal = 0;
       let maxOpponentCount = 0;
       let maxOpponentColor = '';
 
-      for (const color of Object.keys(pieceState)) {
+      for (const color of Object.keys(currentPieceState)) {
         if (color === curColor) continue;
-        const cnt = pieceState[color].get(curPieceRef) ?? 0;
+        const cnt = currentPieceState[color].get(curPieceRef) ?? 0;
         opponentTotal += cnt;
         if (cnt > maxOpponentCount) {
           maxOpponentCount = cnt;
@@ -292,9 +297,9 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
         reRoll.current = 2;
       }
       else if (myCount >= opponentTotal && opponentTotal > 0) {
-        for (const color of Object.keys(pieceState)) {
+        for (const color of Object.keys(currentPieceState)) {
           if (color === curColor) continue;
-          let cnt = pieceState[color].get(curPieceRef) ?? 0;
+          let cnt = currentPieceState[color].get(curPieceRef) ?? 0;
           while (cnt-- > 0) {
             const cutIdx = findIdxByref(color, curPieceRef);
             if (cutIdx !== -1) {
@@ -308,14 +313,14 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
 
     // Leaving Logic
     if (safeSet.has(prePieceRef)) return;
-    let myCount = pieceState[curColor].get(prePieceRef) ?? 0;
+    let myCount = currentPieceState[curColor].get(prePieceRef) ?? 0;
     if (myCount === 0) return;
     let opponentTotal = 0;
     let maxOpponentCount = 0;
     let maxOpponentColor = '';
-    for (const color of Object.keys(pieceState)) {
+    for (const color of Object.keys(currentPieceState)) {
       if (color === curColor) continue;
-      const cnt = pieceState[color].get(prePieceRef) ?? 0;
+      const cnt = currentPieceState[color].get(prePieceRef) ?? 0;
       opponentTotal += cnt;
       if (cnt > maxOpponentCount) {
         maxOpponentCount = cnt;
@@ -329,7 +334,7 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
 
   const determineAndProcessClickCell = async (refNum) => {
     if (!moveAllowed || moving || inputLockedRef.current) return;
-    // console.log(pathPoints[refNum])
+    // console.log(refNum)
     inputLockedRef.current = true;
     reRoll.current = 1;
     const pieceCount = pieceState[turn].get(refNum) ?? 0;
@@ -349,6 +354,11 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
     }
     if (pieceIdxArr[turn][idx] === -1) steps = 1;
     if (moveCount === 6) reRoll.current = 0;
+    if(56-pieceIdxArr[turn][idx] < moveCount){
+      inputLockedRef.current = false;
+      return;
+    }
+
     await runChariot(idx, refNum, steps, turn);
     setTimeout(() => {
       transferTurn(reRoll.current);
@@ -435,10 +445,10 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
 
               {/* The Actual Game Piece Component */}
               <Cell
-                R={pieceState.R.get(i) ?? 0}
-                B={pieceState.B.get(i) ?? 0}
-                Y={pieceState.Y.get(i) ?? 0}
-                G={pieceState.G.get(i) ?? 0}
+                R={pieceState.R?.get(i) ?? 0}
+                B={pieceState.B?.get(i) ?? 0}
+                Y={pieceState.Y?.get(i) ?? 0}
+                G={pieceState.G?.get(i) ?? 0}
                 activeColor={turn}
                 COLORS={COLORS}
                 moveAllowed={moveAllowed}
@@ -454,9 +464,9 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
           const trackColor = c === 'R' ? COLORS.R : c === 'B' ? COLORS.B : c === 'Y' ? COLORS.Y : COLORS.G;
           return (
             <div
-              className={`track${c}${n} relative flex items-center justify-center rounded-[4px] aspect-square`}
+              className={`track${c}${n} relative flex items-center justify-center rounded-[4px] aspect-square cursor-pointer`}
               key={`${c}${n}`}
-              
+              onClick={()=>determineAndProcessClickCell(i * 5 + j + 52)}
             >
               <div
                 className={`cell w-full h-full rounded-[3px] flex items-center justify-center bg-black/40 border transition-all`}
@@ -470,10 +480,10 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
                 <div className="absolute w-1 h-1 rounded-full opacity-50" style={{backgroundColor: trackColor}}/>
                 
                 <Cell
-                  R={pieceState.R.get(i * 5 + j + 52) ?? 0}
-                  B={pieceState.B.get(i * 5 + j + 52) ?? 0}
-                  Y={pieceState.Y.get(i * 5 + j + 52) ?? 0}
-                  G={pieceState.G.get(i * 5 + j + 52) ?? 0}
+                  R={pieceState.R?.get(i * 5 + j + 52) ?? 0}
+                  B={pieceState.B?.get(i * 5 + j + 52) ?? 0}
+                  Y={pieceState.Y?.get(i * 5 + j + 52) ?? 0}
+                  G={pieceState.G?.get(i * 5 + j + 52) ?? 0}
                   activeColor={turn}
                   COLORS={COLORS}
                   moveAllowed={moveAllowed}
@@ -537,10 +547,10 @@ const GameBoard = memo(({ moveCount, timeOut, moving, pieceIdxArr, winState }) =
                     {/* Active Piece */}
                     {(onBoard.has(keyId)) && (
                       <Cell
-                        R={pieceState.R.get(base + i) ?? 0}
-                        B={pieceState.B.get(base + i) ?? 0}
-                        Y={pieceState.Y.get(base + i) ?? 0}
-                        G={pieceState.G.get(base + i) ?? 0}
+                        R={pieceState.R?.get(base + i) ?? 0}
+                        B={pieceState.B?.get(base + i) ?? 0}
+                        Y={pieceState.Y?.get(base + i) ?? 0}
+                        G={pieceState.G?.get(base + i) ?? 0}
                         activeColor={turn}
                         COLORS={COLORS}
                         moveAllowed={moveAllowed}

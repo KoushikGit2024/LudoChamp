@@ -1,7 +1,29 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
+// ==========================================
+// SUB-SCHEMAS
+// ==========================================
+const notificationSchema = new mongoose.Schema({
+    title: { type: String, required: true },
+    message: { type: String, required: true },
+    type: { type: String, enum: ["info", "success", "warning", "error"], default: "info" },
+    read: { type: Boolean, default: false },
+    createdAt: { type: Date, default: Date.now }
+});
+
+const matchHistorySchema = new mongoose.Schema({
+    gameId: { type: String, required: true },
+    date: { type: Date, default: Date.now },
+    result: { type: String, enum: ["win", "loss", "draw"], required: true },
+    opponent: { type: String }
+}, { _id: false }); // _id: false prevents Mongoose from generating an ID for every single match log
+
+// ==========================================
+// MAIN USER SCHEMA
+// ==========================================
 const userSchema = new mongoose.Schema({
+    // --- IDENTITY ---
     fullname: { type: String, required: [true, "Full name is required"], trim: true },
     username: { 
         type: String, 
@@ -9,7 +31,7 @@ const userSchema = new mongoose.Schema({
         unique: true, 
         trim: true, 
         lowercase: true, 
-        minlength: [3, "Username must be at least 3 characters"] // Fixed: was 8 in your text but 3 in message
+        minlength: [3, "Username must be at least 3 characters"] 
     },
     email: { 
         type: String, 
@@ -23,31 +45,59 @@ const userSchema = new mongoose.Schema({
         type: String, 
         required: [true, "Password is required"], 
         minlength: [6, "Password must be at least 6 characters"],
-        select: false // Ensures password isn't sent back in queries by default
+        select: false 
     },
-    avatar: { type: String, default: "" },
+    avatar: { type: String, default: "/defaultProfile.png" }, // Aligned with Zustand default
     isVerified: { type: Boolean, default: false },
-    // otp: { type: String }, // Optional: only if you prefer DB over Redis
-    // otpExpires: { type: Date },
-    role: { type: String, enum: ["user", "admin"], default: "user" }
+    role: { type: String, enum: ["user", "admin"], default: "user" },
+    notifications: { type: [notificationSchema], default: [] },
+
+    // --- GAME STATISTICS ---
+    stats: {
+        level: { type: Number, default: 1 },
+        xp: { type: Number, default: 0 },
+        nextLevelXp: { type: Number, default: 1000 },
+        wins: { type: Number, default: 0 },
+        losses: { type: Number, default: 0 },
+        draws: { type: Number, default: 0 },
+        totalMatches: { type: Number, default: 0 },
+        winRate: { type: String, default: "0%" },
+        matchHistory: { type: [matchHistorySchema], default: [] }
+    },
+
+    // --- CUSTOMIZATION & INVENTORY ---
+    inventory: {
+        badges: { type: [String], default: [] },
+        themes: { type: [String], default: ["default_neon"] },
+        currentTheme: { type: String, default: "default_neon" },
+        avatarBorders: { type: [String], default: ["standard"] },
+        currentBorder: { type: String, default: "standard" }
+    },
+
+    // --- SYSTEM CONFIG ---
+    settings: {
+        musicVolume: { type: Number, default: 0.5 },
+        sfxVolume: { type: Number, default: 0.8 },
+        haptics: { type: Boolean, default: true },
+        lowGraphics: { type: Boolean, default: false }
+    }
 }, { timestamps: true });
 
+// ==========================================
+// MIDDLEWARE & METHODS
+// ==========================================
+
 // PASSWORD HASHING LOGIC
-// Notice: We removed "next" from the function arguments
 userSchema.pre("save", async function () {
     // 1. Only hash if the password has been modified (or is new)
     if (!this.isModified("password")) return;
 
     try {
-        // 2. Generate a salt (higher number = more secure but slower)
+        // 2. Generate a salt
         const salt = await bcrypt.genSalt(10);
-        // console.log(salt);
         // 3. Replace the plain-text password with the hashed version
         this.password = await bcrypt.hash(this.password, salt);
-        
-        // No next() needed! The "async" nature handles the flow.
     } catch (err) {
-        // If something fails, throw the error so the controller catches it
         throw err; 
     }
 });

@@ -134,7 +134,7 @@ const updateProfile = async (req, res, next) => {
             const uploadResponse = await imagekit.upload({
                 file: file.buffer,
                 fileName: `profile_update_${user.username}_${Date.now()}`,
-                folder: "/ludo_neo/avatars"
+                folder: "/MyProjects/ludo_neo/avatars"
             });
 
             // 2. Safely delete the old image from ImageKit
@@ -152,7 +152,7 @@ const updateProfile = async (req, res, next) => {
                     // If ImageKit finds it, destroy it
                     if (files && files.length > 0) {
                         await imagekit.deleteFile(files[0].fileId);
-                        console.log(`[SYSTEM] Orphaned DNA scan deleted: ${oldFileName}`);
+                        // console.log(`[SYSTEM] Orphaned DNA scan deleted: ${oldFileName}`);
                     }
                 } catch (deleteErr) {
                     console.error("[SYSTEM WARNING] Failed to purge old avatar from ImageKit:", deleteErr);
@@ -233,7 +233,8 @@ const initialFetch = async(req, res, next)=>{
                 fullname: user.fullname,
                 username: user.username,
                 email: user.email,
-                avatar: user.avatar
+                avatar: user.avatar,
+                notifications: user.notifications
             },
             message: "User fetched successfully"
         });
@@ -279,6 +280,7 @@ const registerHandler = async (req, res, next) => {
         const file = req.file;
 
         const userExists = await User.findOne({ $or: [{ email }, { username }] });
+        // console.log(userExists);
         if (userExists) return res.status(400).json({ success: false, message: "User already exists" });
 
         let avatarUrl = "/defaultProfile.png";
@@ -470,6 +472,79 @@ const searchUsers = async (req, res, next) => {
     }
 };
 
+// ==========================================
+// FETCH ONLY NOTIFICATIONS
+// ==========================================
+const getNotifications = async (req, res, next) => {
+    try {
+        // Select ONLY the notifications array to save bandwidth
+        const user = await User.findById(req.user.id).select("notifications");
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        res.status(200).json({ 
+            success: true, 
+            notifications: user.notifications 
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// ==========================================
+// MARK NOTIFICATION AS READ
+// ==========================================
+const markNotificationRead = async (req, res, next) => {
+    try {
+        const userId = req.user.id;
+        const { id: notifId } = req.params;
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+        // Mongoose has a handy .id() method for subdocument arrays!
+        const notification = user.notifications.id(notifId);
+        
+        if (!notification) {
+            return res.status(404).json({ success: false, message: "Notification not found" });
+        }
+
+        notification.read = true;
+        await user.save();
+
+        res.status(200).json({ success: true, message: "Comms marked as read." });
+    } catch (error) {
+        next(error);
+    }
+}
+
+const sendInvites = async (req, res, next) => {
+    try {
+        const { targets, title, message, type } = req.body;
+        
+        // targets is an array of usernames. 
+        // We push the notification object to all matching users simultaneously!
+        await User.updateMany(
+            { username: { $in: targets } },
+            { 
+                $push: { 
+                    notifications: { 
+                        title, 
+                        message, 
+                        type, 
+                        read: false, 
+                        createdAt: new Date() 
+                    } 
+                } 
+            }
+        );
+
+        res.status(200).json({ success: true, message: "Invites delivered." });
+    } catch (error) {
+        next(error);
+    }
+};
+
+
 export { 
     loginHandler, 
     registerHandler, 
@@ -481,5 +556,8 @@ export {
     deleteAccount,
     checkUsername,
     initialFetch,
-    searchUsers
+    searchUsers,
+    getNotifications,
+    markNotificationRead,
+    sendInvites
 };

@@ -8,8 +8,8 @@ const AudioContext = createContext({
 });
 
 const AudioProvider = (props) => {
-    const [sound, setSound] = useState(true);
-    const [music, setMusic] = useState(true);
+    const [sound, setSound] = useState(false);
+    const [music, setMusic] = useState(false);
 
     // Custom toggle functions
     const toggleSound = () => setSound(prev => !prev);

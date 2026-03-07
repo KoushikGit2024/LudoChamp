@@ -80,12 +80,8 @@ const Session = () => {
     setIsSaving(true);
     try {
       const finalTitle = saveTitle.trim() || generateDefaultTitle();
-      await api.post('/api/game/save', {
-        title: finalTitle,
-        state: fullGameState,
-        type: boardType
-      });
-      toast.success("Game Synced to Memory Core", { theme: "dark" });
+      await gameActions.saveGameToDB(finalTitle)
+      // toast.success("Game Synced to Memory Core", { theme: "dark" });
       blocker.proceed?.();
     } catch (err) {
       console.error(err);
@@ -95,13 +91,7 @@ const Session = () => {
     }
   };
   
-  // const handleForceExit = () => {
-  //   blocker.reset?.(); // 1. Cancel the interrupted navigation (e.g. the Back button press)
-  //   gameActions.endGame(); // 2. Set status to "FINISHED" so the blocker drops its guard
-  //   navigate('/dashboard', { replace: true }); // 3. Force route strictly to Dashboard
-  // };
-  // --- 3A. UNMOUNT CLEANUP ---
-  // Completely resets game store ONLY when navigating entirely out of the session
+  
   useEffect(() => {
     return () => {
       socket.disconnect();
@@ -124,6 +114,7 @@ const Session = () => {
       navigate("/options/signin");
     } else if (isOnlineMode) {
       socket.connect();
+      console.log("Socket Connected",socket);
     }
 
     return () => {

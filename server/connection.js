@@ -2,11 +2,11 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
 async function connectMongo() {
-    const URL=(process.env.NODE_ENV === "production") ? process.env.MONGO_URL : process.env.MONGO_URL_DEV;
+    const URL=(process.env.NODE_ENV === "production") ? process.env.MONGO_URL : "mongodb://localhost:27017/ludochamp";
     // console.log(URL)
     try {
         await mongoose.connect(URL);
-        console.log("Connected to MongoDB ",(process.env.NODE_ENV === "production")?"in production":"in development");
+        // console.log("Connected to MongoDB ",(process.env.NODE_ENV === "production")?"in production":"in development");
     } catch (error) {
         console.log(error);
     }

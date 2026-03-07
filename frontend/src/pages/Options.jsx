@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useNavigate, useParams, Link, useSearchParams } from "react-router-dom";
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { 
   ArrowLeft, User, Settings, LogIn, UserPlus, 
   CheckCircle, XCircle, Loader2, Mail, Fingerprint, X, Crop, Upload, 
-  ShieldCheck, Eye, EyeOff, Save, RefreshCcw, Trash2, Activity, Cpu, Globe
+  ShieldCheck, Eye, EyeOff, Save, RefreshCcw, Trash2, Activity, Cpu, Globe, Crosshair,
+  Volume2, VolumeX, Music, Music2 // ✅ Added new icons for Settings
 } from 'lucide-react';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -15,6 +16,7 @@ import api from '@/api/axiosConfig';
 import { updateUserInfo, resetUserStore } from "@/store/userActions"; 
 import { useShallow } from 'zustand/shallow';
 import useUserStore from '@/store/userStore';
+import { AudioContext } from '@/contexts/SoundContext'; // ✅ Added Audio Context
 import "../styles/options.css";
 
 const ProfileSkeleton = () => (
@@ -56,23 +58,28 @@ async function getCroppedImg(image, crop) {
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(image, crop.x * scaleX, crop.y * scaleY, crop.width * scaleX, crop.height * scaleY, 0, 0, canvas.width, canvas.height);
-  return canvas.toDataURL('image/jpeg',0.8); 
+  return canvas.toDataURL('image/jpeg', 0.8); 
 }
 
 const Options = () => {
   const { subOption } = useParams();
-  const [searchParams,setURL] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // ✅ Pull in Audio Context for Settings Tab
+  const { sound, toggleSound, music, toggleMusic } = useContext(AudioContext);
 
   // --- States ---
   const [formData, setFormData] = useState({ fullname: '', username: '', email: '', password: '', newPassword: '' });
   const [loading, setLoading] = useState(false);
   const [isEmailSent, setIsEmailSent] = useState(false); 
-  const reset=searchParams.get("reset");
-  const id=searchParams.get("id")
-  // console.log()
-  const [forgotPassMode, setForgotPassMode] = useState(false); // FIXED: Restored state
-  const [newPWmode, setNewPWmode] = useState((reset && id)? true : false);
+  
+  const reset = searchParams.get("reset");
+  const id = searchParams.get("id");
+  const token = searchParams.get("token");
+
+  const [forgotPassMode, setForgotPassMode] = useState(false); 
+  const [newPWmode, setNewPWmode] = useState((reset && id) ? true : false);
   const [showPass, setShowPass] = useState(false);
   const [imgSrc, setImgSrc] = useState('');
   const [crop, setCrop] = useState();
@@ -82,10 +89,13 @@ const Options = () => {
   const [isChecking, setIsChecking] = useState(false);
   const [userStatus, setUserStatus] = useState(null);
   const [imageSizeMB, setImageSizeMB] = useState(null);
+  
+  const [profileLoading, setProfileLoading] = useState(false); 
+  const [isSyncing, setIsSyncing] = useState(false); 
+  
   const imgRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  
   const subOptionsMap = {
     profile: { icon: <User size={20}/>, color: "#ff0505", title: "User Profile" },
     signin: { icon: <LogIn size={20}/>, color: "#2b01ff", title: "System Access" },
@@ -94,29 +104,20 @@ const Options = () => {
   };
 
   const activeTheme = subOptionsMap[subOption] || subOptionsMap.profile;
-  const info = useUserStore(useShallow((state) => state.info));
   
-  // useEffect(()=>{
-  //   console.log(forgotPassMode)
-  // },[forgotPassMode])
+  const { info, stats, inventory, settings } = useUserStore(useShallow((state) => ({
+    info: state.info,
+    stats: state.stats,
+    inventory: state.inventory,
+    settings: state.settings
+  })));
+
   // --- Handle Magic Link Verification ---
   useEffect(() => {
-    const token = searchParams.get("token");
-    if (token) {
-      handleVerifyLink(token);
-    }
-    
-    // console.log({reset,id})
-    if (reset && id) {
-      // handleResetPassword(resetPW);
-      // handleForgotPasswordRequest(reset);
-      // setNewPWmode(true)
-      // console.log('Hi')
-      setForgotPassMode(true);
-    }
-  }, [searchParams]);
+    if (token) handleVerifyLink(token);
+    if (reset && id) setForgotPassMode(true);
+  }, [token, reset, id]);
 
-  
   const handleVerifyLink = async (token) => {
     setLoading(true);
     try {
@@ -130,63 +131,61 @@ const Options = () => {
     }
   };
 
-  // --- Sync Store to Local State & Auto-Fetch Profile ---
+  // --- 1. HANDLE TAB CHANGES & FETCH DATA ---
   useEffect(() => {
-    // 1. Guard against invalid subOptions
     if (!subOptionsMap[subOption]) {
       navigate('/dashboard');
       return;
     }
 
-    // 2. Set Theme Styling
     document.documentElement.style.setProperty('--active-neon', activeTheme.color);
 
-    // 3. Handle Profile-Specific Logic
     if (subOption === 'profile') {
-      // Sync local form state with global store info
-      setFormData(prev => ({ 
-        ...prev, 
-        fullname: info?.fullname || '', 
-        username: info?.username || '', 
-        email: info?.email || '' 
-      }));
-      setFinalImage(info?.avatar || "/defaultProfile.png");
-
-      // FIX: Call the declared function to refresh profile data from the server
-      if(info.email!==""){
+      // ✅ OPTIMIZATION: Silently check if we already have the user's data.
+      // We only hit the server if their email is empty (like after a hard page refresh).
+      const currentInfo = useUserStore.getState().info;
+      
+      if (!currentInfo.email || currentInfo.username === "identity_pending") {
         fetchCurrentProfile(); 
       }
     }
-    if(subOption==='signin' || subOption==='signup'){
-      setFormData(prev => ({ 
-        ...prev, 
-        fullname: '', 
-        username: '', 
-        email: '' 
-      }));
+    
+    if (subOption === 'signin' || subOption === 'signup') {
+      setFormData(prev => ({ ...prev, fullname: '', username: '', email: '' }));
       setFinalImage(null);
-      // console.log('signin')
     }
+    
     setImageSizeMB(null);
-    // 4. Reset secondary states on tab change
     setIsEmailSent(false);
     setForgotPassMode(false); 
     
-  }, [subOption, info, navigate]); // Added dependencies for stability
+  }, [subOption, navigate]); // Notice how clean this dependency array stays!
+
+  // --- 2. SYNC FORM DATA WHEN STORE UPDATES ---
+  useEffect(() => {
+    if (subOption === 'profile' && info) {
+      setFormData(prev => ({ 
+        ...prev, 
+        fullname: info.fullname || '', 
+        username: info.username || '', 
+        email: info.email || '' 
+      }));
+      setFinalImage(info.avatar || "/defaultProfile.png");
+    }
+  }, [info, subOption]);
 
   // --- Debounced Username Check ---
   useEffect(() => {
-    if (!formData.username || formData.username.length < 8 || subOption !== 'signup') {
+    if (!formData.username || formData.username.length < 3 || subOption !== 'signup') {
       setUserStatus(null);
-      setIsChecking(false)
+      setIsChecking(false);
       return;
     }
-    // console.log('Checking username',formData.username)
     setIsChecking(true);
     const timeoutId = setTimeout(async () => {
       try {
-        const res = await api.get(`/api/auth/check-username?username=${formData.username}`);
-        setUserStatus(res.data.available ? 'available' : 'taken');
+        const res = await api.get(`/api/auth/check-username?query=${formData.username}`);
+        setUserStatus(res.data.success ? 'taken' : 'available');
       } catch (err) { setUserStatus(null); }
       finally { setIsChecking(false); }
     }, 500);
@@ -205,7 +204,6 @@ const Options = () => {
         setIsCropModalOpen(true); 
       });
       reader.readAsDataURL(e.target.files[0]);
-      
       e.target.value = ''; 
     }
   };
@@ -213,30 +211,24 @@ const Options = () => {
   const handleConfirmCrop = async () => {
     if (imgRef.current && completedCrop) {
       const base64 = await getCroppedImg(imgRef.current, completedCrop);
-      
-      // Calculate exact file size
       const blob = dataURLtoBlob(base64);
       const sizeInMB = (blob.size / (1024 * 1024)).toFixed(2);
 
-      // Validate against 2MB limit
       if (sizeInMB > 2.0) {
          toast.error(`DATA_OVERLOAD: Image is ${sizeInMB}MB. Maximum limit is 2.00MB.`);
-         return; // Abort the crop confirmation!
+         return; 
       }
 
       setFinalImage(base64);
-      setImageSizeMB(sizeInMB); // Save size to state
+      setImageSizeMB(sizeInMB); 
       setIsCropModalOpen(false);
     }
   };
 
-  // --- States ---
-  // ... existing states
-  const [profileLoading, setProfileLoading] = useState(false); // New state for skeleton
-
   // --- Handlers ---
   const fetchCurrentProfile = async () => {
-    setProfileLoading(true); // Start loading
+    setIsSyncing(true); 
+    setProfileLoading(true); 
     try {
       const res = await api.get('/api/auth/me');
       if (res.data.success) {
@@ -245,19 +237,21 @@ const Options = () => {
     } catch (err) {
       console.log("Node status: Offline");
     } finally {
-      // Small timeout makes the transition feel smoother
-      setTimeout(() => setProfileLoading(false), 600); 
+      setTimeout(() => {
+        setProfileLoading(false);
+        setIsSyncing(false);
+      }, 600); 
     }
   };
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    if(formData.username.length>0 && formData.username.length<8){
-      toast.error("Username must be at least 8 characters long.");
+    if(formData.username.length < 3){
+      toast.error("Username must be at least 3 characters long.");
       return;
     }
-    if(formData.password.length<8){
-      toast.error("Password must be at least 8 characters long.");
+    if(formData.password.length < 6){
+      toast.error("Password must be at least 6 characters long.");
       return;
     }
     setLoading(true);
@@ -271,10 +265,10 @@ const Options = () => {
     } catch (err) { toast.error(err.response?.data?.message || "REGISTRATION FAILURE."); }
     finally { setLoading(false); }
   };
-  const curData=useUserStore(useShallow((state) => state.info));
+
   const handleSignin = async (e) => {
     e.preventDefault();
-    if(curData.username===formData.email || curData.email===formData.email){
+    if(info?.username === formData.email || info?.email === formData.email){
       return toast.warn("User Already Logged In.");
     }
     if (!formData.email || !formData.password) {
@@ -287,18 +281,11 @@ const Options = () => {
         email: formData.email, 
         password: formData.password 
       });
-      console.log(res.data)
-      // Extract user data regardless of whether it's nested under .user or not
       const userData = res.data.user || res.data;
-      //  console.log(useUserStore);
       if (userData && (userData.username || userData.email)) {
-        // Update store with the actual user object
         updateUserInfo(userData);
-        console.log(userData);
         const displayName = userData.username || userData.fullname || "PILOT";
         toast.success(`PILOT ${displayName} ACCESS GRANTED.`);
-        
-        // Brief delay before navigation ensures store persistence is triggered
         setTimeout(() => navigate('/options/profile'), 500);
       } else {
         throw new Error("MALFORMED IDENTITY DATA.");
@@ -316,23 +303,14 @@ const Options = () => {
   };
 
   const handleForgotPasswordRequest = async () => {
-    
-    // if(searchParams.get("reset") && subOption!="signin"){
-    //   return toast.warn("INVALID REQUEST.");
-    // }
-    const resetToken=searchParams.get('reset');
-    if(resetToken){
-      if(formData.email.length<8){
-      toast.error("Password must be at least 8 characters long.");
-      return;
-    }
+    if(reset){
+      if(formData.email.length < 6){
+        toast.error("Password must be at least 6 characters long.");
+        return;
+      }
       setLoading(true);
-      let res;
       try {
-        const eid=searchParams.get('id');
-        
-        res=await api.post('/api/auth/reset-password', { email: eid,token:resetToken,newPassword:formData.email });
-        // setIsEmailSent(true);
+        const res = await api.post('/api/auth/reset-password', { email: id, token: reset, newPassword: formData.email });
         toast.success((res.data.message).toUpperCase());
       } catch (err) { toast.error((err.response?.data?.message).toUpperCase()); }
       finally { setLoading(false); setNewPWmode(false); setForgotPassMode(false); setFormData(pre=>({...pre,email:''}))}
@@ -346,11 +324,11 @@ const Options = () => {
       finally { setLoading(false); }
     }
   };
-  // const all =useUserStore(useShallow(state=>state))
-  // console.log(all);
+
   const handleUpdateProfile = async (e) => {
     if(e) e.preventDefault();
     setLoading(true);
+    setIsSyncing(true); // ✅ Trigger the sync loader visually!
     try {
       const form = new FormData();
       form.append('fullname', formData.fullname);
@@ -362,8 +340,12 @@ const Options = () => {
       }
       updateUserInfo(res.data.user);
       toast.success("NEURAL PROFILE SYNCHRONIZED.");
-    } catch (err) { toast.error("SYNC FAILURE."); }
-    finally { setLoading(false); }
+    } catch (err) { 
+      toast.error("SYNC FAILURE."); 
+    } finally { 
+      setLoading(false); 
+      setTimeout(() => setIsSyncing(false), 600); // Smooth off-switch for UI loader
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -380,7 +362,7 @@ const Options = () => {
 
   return (
     <div className="h-screen w-full bg-[#020205] text-white flex flex-col items-center justify-center p-2 sm:p-4 md:p-8 relative overflow-hidden">
-      <ToastContainer position="top-right" autoClose={3000} theme="dark" /> 
+      {/* <ToastContainer position="top-right" autoClose={3000} theme="dark" />  */}
       
       <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
         <Particles particleColors={[activeTheme.color, "#ffffff"]} particleCount={80} />
@@ -408,7 +390,7 @@ const Options = () => {
           
           {/* Sidebar */}
           <div className="w-full md:w-[240px] flex-shrink-0 bg-white/[0.03] border-b md:border-b-0 md:border-r border-white/10 p-6 flex flex-col">
-            <button onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-gray-500 hover:text-white mb-8 group transition-all">
+            <button type="button" onClick={() => navigate('/dashboard')} className="flex items-center gap-2 text-gray-500 hover:text-white mb-8 group transition-all">
               <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform"/><span className="text-[10px] font-black tracking-widest uppercase">Dashboard</span>
             </button>
             <nav className="flex md:flex-col gap-2 overflow-x-auto no-scrollbar pb-4 md:pb-0">
@@ -458,7 +440,7 @@ const Options = () => {
                   
                   {!forgotPassMode && !newPWmode ? (
                     <>
-                      <div className="space-y-1"><label className="text-[9px] uppercase tracking-widest text-gray-500 ml-1">Security Cipher</label><div className="relative group"><ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#2b01ff]" size={18}/><input name="password" value={formData.password || ''} onChange={handleInput} type={showPass ? "text" : "password"} placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-12 outline-none text-sm transition-all focus:border-[#2b01ff]/40" /><button onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white">{showPass ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></div>
+                      <div className="space-y-1"><label className="text-[9px] uppercase tracking-widest text-gray-500 ml-1">Security Cipher</label><div className="relative group"><ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#2b01ff]" size={18}/><input name="password" value={formData.password || ''} onChange={handleInput} type={showPass ? "text" : "password"} placeholder="••••••••" className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-12 outline-none text-sm transition-all focus:border-[#2b01ff]/40" /><button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-600 hover:text-white">{showPass ? <EyeOff size={16}/> : <Eye size={16}/>}</button></div></div>
                       <button onClick={handleSignin} disabled={loading} className="w-full py-4 bg-[#2b01ff] font-black uppercase text-xs tracking-widest rounded-xl hover:shadow-[0_0_20px_#2b01ff] transition-all active:scale-95">{loading ? <Loader2 className="animate-spin mx-auto"/> : "INITIALIZE_ACCESS"}</button>
                       <button onClick={() => setForgotPassMode(true)} className="w-full text-[9px] text-gray-500 hover:text-[#2b01ff] uppercase tracking-widest">Forgotten Cipher?</button>
                     </>
@@ -477,15 +459,9 @@ const Options = () => {
                     <div className="space-y-6">
                        <div className="flex flex-col items-center">
                         <div className={`relative w-36 h-36 rounded-[2rem] border-2 transition-all overflow-hidden cursor-pointer group ${finalImage ? 'border-[#00ff3c]' : 'border-dashed border-white/20'}`} onClick={() => fileInputRef.current.click()}>{finalImage ? <img src={finalImage} className="w-full h-full object-cover" alt="Avatar" /> : <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-500 group-hover:bg-white/5 transition-colors"><Upload size={24} className="mb-1"/><span className="text-[7px] font-black uppercase tracking-widest">SCAN_DNA</span></div>}</div>
-                        {finalImage && (
-                          <div className="mt-2 text-[10px] text-gray-400 flex items-center gap-1">
-                            <CheckCircle size={12} className="text-[#00ff3c]"/>
-                            <span>{imageSizeMB} MB</span>
-                          </div>
-                        )}
-                        {imageSizeMB  && (
-                          <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-[#00ff3c]">
-                            SCAN_SIZE: {imageSizeMB} MB
+                        {imageSizeMB && (
+                          <div className="mt-3 text-[10px] font-black uppercase tracking-widest text-[#00ff3c] flex items-center gap-1.5">
+                            <CheckCircle size={10} className="text-[#00ff3c]" /> SCAN_SIZE: {imageSizeMB} MB
                           </div>
                         )}
                       </div>
@@ -520,13 +496,11 @@ const Options = () => {
                         </div>
                       </div>
                       
-                      {/* 2. Text & Metadata Section */}
                       <div className="text-center sm:text-left space-y-0.5">
                         <h4 className="text-[8px] font-black tracking-[0.3em] text-[#ff0505] uppercase opacity-70">Authenticated_Pilot</h4>
                         <p className="text-2xl font-black uppercase tracking-tight text-white leading-tight">{info?.fullname || "Pilot Designation"}</p>
                         <p className="text-[10px] font-mono text-gray-500 lowercase opacity-60">@{info?.username || "identity_pending"}</p>
                         
-                        {/* ✅ MOVED SCAN SIZE HERE: Flows perfectly under the username */}
                         {imageSizeMB && (
                           <div className="pt-2 flex items-center justify-center sm:justify-start gap-1.5">
                             <CheckCircle size={10} className="text-[#00ff3c]" />
@@ -537,10 +511,25 @@ const Options = () => {
                         )}
                       </div>
                     </div>
+
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="space-y-6 bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] flex flex-col justify-between">
                       <form onSubmit={handleUpdateProfile} className="space-y-5">
-                        <div className="flex items-center gap-3"><Fingerprint size={18} className="text-[#ff0505]" /><h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">Pilot_Metadata</h5></div>
+                        
+                        {/* ✅ ACTIVE SYNC LOADER VISUALIZER */}
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                            <Fingerprint size={18} className="text-[#ff0505]" />
+                            <h5 className="text-[11px] font-black text-gray-400 uppercase tracking-[0.2em]">Pilot_Metadata</h5>
+                          </div>
+                          {isSyncing && (
+                            <div className="flex items-center gap-2 text-[#00ff3c]">
+                              <Loader2 size={12} className="animate-spin" />
+                              <span className="text-[8px] font-black tracking-widest uppercase">Syncing</span>
+                            </div>
+                          )}
+                        </div>
+
                         <div className="space-y-1"><label className="text-[9px] uppercase tracking-widest text-gray-500 ml-1">Universal Designation</label><div className="relative group"><User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-600 group-focus-within:text-[#ff0505] transition-colors" size={16}/><input name="fullname" value={formData.fullname || ''} onChange={handleInput} type="text" className="w-full bg-white/5 border border-white/10 rounded-xl py-3.5 pl-11 outline-none text-sm focus:border-[#ff0505]/40 focus:bg-white/[0.08] transition-all" /></div></div>
                         <div className="p-4 bg-black/60 border border-white/5 rounded-2xl space-y-3 font-mono">
                            <div className="flex justify-between items-center"><div className="flex items-center gap-2"><Activity size={12} className="text-[#ff0505] animate-pulse"/><span className="text-[8px] text-gray-500 uppercase">Neural_Link</span></div><span className="text-[9px] text-[#00ff3c]">ENCRYPTED</span></div>
@@ -562,9 +551,62 @@ const Options = () => {
                   </div>
                 )
               )}
-              { subOption==="setting" && (
-                <div className="flex items-center justify-center h-full" style={{color:activeTheme.color}}>
-                  <h1 className="text-2xl">In Development</h1>
+
+              {/* --- SETTINGS --- */}
+              { subOption === "setting" && (
+                <div className="max-w-4xl mx-auto space-y-6 animate-in slide-in-from-right-4 duration-500 pb-8">
+                  <div className="bg-white/[0.02] border border-white/5 p-6 rounded-[2rem] space-y-6">
+                    
+                    <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+                      <Settings size={20} className="text-[#fff200]" />
+                      <h5 className="text-[12px] font-black text-gray-400 uppercase tracking-[0.2em]">Core_Settings</h5>
+                    </div>
+                    
+                    {/* Settings Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      {/* SFX Toggle */}
+                      <button onClick={() => toggleSound(!sound)} className="w-full flex items-center justify-between p-5 rounded-[1.5rem] bg-black/40 border border-white/5 hover:border-[#00ff3c]/30 transition-all group">
+                        <div className="flex items-center gap-4">
+                          <div className={`p-3 rounded-xl bg-white/5 group-hover:bg-[#00ff3c]/10 transition-colors ${sound ? "text-[#00ff3c]" : "text-gray-500"}`}>
+                            {sound ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                          </div>
+                          <div className="text-left">
+                            <span className="block text-sm font-bold uppercase tracking-tight text-white">SFX Output</span>
+                            <span className="block text-[9px] text-gray-500 uppercase tracking-widest mt-0.5">Interface Sounds</span>
+                          </div>
+                        </div>
+                        <div className={`w-10 h-5 rounded-full p-1 transition-colors ${sound ? 'bg-[#00ff3c]' : 'bg-gray-800'}`}>
+                            <div className={`w-3 h-3 bg-black rounded-full transition-transform ${sound ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </div>
+                      </button>
+
+                      {/* BGM Toggle */}
+                      <button onClick={() => toggleMusic(!music)} className="w-full flex items-center justify-between p-5 rounded-[1.5rem] bg-black/40 border border-white/5 hover:border-[#00D4FF]/30 transition-all group">
+                        <div className="flex items-center gap-4">
+                          <div className={`p-3 rounded-xl bg-white/5 group-hover:bg-[#00D4FF]/10 transition-colors ${music ? "text-[#00D4FF]" : "text-gray-500"}`}>
+                            {music ? <Music2 size={20} /> : <Music size={20} />}
+                          </div>
+                          <div className="text-left">
+                            <span className="block text-sm font-bold uppercase tracking-tight text-white">Neural BGM</span>
+                            <span className="block text-[9px] text-gray-500 uppercase tracking-widest mt-0.5">Background Music</span>
+                          </div>
+                        </div>
+                        <div className={`w-10 h-5 rounded-full p-1 transition-colors ${music ? 'bg-[#00D4FF]' : 'bg-gray-800'}`}>
+                            <div className={`w-3 h-3 bg-black rounded-full transition-transform ${music ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </div>
+                      </button>
+                      
+                      {/* Empty Expansion Slots */}
+                      <div className="w-full p-5 rounded-[1.5rem] bg-white/[0.01] border border-white/5 border-dashed flex flex-col items-center justify-center text-gray-600 opacity-50 min-h-[100px]">
+                         <span className="text-[10px] font-black uppercase tracking-widest">Expansion_Slot_Alpha</span>
+                      </div>
+                      <div className="w-full p-5 rounded-[1.5rem] bg-white/[0.01] border border-white/5 border-dashed flex flex-col items-center justify-center text-gray-600 opacity-50 min-h-[100px]">
+                         <span className="text-[10px] font-black uppercase tracking-widest">Expansion_Slot_Beta</span>
+                      </div>
+
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

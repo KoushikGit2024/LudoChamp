@@ -76,6 +76,11 @@ const getUser = async () => {
  * This component wraps all routes. 
  * It handles the global styles, Toast notifications, and initial Auth check.
  */
+/**
+ * ROOT LAYOUT
+ * This component wraps all routes. 
+ * It handles the global styles, Toast notifications, and initial Auth check.
+ */
 const RootLayout = () => {
   useEffect(() => {
     getUser();
@@ -86,17 +91,20 @@ const RootLayout = () => {
       {/* All matched child routes render here */}
       <Outlet /> 
 
-      {/* Global Toast Notifications */}
-      <ToastContainer 
-        position="bottom-right"
-        theme="dark"
-        autoClose={3000}
-        hideProgressBar={false}
-      />
+      {/* Global Toast Notifications - Forced to the absolute top layer */}
+      <div className="fixed z-[99999]">
+        <ToastContainer 
+           position="top-right" 
+           autoClose={3000} 
+           theme="dark" 
+           toastClassName="!bg-[#0a0a0f] !text-white !border !border-white/10 !shadow-2xl" 
+        />
+      </div>
     </main>
   );
 };
 
+// Define the Data Router
 // Define the Data Router
 const router = createBrowserRouter([
   {
@@ -105,21 +113,26 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Dashboard />, // Changed to Dashboard so '/' doesn't crash GameSetup
+        element: <Dashboard />, 
       },
       {
         path: "dashboard",
         element: <Dashboard />,
       },
       {
-        // 1. ADDED THIS NEW ROUTE! Now GameSetup gets the :boardType param
         path: "setup/:boardType", 
         element: <GameSetup />, 
       },
+      // ✅ FOOLPROOF FIX: Explicitly define both the with-ID and without-ID routes
       {
         path: "session/:boardType",
         element: <Session />,
       },
+      {
+        path: "session/:boardType/:gameId",
+        element: <Session />,
+      },
+      // ------------------------------------------------------------------------
       {
         path: "options/:subOption",
         element: <Options />,

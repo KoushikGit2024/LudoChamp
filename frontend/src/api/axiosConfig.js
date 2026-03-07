@@ -6,7 +6,7 @@ import axios from 'axios';
 const api = axios.create({
     baseURL: import.meta.env.VITE_MODE === 'production'
         ? import.meta.env.VITE_BASE_URL
-        : import.meta.env.VITE_BASE_URL_DEV,
+        : "http://localhost:3000",
 
     withCredentials: true,
 

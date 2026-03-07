@@ -12,8 +12,8 @@ import User from "./src/models/userModel.js";
 import ErrorLog from "./src/models/errorModel.js";
 
 // Socket and Game Logic Imports
-import registerGameHandlers from "./src/sockets/gameHandlers.js";
-import redisGameInitiate from "./src/handlers/gameControler.js"; 
+import registerGameHandlers from "./src/sockets/gameControllers.js";
+// import {redisGameInitiate} from "./src/handlers/gameHandlers.js"; 
 
 // Standardized Redis import (Ensure your redis.js exports your client)
 import redis from "./src/config/redis.js"; 
@@ -100,7 +100,7 @@ app.get("/redis", async (req, res) => {
 app.use('/api/auth', authRoute);
 app.use('/api/games', gameRoute);
 // Ludo Setup Route (Called by GameSetup.jsx to create the game matrix in Redis)
-app.post('/api/create-game', redisGameInitiate);
+// app.post('/api/create-game', redisGameInitiate);
 
 
 // ===== Global Error Handler =====

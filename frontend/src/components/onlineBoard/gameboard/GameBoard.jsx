@@ -20,9 +20,9 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, timeOut, moving, 
   const {sound}=useContext(AudioContext);
   const findIdxByref = (color, ref) => {
     let baseStartIdx =
-      turn === 'R' ? 79 :
-      turn === 'B' ? 83 :
-      turn === 'Y' ? 87 :
+      color === 'R' ? 79 :
+      color === 'B' ? 83 :
+      color === 'Y' ? 87 :
       91;
     let foundIdx = pieceIdxArr[color].findIndex((el, idx) => {
       if (el === -1) {
@@ -47,18 +47,18 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, timeOut, moving, 
       turn: state.move.turn,
       moveAllowed: state.move.moveAllowed,
       onBoard: state.meta.onBoard,
-      clrR: state.players.R.color,
-      clrB: state.players.B.color,
-      clrY: state.players.Y.color,
-      clrG: state.players.G.color,
-      homeR: state.players.R.homeCount,
-      homeB: state.players.B.homeCount,
-      homeY: state.players.Y.homeCount,
-      homeG: state.players.G.homeCount,
-      winR: state.players.R.winCount,
-      winB: state.players.B.winCount,
-      winY: state.players.Y.winCount,
-      winG: state.players.G.winCount,
+      clrR: state.players.R?.color,
+      clrB: state.players.B?.color,
+      clrY: state.players.Y?.color,
+      clrG: state.players.G?.color,
+      homeR: state.players.R?.homeCount,
+      homeB: state.players.B?.homeCount,
+      homeY: state.players.Y?.homeCount,
+      homeG: state.players.G?.homeCount,
+      winR: state.players.R?.winCount,
+      winB: state.players.B?.winCount,
+      winY: state.players.Y?.winCount,
+      winG: state.players.G?.winCount,
     }))
   );
 
@@ -70,10 +70,10 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, timeOut, moving, 
     R: winR, B: winB, Y: winY, G: winG
   }), [winR, winB, winY, winG]);
 
-  const pieceR = useGameStore(state => state.players.R.pieceRef);
-  const pieceB = useGameStore(state => state.players.B.pieceRef);
-  const pieceY = useGameStore(state => state.players.Y.pieceRef);
-  const pieceG = useGameStore(state => state.players.G.pieceRef);
+  const pieceR = useGameStore(state => state.players.R?.pieceRef);
+  const pieceB = useGameStore(state => state.players.B?.pieceRef);
+  const pieceY = useGameStore(state => state.players.Y?.pieceRef);
+  const pieceG = useGameStore(state => state.players.G?.pieceRef);
 
   const pieceState = {
     R: pieceR, B: pieceB, Y: pieceY, G: pieceG
@@ -165,7 +165,7 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, timeOut, moving, 
           y: pathPoints[to].cy - targetH / 2,
           width: pathPoints[to].w,
           height: pathPoints[to].h,
-          duration: 0.15, // Smooth animation speed
+          duration: 0.15, 
           ease: "power1.inOut",
           onComplete: resolve
         }
@@ -177,14 +177,12 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, timeOut, moving, 
     });
   };
 
-  // The actual visual runner for the Chariot
   const runChariot = async (idx = -1, refNum = null, stepCount = -1, turnColor = '') => {
     if (idx < 0 || refNum === null || stepCount === -1 || !turnColor) return;
     let from = refNum;
     let to = null;
     setChariotColor(turnColor);
     
-    // Server-directed Cut Return
     if (stepCount === -2) {
       const baseStart = turnColor === 'R' ? 79 : turnColor === 'B' ? 83 : turnColor === 'Y' ? 87 : 91;
       to = baseStart - idx;
@@ -194,7 +192,6 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, timeOut, moving, 
       return;
     }
 
-    // Server-directed Forward Move
     let indexVal = pieceIdxArr[turnColor][idx];
     setShowChariotDisplay(true);
     for (let step = 1; step <= stepCount; step++) {
@@ -219,33 +216,72 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, timeOut, moving, 
     socket.emit("move-piece", { gameId, color: turn, pieceIdx: idx, refNum });
   };
 
-  // 2. LISTEN FOR SERVER COMMANDS
+  // 2. LISTEN FOR SERVER COMMANDS WITH STRICT SYNC ARRAY
+  // The 2-size array: [previousTick, currentTick]
+  const syncArrRef = useRef([0, 0]);
+
   useEffect(() => {
     if (!isOnline || !socket) return;
 
-    const handlePieceMoved = async ({ animation, newState }) => {
+    const handlePieceMoved = async (payload) => {
+      const { animation, newState, syncArray } = payload;
+
+      // --- CRITICAL DESYNC CHECK ---
+      if (syncArray && Array.isArray(syncArray) && syncArray.length === 2) {
+        const localCurrent = syncArrRef.current[1]; // Frontend index 1
+        const serverPrevious = syncArray[0];        // Server index 0
+
+        // If our current tick doesn't perfectly match the server's previous tick...
+        if (localCurrent !== 0 && localCurrent !== serverPrevious) {
+          console.warn(`[DESYNC] Expected Server Prev: ${localCurrent}, Got: ${serverPrevious}`);
+          inputLockedRef.current = false; // Release lock
+          socket.emit("sync-state", { gameId }); // Force a hard refresh
+          return; // Abort animation entirely!
+        }
+        
+        // Everything matches! Update local array to match server
+        syncArrRef.current = [syncArray[0], syncArray[1]];
+      }
+      // -----------------------------
+
       inputLockedRef.current = true;
       gameActions.setMoving(true);
 
       const { color, pieceIdx, fromRef, steps, cutInfo } = animation;
 
-      // Execute forward animation
       await runChariot(pieceIdx, fromRef, steps, color);
-
-      // Execute cut animation if applicable
       if (cutInfo) {
         await runChariot(cutInfo.idx, cutInfo.fromRef, -2, cutInfo.color);
       }
 
-      // Hard sync store to reflect server reality instantly after animations
       gameActions.syncGameState(newState);
       
       gameActions.setMoving(false);
       inputLockedRef.current = false;
     };
 
+    // --- PASSIVE LISTENERS TO KEEP ARRAY UPDATED ---
+    // If a dice roll happens, we must quietly update our array so the next piece move doesn't falsely desync
+    const handleDiceRolled = (payload) => {
+      if (payload.syncArray) syncArrRef.current = payload.syncArray;
+    };
+
+    // If a hard refresh happens, establish the new baseline
+    const handleStateSynced = (serverState) => {
+      if (serverState.syncTick) {
+        syncArrRef.current = [serverState.syncTick - 1, serverState.syncTick];
+      }
+    };
+
     socket.on("piece-moved", handlePieceMoved);
-    return () => socket.off("piece-moved", handlePieceMoved);
+    socket.on("dice-rolled", handleDiceRolled);
+    socket.on("state-synced", handleStateSynced);
+
+    return () => {
+      socket.off("piece-moved", handlePieceMoved);
+      socket.off("dice-rolled", handleDiceRolled);
+      socket.off("state-synced", handleStateSynced);
+    };
   }, [socket, isOnline]);
 
 
@@ -299,10 +335,10 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, timeOut, moving, 
               )}
 
               <Cell
-                R={pieceState.R.get(i) ?? 0}
-                B={pieceState.B.get(i) ?? 0}
-                Y={pieceState.Y.get(i) ?? 0}
-                G={pieceState.G.get(i) ?? 0}
+                R={pieceState.R?.get(i) ?? 0}
+                B={pieceState.B?.get(i) ?? 0}
+                Y={pieceState.Y?.get(i) ?? 0}
+                G={pieceState.G?.get(i) ?? 0}
                 activeColor={turn}
                 COLORS={COLORS}
                 moveAllowed={moveAllowed}
@@ -326,16 +362,16 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, timeOut, moving, 
                 className={`cell w-full h-full rounded-[3px] flex items-center justify-center bg-black/40 border transition-all`}
                 style={{
                   borderColor: trackColor,
-                  boxShadow: `inset 0 0 8px ${trackColor}44` // Internal neon glow
+                  boxShadow: `inset 0 0 8px ${trackColor}44` 
                 }}
                 ref={(el) => (pathRefs.current[i * 5 + j + 52] = el)}
               >
                 <div className="absolute w-1 h-1 rounded-full opacity-50" style={{backgroundColor: trackColor}}/>
                 <Cell
-                  R={pieceState.R.get(i * 5 + j + 52) ?? 0}
-                  B={pieceState.B.get(i * 5 + j + 52) ?? 0}
-                  Y={pieceState.Y.get(i * 5 + j + 52) ?? 0}
-                  G={pieceState.G.get(i * 5 + j + 52) ?? 0}
+                  R={pieceState.R?.get(i * 5 + j + 52) ?? 0}
+                  B={pieceState.B?.get(i * 5 + j + 52) ?? 0}
+                  Y={pieceState.Y?.get(i * 5 + j + 52) ?? 0}
+                  G={pieceState.G?.get(i * 5 + j + 52) ?? 0}
                   activeColor={turn}
                   COLORS={COLORS}
                   moveAllowed={moveAllowed}
@@ -373,10 +409,10 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, timeOut, moving, 
                     {!(onBoard.has(keyId)) && <Ban size={10} className="opacity-50 absolute" />}
                     {(onBoard.has(keyId)) && (
                       <Cell
-                        R={pieceState.R.get(base + i) ?? 0}
-                        B={pieceState.B.get(base + i) ?? 0}
-                        Y={pieceState.Y.get(base + i) ?? 0}
-                        G={pieceState.G.get(base + i) ?? 0}
+                        R={pieceState.R?.get(base + i) ?? 0}
+                        B={pieceState.B?.get(base + i) ?? 0}
+                        Y={pieceState.Y?.get(base + i) ?? 0}
+                        G={pieceState.G?.get(base + i) ?? 0}
                         activeColor={turn}
                         COLORS={COLORS}
                         moveAllowed={moveAllowed}

@@ -9,7 +9,11 @@ import {
     updateProfile,
     checkUsername ,
     initialFetch,
-    searchUsers
+    searchUsers,
+    getNotifications,
+    markNotificationRead,
+    sendInvites,
+    deleteAccount
 } from "../handlers/authHandler.js";
 import tokenChecker from "../middlewares/tokenCheker.js";
 import upload from "../middlewares/multerSetup.js";
@@ -61,5 +65,13 @@ authRoute.get("/search-users", tokenChecker, searchUsers);
 //         res.status(500).json({ success: false, message: error.message });
 //     }
 // });
+authRoute.get("/notifications", tokenChecker, getNotifications);
+
+// Update a specific notification's read status (This matches the frontend call perfectly!)
+authRoute.put("/notifications/:id/read", tokenChecker, markNotificationRead);
+
+// Add this new route (Protect it with tokenChecker to prevent spam)
+authRoute.post('/send-invites', tokenChecker, sendInvites);
+authRoute.delete("/delete-account", tokenChecker, deleteAccount);
 
 export default authRoute;

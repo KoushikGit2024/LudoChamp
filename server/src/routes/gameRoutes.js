@@ -1,12 +1,20 @@
-import express from 'express';
-import { saveGame, getGame } from '../handlers/gameControler.js';
+import express from "express";
+import { 
+    initOnlineGameRedis, 
+    saveGame, 
+    getSavedGamesList, 
+    getGameById 
+} from "../handlers/gameHandlers.js";
+import tokenChecker from "../middlewares/tokenCheker.js"; 
 
 const gameRoute = express.Router();
 
-// POST request to save/update the game
-gameRoute.post('/save', saveGame);
+// Redis Route
+gameRoute.post("/init-online", tokenChecker, initOnlineGameRedis);
 
-// GET request to retrieve a specific game by ID
-gameRoute.get('/:gameId', getGame);
+// MongoDB Routes
+gameRoute.post("/save", tokenChecker, saveGame);
+gameRoute.get("/saved", tokenChecker, getSavedGamesList);
+gameRoute.get("/:gameId", tokenChecker, getGameById);
 
 export default gameRoute;

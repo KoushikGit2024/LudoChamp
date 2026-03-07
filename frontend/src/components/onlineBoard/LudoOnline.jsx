@@ -7,12 +7,12 @@ import GameBoard from './gameboard/GameBoard.jsx';
 import Dice from './gameboard/Dice';
 import PlayerBoard from './gameboard/PlayerBoard';
 import useGameStore from '@/store/useGameStore';
+import useUserStore from '@/store/userStore'; // ✅ Imported UserStore for Auth details
 import gameActions from '@/store/gameLogic';
 import { useShallow } from 'zustand/shallow';
 import ErrorBoundary from '../../ErrorBoundary';
 import GradientText from '@/components/customComponents/GradientText';
-
-
+import { toast } from 'react-toastify'; 
 
 const LudoSkeleton = () => (
   <div className="flex flex-col items-center justify-center w-full h-full space-y-8 animate-pulse">
@@ -38,13 +38,12 @@ const LudoSkeleton = () => (
   </div>
 );
 
-// Assuming you pass the socket instance here via a layout wrapper or context
 const LudoOnline = memo(({ socket }) => {
   const navigate = useNavigate();
   const { gameId } = useParams(); 
   const [screen, setScreen] = useState(window.innerWidth <= window.innerHeight);
   const [sound, allowSound] = useState(false);
-  const [socketLoaded,setSocketLoaded] = useState(false);
+  const [socketLoaded, setSocketLoaded] = useState(false);
   
   const ref = useRef(null);
 
@@ -52,29 +51,122 @@ const LudoOnline = memo(({ socket }) => {
   // ===================== ONLINE SOCKET SYNC LOGIC ==========================
   // =========================================================================
   
+  const syncTicksRef = useRef([0, 0]);
+  const myColorRef = useRef(null); // Track the assigned color for reconnections
+  
+  const userInfo = useUserStore(state => state.info);
+  // Fallback to URL parsing if Zustand hasn't initialized the game type locally yet
+  const gameType = useGameStore(state => state.meta.type) || (window.location.pathname.includes('poi') ? 'poi' : 'pof');
+
   useEffect(() => {
-  if (!socket || !gameId) return;
+    if (!socket || !gameId) return;
 
-  // 1. Initial Sync Request
-  socket.emit("sync-state", { gameId });
+    // 1. Initial Join Request
+    socket.emit("join-game", { 
+      gameId, 
+      type: gameType,
+      requestedColor: "R", // Backend handles fallback if R is taken
+      user: { 
+        userId: userInfo?.username || "Guest", 
+        name: userInfo?.fullname || "Unknown Pilot", 
+        profile: userInfo?.avatar 
+      }
+    });
 
-  const handleStateSync = (serverState) => {
-    gameActions.syncGameState(serverState);
-    setSocketLoaded(true); // <--- State is now ready
-  };
+    // Helper: Verify if the incoming event is perfectly sequential
+    const verifySyncSequence = (incomingTick) => {
+      const [prev, curr] = syncTicksRef.current;
+      
+      if (curr === 0) {
+        syncTicksRef.current = [0, incomingTick];
+        return true;
+      }
 
-  const handleDiceRolled = ({ value, newState }) => {
-    gameActions.syncGameState(newState);
-  };
+      if (incomingTick !== curr + 1) {
+        console.warn(`SYNC DESYNC: Expected tick ${curr + 1}, got ${incomingTick}. Requesting hard sync...`);
+        toast.warning("Desync detected. Realigning grid...", { theme: "dark" });
+        // Emit sync-state with our known color so the backend can re-bind our socket
+        socket.emit("sync-state", { gameId, color: myColorRef.current }); 
+        return false;
+      }
 
-  socket.on("state-synced", handleStateSync);
-  socket.on("dice-rolled", handleDiceRolled);
+      syncTicksRef.current = [curr, incomingTick];
+      return true;
+    };
 
-  return () => {
-    socket.off("state-synced", handleStateSync);
-    socket.off("dice-rolled", handleDiceRolled);
-  };
-}, [socket, gameId]);
+    // --- SOCKET EVENT LISTENERS ---
+
+    const handleJoinSuccess = ({ assignedColor, newState }) => {
+      myColorRef.current = assignedColor; // Save our assigned color
+      const serverTick = newState.syncTick || 1; 
+      syncTicksRef.current = [serverTick - 1, serverTick]; 
+      gameActions.syncGameState(newState);
+      setSocketLoaded(true); 
+    };
+
+    const handlePlayerJoined = ({ message, newState, syncArray }) => {
+      toast.success(message, { theme: "dark", icon: "🌐" });
+      if (syncArray && verifySyncSequence(syncArray[1])) {
+        gameActions.syncGameState(newState);
+      }
+    };
+
+    const handlePlayerLeft = ({ message, newState, syncArray }) => {
+      toast.error(message, { theme: "dark", icon: "⚠️" });
+      if (syncArray && verifySyncSequence(syncArray[1])) {
+        gameActions.syncGameState(newState);
+      }
+    };
+
+    const handleStateSync = (serverState) => {
+      const serverTick = serverState.syncTick || 1; 
+      syncTicksRef.current = [serverTick - 1, serverTick]; 
+      gameActions.syncGameState(serverState);
+      setSocketLoaded(true); 
+    };
+
+    const handleDiceRolled = ({ value, newState, syncArray }) => {
+      if (syncArray && verifySyncSequence(syncArray[1])) {
+        gameActions.syncGameState(newState);
+      }
+    };
+
+    const handlePieceMoved = ({ animation, newState, syncArray }) => {
+      if (syncArray && verifySyncSequence(syncArray[1])) {
+        gameActions.syncGameState(newState);
+      }
+    };
+
+    const handlePlayerOfflineWarning = ({ message }) => {
+      // Pops a yellow warning immediately when a player drops
+      toast.warning(message, { theme: "dark", autoClose: 9500, icon: "⏳" });
+    };
+
+    const handlePlayerReconnected = ({ message }) => {
+      // Pops a success toast if they rejoin within 10 seconds
+      toast.success(message, { theme: "dark", icon: "🔌" });
+    };
+
+    socket.on("join-success", handleJoinSuccess);
+    socket.on("player-joined", handlePlayerJoined);
+    socket.on("player-left", handlePlayerLeft);
+    socket.on("state-synced", handleStateSync);
+    socket.on("dice-rolled", handleDiceRolled);
+    socket.on("piece-moved", handlePieceMoved);
+    socket.on("player-offline-warning", handlePlayerOfflineWarning);
+    socket.on("player-reconnected", handlePlayerReconnected);
+
+    return () => {
+      socket.off("join-success", handleJoinSuccess);
+      socket.off("player-joined", handlePlayerJoined);
+      socket.off("player-left", handlePlayerLeft);
+      socket.off("state-synced", handleStateSync);
+      socket.off("dice-rolled", handleDiceRolled);
+      socket.off("piece-moved", handlePieceMoved);
+      socket.off("player-offline-warning", handlePlayerOfflineWarning);
+      socket.off("player-reconnected", handlePlayerReconnected);
+    };
+  }, [socket, gameId, gameType, userInfo]);
 
   // =========================================================================
   // ========================== STORE SUBSCRIPTIONS ==========================
@@ -88,12 +180,11 @@ const LudoOnline = memo(({ socket }) => {
   const winPosn = useGameStore(state => state.players[state.move.turn]?.winPosn || 0);
   const rollAllowed = useGameStore(state => state.move.rollAllowed);
   
-  // FIXED: Fetching pieceRef instead of non-existent pieceState
   const {pieceStateR, pieceStateB, pieceStateY, pieceStateG } = useGameStore(useShallow(state => ({
-      pieceStateR: state.players.R.pieceRef, 
-      pieceStateB: state.players.B.pieceRef,
-      pieceStateY: state.players.Y.pieceRef,
-      pieceStateG: state.players.G.pieceRef,
+      pieceStateR: state.players.R?.pieceRef, 
+      pieceStateB: state.players.B?.pieceRef,
+      pieceStateY: state.players.Y?.pieceRef,
+      pieceStateG: state.players.G?.pieceRef,
   })));
 
   const pieceState = useMemo(() => ({
@@ -104,10 +195,10 @@ const LudoOnline = memo(({ socket }) => {
   const playersData = useGameStore(state => state.players);
 
   const { pieceIdxR, pieceIdxB, pieceIdxY, pieceIdxG } = useGameStore(useShallow(state => ({
-    pieceIdxR: state.players.R.pieceIdx,
-    pieceIdxB: state.players.B.pieceIdx,
-    pieceIdxY: state.players.Y.pieceIdx,
-    pieceIdxG: state.players.G.pieceIdx,
+    pieceIdxR: state.players.R?.pieceIdx,
+    pieceIdxB: state.players.B?.pieceIdx,
+    pieceIdxY: state.players.Y?.pieceIdx,
+    pieceIdxG: state.players.G?.pieceIdx,
   })));
 
   const pieceIdx = useMemo(() => ({
@@ -118,10 +209,10 @@ const LudoOnline = memo(({ socket }) => {
   const timeOut = useGameStore((state) => state.move.timeOut);
 
   const { winR, winB, winY, winG } = useGameStore(useShallow(state => ({
-    winR: state.players.R.winPosn,
-    winB: state.players.B.winPosn,
-    winY: state.players.Y.winPosn,
-    winG: state.players.G.winPosn,
+    winR: state.players.R?.winPosn,
+    winB: state.players.B?.winPosn,
+    winY: state.players.Y?.winPosn,
+    winG: state.players.G?.winPosn,
   })));
 
   const winState = useMemo(() => ({
@@ -153,6 +244,7 @@ const LudoOnline = memo(({ socket }) => {
       {/* Background Ambience */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#020205] to-[#020205] z-0 pointer-events-none" />
       <div className="absolute inset-0 z-0 opacity-10" style={{backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '30px 30px'}}></div>
+      
       {!socketLoaded ? (
         <motion.div 
           initial={{ opacity: 0 }} 
@@ -168,91 +260,72 @@ const LudoOnline = memo(({ socket }) => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
           ref={ref}
-          className={`relative z-10 flex flex-col items-center justify-between ...`}
-        >
-          {/* ... rest of your code ... */}
-          {/* --- MAIN GAME CONTAINER --- */}
-          <div
-            ref={ref}
-            className={`relative z-10 flex flex-col items-center justify-between transition-all duration-500
+          className={`relative z-10 flex flex-col items-center justify-between transition-all duration-500
               ${screen ? 'w-full max-w-[500px] aspect-[12/16] py-2 px-1' : 'h-full max-h-[95vh] aspect-[1/1] py-4'}
               ${isFinished ? 'pointer-events-none blur-md opacity-40 scale-95' : ''} 
             `}
-          >
-            <div className='flex flex-row items-center justify-between w-full h-[10%] sm:h-[10%] px-1 gap-2 sm:gap-4'>  
-              <div className="h-full flex-1 max-w-[35%] min-w-0">
-                <PlayerBoard playing={playersSet?.has('B')} idx={'B'} left={true} turn={moveObj.turn === 'B'} isOnline={true}/>
+        >
+          {/* --- MAIN GAME CONTAINER --- */}
+          <div className='flex flex-row items-center justify-between w-full h-[10%] sm:h-[10%] px-1 gap-2 sm:gap-4'>  
+            <div className="h-full flex-1 max-w-[35%] min-w-0">
+              <PlayerBoard playing={playersSet?.has('B')} idx={'B'} left={true} turn={moveObj.turn === 'B'} isOnline={true}/>
+            </div>
+            
+            <div className="relative h-full aspect-square max-h-[80px] sm:max-h-[100px] flex items-center justify-center group flex-shrink-0">
+              <div className="absolute inset-0 rounded-xl opacity-40 blur-lg transition-colors duration-500" style={{ backgroundColor: curColor }} />
+              <div className="dice-cover relative z-10 w-full h-full flex items-center justify-center rounded-xl bg-[#0a0a0f]/80 backdrop-blur-xl border border-white/10 transition-all duration-300 shadow-xl" style={{ borderColor: curColor, boxShadow: `inset 0 0 15px ${curColor}15` }}>
+                <div className="absolute top-0.5 left-0.5 w-1.5 h-1.5 border-t border-l opacity-50" style={{borderColor: curColor}}/>
+                <div className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 border-b border-r opacity-50" style={{borderColor: curColor}}/>
+                
+                <Dice 
+                  turn={turn} 
+                  rollAllowed={rollAllowed} 
+                  gameFinished={isFinished}
+                  socket={socket} 
+                  gameId={gameId} 
+                  isOnline={true}
+                />
               </div>
-              
-              <div className="relative h-full aspect-square max-h-[80px] sm:max-h-[100px] flex items-center justify-center group flex-shrink-0">
-                <div className="absolute inset-0 rounded-xl opacity-40 blur-lg transition-colors duration-500" style={{ backgroundColor: curColor }} />
-                <div className="dice-cover relative z-10 w-full h-full flex items-center justify-center rounded-xl bg-[#0a0a0f]/80 backdrop-blur-xl border border-white/10 transition-all duration-300 shadow-xl" style={{ borderColor: curColor, boxShadow: `inset 0 0 15px ${curColor}15` }}>
-                  <div className="absolute top-0.5 left-0.5 w-1.5 h-1.5 border-t border-l opacity-50" style={{borderColor: curColor}}/>
-                  <div className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 border-b border-r opacity-50" style={{borderColor: curColor}}/>
-                  
-                  <Dice 
-                    turn={turn} 
-                    rollAllowed={rollAllowed} 
-                    gameFinished={isFinished}
-                    socket={socket} 
-                    gameId={gameId} 
+            </div>
+            
+            <div className="h-full flex-1 max-w-[35%] min-w-0">
+              <PlayerBoard playing={playersSet?.has('Y')} idx={'Y'} left={false} turn={moveObj.turn === 'Y'} isOnline={true} />
+            </div>
+          </div>
+
+          <div className={`relative flex items-center justify-center flex-1 w-full overflow-hidden my-1`}>
+            <div className="relative aspect-square w-full h-auto max-h-full max-w-full flex items-center justify-center">
+              <div className="absolute inset-0 rounded-lg bg-black/40 shadow-2xl backdrop-blur-sm border border-white/5"></div>
+              <div className={`z-10 p-1 aspect-square flex-none ${screen ? 'w-full max-w-full h-auto' : 'h-full max-h-full w-auto'}`}>
+                <ErrorBoundary>
+                  <GameBoard
+                    socket={socket}
+                    gameId={gameId}
                     isOnline={true}
+                    moveCount={moveObj.moveCount}
+                    moving={moveObj.moving}
+                    pieceIdxArr={pieceIdx}
+                    winState={winState}
                   />
-                </div>
-              </div>
-              
-              <div className="h-full flex-1 max-w-[35%] min-w-0">
-                <PlayerBoard playing={playersSet?.has('Y')} idx={'Y'} left={false} turn={moveObj.turn === 'Y'} isOnline={true} />
+                </ErrorBoundary>
               </div>
             </div>
+          </div>
 
-            <div className={`relative flex items-center justify-center flex-1 w-full overflow-hidden my-1`}>
-              <div className="relative aspect-square w-full h-auto max-h-full max-w-full flex items-center justify-center">
-                <div className="absolute inset-0 rounded-lg bg-black/40 shadow-2xl backdrop-blur-sm border border-white/5"></div>
-                <div className={`z-10 p-1 aspect-square flex-none ${screen ? 'w-full max-w-full h-auto' : 'h-full max-h-full w-auto'}`}>
-                  <ErrorBoundary>
-                    <GameBoard
-                      socket={socket}
-                      gameId={gameId}
-                      isOnline={true}
-                      moveCount={moveObj.moveCount}
-                      moving={moveObj.moving}
-                      pieceIdxArr={pieceIdx}
-                      winState={winState}
-                    />
-                  </ErrorBoundary>
-                </div>
-              </div>
+          <div className='flex flex-row items-center justify-between w-full h-[10%] sm:h-[10%] px-1 gap-2 sm:gap-4'>
+            <div className="h-full flex-1 max-w-[35%] min-w-0">
+              <PlayerBoard playing={playersSet?.has('R')} idx={'R'} left={true} turn={moveObj.turn === 'R'} isOnline={true}/>
             </div>
-
-            <div className='flex flex-row items-center justify-between w-full h-[10%] sm:h-[10%] px-1 gap-2 sm:gap-4'>
-              <div className="h-full flex-1 max-w-[35%] min-w-0">
-                <PlayerBoard playing={playersSet?.has('R')} idx={'R'} left={true} turn={moveObj.turn === 'R'} isOnline={true}/>
-              </div>
-              <div className="hidden sm:flex flex-col items-center justify-center opacity-30 w-[20%]">
-                <Zap size={18} className="text-white animate-pulse" />
-                <span className="text-[8px] tracking-[0.3em] text-white font-mono mt-0.5">NEO</span>
-              </div>
-              <div className="h-full flex-1 max-w-[35%] min-w-0">
-                <PlayerBoard playing={playersSet?.has('G')} idx={'G'} left={false} turn={moveObj.turn === 'G'} isOnline={true}/>
-              </div>
+            <div className="hidden sm:flex flex-col items-center justify-center opacity-30 w-[20%]">
+              <Zap size={18} className="text-white animate-pulse" />
+              <span className="text-[8px] tracking-[0.3em] text-white font-mono mt-0.5">NEO</span>
+            </div>
+            <div className="h-full flex-1 max-w-[35%] min-w-0">
+              <PlayerBoard playing={playersSet?.has('G')} idx={'G'} left={false} turn={moveObj.turn === 'G'} isOnline={true}/>
             </div>
           </div>
         </motion.div>
       )}
-      {/* --- SOUND TOGGLE --- */}
-      {/* <div className="absolute z-50 top-2 left-2 sm:top-4 sm:left-4" onClick={() => allowSound(pre => !pre)}>
-        <button className={`flex items-center gap-2 px-3 py-1.5 rounded-full border backdrop-blur-md transition-all duration-300
-          ${sound ? 'bg-[#00ff3c]/10 border-[#00ff3c]/50 text-[#00ff3c] shadow-[0_0_15px_rgba(0,255,60,0.3)]' : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'}`}
-        >
-          {sound ? <Volume2 size={14} /> : <VolumeX size={14} />}
-          <span className="text-[10px] sm:text-xs font-bold tracking-widest uppercase hidden sm:block">
-            {sound ? 'ON' : 'OFF'}
-          </span>
-        </button>
-      </div> */}
-
-      
 
       {/* --- LEADERBOARD OVERLAY --- */}
       <AnimatePresence>
@@ -278,17 +351,17 @@ const LudoOnline = memo(({ socket }) => {
                 {Array.from(playersSet || [])
                   .map(color => playersData[color])
                   .sort((a, b) => {
-                    // Sort un-finished players to the bottom
                     if (a.winPosn === 0) return 1;
                     if (b.winPosn === 0) return -1;
                     return a.winPosn - b.winPosn;
                   })
                   .map((player, idx) => {
-                    // Determine Trophy Color and Glow based on Rank
+                    if (!player) return null; // Safe check for purged players
+                    
                     const trophyStyle = 
-                      player.winPosn === 1 ? "text-[#FFD700] drop-shadow-[0_0_12px_rgba(255,215,0,0.8)]" :   // Gold
-                      player.winPosn === 2 ? "text-[#C0C0C0] drop-shadow-[0_0_12px_rgba(192,192,192,0.8)]" : // Silver
-                      player.winPosn === 3 ? "text-[#CD7F32] drop-shadow-[0_0_12px_rgba(205,127,50,0.8)]" :  // Copper
+                      player.winPosn === 1 ? "text-[#FFD700] drop-shadow-[0_0_12px_rgba(255,215,0,0.8)]" :   
+                      player.winPosn === 2 ? "text-[#C0C0C0] drop-shadow-[0_0_12px_rgba(192,192,192,0.8)]" : 
+                      player.winPosn === 3 ? "text-[#CD7F32] drop-shadow-[0_0_12px_rgba(205,127,50,0.8)]" :  
                       null;
 
                     return (
@@ -307,7 +380,6 @@ const LudoOnline = memo(({ socket }) => {
                           </div>
                         </div>
                         
-                        {/* Render Trophy if they are 1st, 2nd, or 3rd */}
                         {trophyStyle && (
                           <Trophy size={24} className={`opacity-90 relative z-10 ${trophyStyle}`} />
                         )}

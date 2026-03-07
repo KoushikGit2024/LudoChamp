@@ -10,8 +10,9 @@ import { Bounce, toast } from "react-toastify";
 import { AudioContext } from "@/contexts/SoundContext";
 
 const Dice = ({ pieceIdx, ticks, gameFinished, homeCount, rollAllowed, turn, winState }) => {
+  const moveCount=useGameStore(state=>state?.move?.moveCount)
   const [rolling, setRolling] = useState(false);
-  const [value, setValue] = useState(1);
+  const [value, setValue] = useState(moveCount||1);
   const {sound}=useContext(AudioContext)
   // --- STORE HOOKS (Unchanged) ---
   const pathCount = useGameStore((state) => state.players[turn]?.pathCount);
@@ -54,7 +55,7 @@ const Dice = ({ pieceIdx, ticks, gameFinished, homeCount, rollAllowed, turn, win
       setTimeout(() => {
         afterDiceRoll(final);
       }, 500);
-    }, 0.10);//1900
+    }, 1900);//1900
   };
 
   const afterDiceRoll = (final) => {

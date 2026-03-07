@@ -1,47 +1,21 @@
 import mongoose from "mongoose";
 
-const playerSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-    name: String,
-    profile: String,
-    color: String,
-    pieceIdx: { type: [Number], default: [-1, -1, -1, -1] },
-    homeCount: { type: Number, default: 4 },
-    outCount: { type: Number, default: 0 },
-    winCount: { type: Number, default: 0 },
-    winPosn: { type: Number, default: 0 },
-    online: { type: Boolean, default: false }
-}, { _id: false }); // No need for separate IDs for each player sub-doc
-
-const gameStoreSchema = new mongoose.Schema({
-    meta: {
-        gameId: { type: String, required: true, unique: true },
-        status: { 
-            type: String, 
-            enum: ["WAITING", "RUNNING", "FINISHED"], 
-            default: "WAITING" 
-        },
-        type: { type: String, default: "offline" },
-        title: { type:String },
-        playerCount: { type: Number, default: 4 },
-        onBoard: [String], // Array of active colors like ['R', 'G']
-        winLast: { type: Number, default: 0 }
+const gameSchema = new mongoose.Schema({
+    // ✅ ADDED THIS: Link the game to the human player
+    ownerId: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'User', 
+        required: true,
+        index: true // Speeds up the query when fetching the list of saved games
     },
-    move: {
-        playerIdx: { type: Number, default: 0 },
-        turn: { type: String, default: 'R' },
-        moveCount: { type: Number, default: 0 },
-        rollAllowed: { type: Boolean, default: true }
-    },
-    players: {
-        R: playerSchema,
-        B: playerSchema,
-        Y: playerSchema,
-        G: playerSchema
-    },
-    isDeleted: { type: Boolean, default: false }
+    
+    // We use "Mixed" because Zustand sends a dynamic, complex object.
+    // If we don't use Mixed, Mongoose might accidentally delete nested data!
+    meta: { type: mongoose.Schema.Types.Mixed, required: true },
+    move: { type: mongoose.Schema.Types.Mixed, required: true },
+    players: { type: mongoose.Schema.Types.Mixed, required: true }
+    
 }, { timestamps: true });
 
-const GameStore = mongoose.models.GameStore || mongoose.model('gamestore', gameStoreSchema);
-
-export default GameStore;
+const Game = mongoose.models.Game || mongoose.model('gamestore', gameSchema);
+export default Game;

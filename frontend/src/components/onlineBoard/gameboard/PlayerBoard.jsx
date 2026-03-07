@@ -1,9 +1,9 @@
 import React, { memo, useEffect, useRef } from "react";
 import gsap from "gsap";
 import useGameStore from '@/store/useGameStore';
-import { User } from "lucide-react"; 
+import { User, ShieldAlert } from "lucide-react"; 
 
-const PlayerBoard = memo(({ playing, left, turn = false, idx }) => {
+const PlayerBoard = memo(({ playing, left, turn = false, idx, isOnline = false }) => {
   const timerRef = useRef(null);
   const animRef = useRef(null);
 
@@ -44,11 +44,12 @@ const PlayerBoard = memo(({ playing, left, turn = false, idx }) => {
     return () => {
       animRef.current?.kill();
     };
-  }, [turn]); // Removed rollAllowed/moveAllowed. Turn transitions are enough for online.
+  }, [turn]);
 
-  const userName = useGameStore((state) => state.players[idx].userId);
-  const playerName = useGameStore((state) => state.players[idx].name);
-  const playerProfile = useGameStore((state) => state.players[idx].profile);
+  const userName = useGameStore((state) => state.players[idx]?.userId);
+  const playerName = useGameStore((state) => state.players[idx]?.name);
+  const playerProfile = useGameStore((state) => state.players[idx]?.profile);
+  const isBot = useGameStore((state) => state.players[idx]?.difficulty !== undefined);
 
   // --- Design Constants ---
   const PLAYER_COLORS = {
@@ -104,12 +105,12 @@ const PlayerBoard = memo(({ playing, left, turn = false, idx }) => {
            
            {/* Fallback Icon if Image Fails/Missing */}
            <div className="absolute z-0 text-white/20">
-              <User size={20} />
+              {isBot ? <ShieldAlert size={20} /> : <User size={20} />}
            </div>
 
-           {/* Online Status Dot (Always true for active players in online mode) */}
-           {playing && (
-             <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-green-500 shadow-[0_0_5px_#00ff00] z-20" />
+           {/* Online Status Dot (Always true for active players in online mode, false for bots/offline) */}
+           {playing && isOnline && !isBot && (
+             <div className="absolute bottom-1 right-1 w-2 h-2 rounded-full bg-[#00ff3c] shadow-[0_0_5px_#00ff3c] z-20" />
            )}
         </div>
       </div>
@@ -121,13 +122,13 @@ const PlayerBoard = memo(({ playing, left, turn = false, idx }) => {
         `}
       >
         {!userName ? (
-          // Default Name Display
+          // Default Name Display (Bots or Local Offline Players)
           <div className="flex flex-col">
             <span 
               className="text-[10px] uppercase tracking-widest font-bold opacity-60"
               style={{ color: turn ? themeColor : '#9ca3af' }}
             >
-              System ID
+              {isBot ? "AI_NODE" : "System ID"}
             </span>
             <span className="text-xs sm:text-sm font-bold text-white truncate w-full">
               {playerName || `Pilot_${idx}`}

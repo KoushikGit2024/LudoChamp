@@ -8,10 +8,11 @@ import {
 import GradientText from '@/components/customComponents/GradientText';
 import gameActions from '@/store/gameLogic';
 import api from '@/api/axiosConfig';
+import { toast } from 'react-toastify'; // Added toast for error handling
 import "@/styles/options.css";
 import useUserStore from '@/store/userStore';
+import useGameStore from '@/store/useGameStore';
 
-// Removed props.setProceed logic
 const GameSetup = () => {
   const { boardType } = useParams();
   const navigate = useNavigate();
@@ -57,6 +58,7 @@ const GameSetup = () => {
   const [searchResults, setSearchResults] = useState({ R: [], B: [], Y: [], G: [] });
   const [activeSearch, setActiveSearch] = useState(null);
   const [botDifficulty, setBotDifficulty] = useState({ R:'Normal', B:'Normal', Y:'Normal', G:'Normal' });
+  const [isStarting, setIsStarting] = useState(false); // NEW: Track initialization state
   const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
@@ -150,22 +152,67 @@ const GameSetup = () => {
     setActiveSearch(null); 
   };
 
-  const handleStart = () => {
-    const gameObj = {
-      type: boardType,
-      players: selectedColors,
-      names: selectedColors.map(c => isPOF ? players[c].username : players[c].name), 
-      botDifficulties: selectedColors.reduce((acc, c) => {
-        acc[c] = (isBot && c !== humanColor) ? botDifficulty[c] : null;
-        return acc;
-      }, {})
-    };
-    
-    // 1. Save to Zustand
-    gameActions.initiateGame(gameObj);
-    
-    // 2. Navigate away to the Session component!
-    navigate(`/session/${boardType}`);
+  // ✅ UPDATED: Dynamic Routing & Notification Dispatcher
+  const handleStart = async () => {
+    setIsStarting(true);
+
+    try {
+      // --- 1. POI MATCHMAKING ---
+      if (isPOI) {
+        // Skip local game creation completely. The server will pair them.
+        navigate(`/session/poi`);
+        return;
+      }
+
+      // --- 2. GAME OBJ GENERATION (POF, BOT, OFFLINE) ---
+      const gameObj = {
+        type: boardType,
+        players: selectedColors,
+        names: selectedColors.map(c => isPOF ? players[c].username : players[c].name), 
+        botDifficulties: selectedColors.reduce((acc, c) => {
+          acc[c] = (isBot && c !== humanColor) ? botDifficulty[c] : null;
+          return acc;
+        }, {})
+      };
+      
+      // Initialize local game to generate the unique gameId
+      gameActions.initiateGame(gameObj);
+      const gameId = useGameStore.getState().meta.gameId;
+
+      // --- 3. POF INVITE SYSTEM ---
+      if (isPOF) {
+        // Extract the usernames of the friends invited (excluding the host)
+        const invitedUsers = selectedColors
+          .filter(c => c !== humanColor)
+          .map(c => players[c].username);
+
+        if (invitedUsers.length > 0) {
+          // Broadcast notifications to their in-game comms
+          const inviteList = [...invitedUsers, myName];
+          await api.post('/api/auth/send-invites', {
+            targets: inviteList,
+            title: "ELITE_LINK INVITE",
+            message: `Pilot ${myName} requested backup. Access node here: /session/pof/${gameId}`,
+            type: "info" // 'info' maps to blue style in Dashboard
+          });
+          toast.success("Uplink invites broadcasted successfully.", { theme: "dark" });
+        }
+        
+        // Navigate host to the generated room
+        navigate(`/session/pof/${gameId}`);
+        return;
+      }
+
+      // --- 4. OFFLINE / BOT ROUTING ---
+      // For local modes, we can safely navigate to a general offline path, or include the ID
+      navigate(`/session/${boardType}/${gameId}`);
+
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to initialize session.", { theme: "dark" });
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   let startDisabled = false;
@@ -313,15 +360,17 @@ const GameSetup = () => {
 
         <div className="p-5 sm:p-8 bg-white/5 border-t border-white/5 flex-shrink-0">
           <button 
-            disabled={startDisabled}
+            disabled={startDisabled || isStarting}
             onClick={handleStart}
             className={`w-full py-4 rounded-xl font-black uppercase text-[10px] tracking-[0.3em] transition-all flex items-center justify-center gap-2 active:scale-[0.98] 
-              ${startDisabled ? 'bg-white/10 text-white/30 cursor-not-allowed' : 
-                isPOI ? 'bg-[#00D4FF] text-black shadow-[0_0_25px_rgba(0,212,255,0.2)]' : 
-                'bg-[#00ff3c] text-black shadow-[0_0_25px_rgba(0,255,60,0.2)]'
+              ${startDisabled || isStarting ? 'bg-white/10 text-white/30 cursor-not-allowed' : 
+                isPOI ? 'bg-[#00D4FF] text-black shadow-[0_0_25px_rgba(0,212,255,0.2)] hover:shadow-[0_0_35px_rgba(0,212,255,0.4)]' : 
+                'bg-[#00ff3c] text-black shadow-[0_0_25px_rgba(0,255,60,0.2)] hover:shadow-[0_0_35px_rgba(0,255,60,0.4)]'
               }`}
           >
-            {isPOI ? "INITIALIZE_MATCH" : "ENGAGE_LINK"} <ChevronRight size={14} />
+            {isStarting ? <Loader2 size={14} className="animate-spin" /> : null}
+            {isStarting ? "UPLINKING..." : isPOI ? "INITIALIZE_MATCH" : "ENGAGE_LINK"} 
+            {!isStarting && <ChevronRight size={14} />}
           </button>
         </div>
       </motion.div>
