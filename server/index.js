@@ -124,7 +124,8 @@ app.use('/api/games', gameRoute);
 // ===== Global Error Handler =====
 app.use(async (err, req, res, next) => {
     try {
-        await ErrorLog.create({
+        console.log("Error:", err);
+        ErrorLog.create({
             source: req.originalUrl?.includes('auth') ? 'Auth' : 'General',
             message: err.message,
             stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
