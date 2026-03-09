@@ -18,22 +18,7 @@ import gameActions from '@/store/gameLogic';
 import api from '@/api/axiosConfig'; 
 import { AudioContext } from '@/contexts/SoundContext';
 
-const LudoSkeleton = () => (
-  <div className="flex flex-col items-center justify-center w-[90vmin] h-[90vmin] aspect-square space-y-8 animate-pulse">
-    <div className="flex justify-between w-full px-4">
-      <div className="h-12 w-32 bg-white/5 rounded-xl border border-white/10" />
-      <div className="h-12 w-32 bg-white/5 rounded-xl border border-white/10" />
-    </div>
-    <div className="relative aspect-square w-[90%] max-w-[450px] bg-white/5 rounded-2xl border border-white/10 flex items-center justify-center">
-       <Zap size={48} className="text-white/10" />
-    </div>
-    <div className="flex justify-between w-full px-4">
-      <div className="h-12 w-32 bg-white/5 rounded-xl border border-white/10" />
-      <div className="h-12 w-32 bg-white/5 rounded-xl border border-white/10" />
-    </div>
-    <p className="text-[10px] font-mono text-indigo-400 tracking-[0.4em] uppercase">Initializing_Grid...</p>
-  </div>
-);
+import LudoSkeleton from '@/components/sharedBoardComponents/LudoSkeleton';
 
 const generateDefaultTitle = () => {
   const now = new Date();

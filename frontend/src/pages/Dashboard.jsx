@@ -343,8 +343,8 @@ const Dashboard = () => {
         </GradientText>
       </div>
 
-      <div className="absolute z-40 right-0 top-8 flex flex-col items-end" onMouseEnter={() => setIsProfileOpen(true)} onMouseLeave={() => setIsProfileOpen(false)}>
-        <button type="button" className="xl:w-20 lg:w-16 w-14 aspect-square bg-white/10 backdrop-blur-md rounded-l-2xl border-2 border-r-0 border-white/20 flex items-center justify-center transition-all hover:bg-white/20 shadow-[0_0_20px_rgba(0,0,0,0.5)] relative">
+      <div className="absolute z-40 right-0 top-8 flex flex-col items-end" onMouseLeave={() => setIsProfileOpen(false)}>
+        <button type="button" onMouseEnter={() => setIsProfileOpen(true)} onClick={()=>setIsProfileOpen(pre=>!pre)} className="xl:w-20 lg:w-16 w-14 aspect-square bg-white/10 backdrop-blur-md rounded-l-2xl border-2 border-r-0 border-white/20 flex items-center justify-center transition-all hover:bg-white/20 shadow-[0_0_20px_rgba(0,0,0,0.5)] relative">
           <div className="w-[80%] aspect-square rounded-full border-2 p-[2px] bg-gradient-to-tr from-gray-800 to-black relative" style={{borderColor: (isLoggedIn)?'#00ff3c80':'transparent'}}>
               <img src={currentAvatar} alt="profile" className="h-full w-full rounded-full object-cover" onError={() => setCurrentAvatar('/defaultProfile.png')} />
               {isLoggedIn && <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-black bg-[#00ff3c]`}></div>}
@@ -362,9 +362,9 @@ const Dashboard = () => {
                   <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Pilot_ID</p>
                   <p className="text-xs text-[#00ff3c] truncate font-mono">@{userInfo.username}</p>
                 </div>
-                <div onClick={() => navigate('/options/profile')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-gray-300 hover:text-white transition-colors cursor-pointer group">
+                <button onClick={() => navigate('/options/profile')} className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 text-gray-300 hover:text-white transition-colors cursor-pointer group">
                   <User size={14} className="text-[#ff0505] group-hover:scale-110 transition-transform"/> <span className="text-xs font-bold uppercase">Profile</span>
-                </div>
+                </button>
                 <button onClick={() => setActiveModal('notifications')} className="flex items-center justify-between px-3 py-2.5 rounded-xl hover:bg-white/5 text-gray-300 hover:text-white transition-colors text-left group w-full">
                   <div className="flex items-center gap-3">
                     <Bell size={14} className="text-[#00D4FF] group-hover:scale-110 transition-transform"/> <span className="text-xs font-bold uppercase">Comms</span>
@@ -413,10 +413,10 @@ const Dashboard = () => {
           
           {/* ✅ UPDATED: Menu mapping handles dynamic clicks instead of raw Links */}
           {MENU_ITEMS.map((item, idx) => (
-            <div 
+            <button 
               key={item.label} 
               onClick={(e) => handleMenuClick(e, item.route)} 
-              className="block group perspective-1000 w-[280px] relative cursor-pointer"
+              className="block group perspective-1000 w-[280px] relative cursor-pointer rounded-2xl"
             >
               <ElectricBorder color={item.color} speed={3} chaos={0.1} thickness={3} style={{ borderRadius: '16px' }}>
                 <div className="relative w-full aspect-[3/4] p-5 bg-[#0a0a0f] rounded-[14px] flex flex-col items-center justify-between transition-all duration-500 ease-out group-hover:scale-[1.05] group-hover:-translate-y-2" style={{ '--hover-glow': `${item.color}44`, '--neon-color': item.color }}>
@@ -434,7 +434,7 @@ const Dashboard = () => {
                   </div>
                 </div>
               </ElectricBorder>
-            </div>
+            </button>
           ))}
         </div>
       </div>

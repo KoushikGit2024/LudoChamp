@@ -1,15 +1,15 @@
 import React, { memo, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Shield, ChevronRight, Zap, Trophy, Ban } from "lucide-react"; 
-import "../../../styles/gameBoard.css"; 
-import SlideEffect from '../../../assets/SlideEffect.mp3';
-import FinishSound from '../../../assets/FinishSound.mp3';
+import "@/styles/gameBoard.css"; 
+import SlideEffect from '@/assets/SlideEffect.mp3';
+import FinishSound from '@/assets/FinishSound.mp3';
 import gsap from "gsap";
-import debounce from '../../../derivedFuncs/debounce.js';
-import Cell from "../../sharedBoardComponents/Cell.jsx";
+import debounce from '@/derivedFuncs/debounce.js';
+import Cell from "@/components/sharedBoardComponents/Cell.jsx";
 import useGameStore from '@/store/useGameStore';
 import gameActions from '@/store/gameLogic';
 import { useShallow } from "zustand/shallow";
-import piecePath from "../../../contexts/PiecePath.js";
+import piecePath from "@/contexts/PiecePath.js";
 import { AudioContext } from "@/contexts/SoundContext";
 
 // ✅ Added myColor prop

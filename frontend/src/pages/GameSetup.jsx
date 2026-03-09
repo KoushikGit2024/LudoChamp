@@ -71,7 +71,29 @@ const GameSetup = () => {
       setHumanColor(null); 
     }
   }, [isPOI, isBot, isPOF, isOffline, selectedColors.length]);
+  useEffect(()=>{
+    console.log(players)
+  },[players])
 
+  const handleClaimNode = (colorId) => {
+    const prevColor = humanColor;
+
+    // If it's the same color or no color was previously selected, just update the color
+    if (!prevColor || prevColor === colorId) {
+      setHumanColor(colorId);
+      return;
+    }
+
+    // Swap the player data between the old node and the newly claimed node
+    setPlayers((prev) => ({
+      ...prev,
+      [prevColor]: prev[colorId], // Move the target node's data to your old node
+      [colorId]: prev[prevColor]  // Move your data to the new node
+    }));
+
+    // Update the claimed color state
+    setHumanColor(colorId);
+  };
   useEffect(() => {
     setPlayers(prev => {
       let changed = false;
@@ -87,7 +109,7 @@ const GameSetup = () => {
            botIdx++;
         } else if (isPOF && c === humanColor) {
            if (next[c].name !== myName || next[c].username !== myEmail) {
-               next[c] = { ...next[c], name: myName, username: myEmail, profile: myAvatar, verified: true };
+               next[c] = { ...next[c], name: myName, username: myName, profile: myAvatar, verified: true };
                changed = true;
            }
         }
@@ -182,15 +204,14 @@ const GameSetup = () => {
       // --- 3. POF INVITE SYSTEM ---
       if (isPOF) {
         // Extract the usernames of the friends invited (excluding the host)
-        const invitedUsers = selectedColors
-          .filter(c => c !== humanColor)
-          .map(c => players[c].username);
-
+        const invitedUsers = selectedColors.map(c => players[c].username);
+        console.log(invitedUsers)
         if (invitedUsers.length > 0) {
           // Broadcast notifications to their in-game comms
-          const inviteList = [...invitedUsers, myName];
+          const inviteList = [...invitedUsers];
           await api.post('/api/auth/send-invites', {
             targets: inviteList,
+            colors:selectedColors,
             title: "ELITE_LINK INVITE",
             message: `Pilot ${myName} requested backup. Access node here: /session/pof/${gameId}`,
             type: "info" // 'info' maps to blue style in Dashboard
@@ -199,7 +220,7 @@ const GameSetup = () => {
         }
         
         // Navigate host to the generated room
-        navigate(`/session/pof/${gameId}`);
+        // navigate(`/session/pof/${gameId}`);
         return;
       }
 
@@ -346,7 +367,7 @@ const GameSetup = () => {
 
                   {(isBot || isPOF) && (
                     <button 
-                      onClick={() => setHumanColor(colorId)} 
+                      onClick={() => handleClaimNode(colorId)} 
                       className={`w-full mt-3 py-2 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all 
                       ${isOwned ? 'bg-[#00ff3c]/10 text-[#00ff3c] border border-[#00ff3c]/20 pointer-events-none' : 'bg-white/5 border border-white/10 hover:bg-white/10 text-gray-400'}`}
                     >

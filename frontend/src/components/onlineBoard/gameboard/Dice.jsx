@@ -48,7 +48,7 @@ const Dice = ({ turn, rollAllowed, gameFinished, socket, gameId, isOnline, myCol
        }, 500);
     }
   };
-
+  
   // --- SERVER RESPONSE LISTENER (ONLINE ONLY) ---
   useEffect(() => {
     if (!isOnline || !socket) return;
