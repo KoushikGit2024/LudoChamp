@@ -52,7 +52,7 @@ const corsOptions = {
 
 // console.log(allowedOrigins);
 // ===== Middlewares =====
-app.use(cors());
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 
@@ -60,12 +60,7 @@ app.use(cookieParser());
 connectMongo();
 
 // ===== Socket.io Setup =====
-const io = new Server(server, {
-    cors: {
-        origin: allowedOrigins,
-        credentials: true
-    }, 
-});
+const io = new Server(server, corsOptions);
 
 // Socket Middleware: Verify User via JWT Cookie
 // io.use((socket, next) => {
