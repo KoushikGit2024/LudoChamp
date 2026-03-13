@@ -214,7 +214,8 @@ const GameSetup = () => {
             colors:selectedColors,
             title: "ELITE_LINK INVITE",
             message: `Pilot ${myName} requested backup. Access node here: /session/pof/${gameId}`,
-            type: "info" // 'info' maps to blue style in Dashboard
+            type: "info", // 'info' maps to blue style in Dashboard,
+            gameId
           });
           toast.success("Uplink invites broadcasted successfully.", { theme: "dark" });
         }

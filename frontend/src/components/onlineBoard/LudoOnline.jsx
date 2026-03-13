@@ -41,17 +41,17 @@ const LudoOnline = memo(({ socket }) => {
   useEffect(() => {
     if (!socket || !gameId) return;
 
-    socket.emit("join-game", { 
-      gameId, 
-      type: gameType,
-      requestedColor: "R", 
-      user: { 
-        userId: userInfo?.username || "Guest", 
-        name: userInfo?.fullname || "Unknown Pilot", 
-        profile: userInfo?.avatar 
-      }
-    });
-
+    // socket.emit("join-game", { 
+    //   gameId, 
+    //   type: gameType,
+    //   requestedColor: "R", 
+    //   user: { 
+    //     userId: userInfo?.username || "Guest", 
+    //     name: userInfo?.fullname || "Unknown Pilot", 
+    //     profile: userInfo?.avatar 
+    //   }
+    // });
+    console.log("Join Game",socket);
     // Helper: Verify if the incoming event is perfectly sequential
     const verifySyncSequence = (incomingTick) => {
       const [prev, curr] = syncTicksRef.current;
@@ -69,7 +69,7 @@ const LudoOnline = memo(({ socket }) => {
       if (incomingTick !== curr + 1) {
         console.warn(`SYNC DESYNC: Expected tick ${curr + 1}, got ${incomingTick}. Requesting hard sync...`);
         toast.warning("Desync detected. Realigning grid...", { theme: "dark" });
-        socket.emit("sync-state", { gameId, color: myColorRef.current }); 
+        // socket.emit("sync-state", { gameId, color: myColorRef.current }); 
         return false;
       }
 
@@ -142,24 +142,24 @@ const LudoOnline = memo(({ socket }) => {
       toast.success(message, { theme: "dark", icon: "🔌" });
     };
 
-    socket.on("join-success", handleJoinSuccess);
-    socket.on("player-joined", handlePlayerJoined);
-    socket.on("player-left", handlePlayerLeft);
-    socket.on("state-synced", handleStateSync);
-    socket.on("dice-rolled", handleDiceRolled);
-    socket.on("piece-moved", handlePieceMoved);
-    socket.on("player-offline-warning", handlePlayerOfflineWarning);
-    socket.on("player-reconnected", handlePlayerReconnected);
+    // socket.on("join-success", handleJoinSuccess);
+    // socket.on("player-joined", handlePlayerJoined);
+    // socket.on("player-left", handlePlayerLeft);
+    // socket.on("state-synced", handleStateSync);
+    // socket.on("dice-rolled", handleDiceRolled);
+    // socket.on("piece-moved", handlePieceMoved);
+    // socket.on("player-offline-warning", handlePlayerOfflineWarning);
+    // socket.on("player-reconnected", handlePlayerReconnected);
 
     return () => {
-      socket.off("join-success", handleJoinSuccess);
-      socket.off("player-joined", handlePlayerJoined);
-      socket.off("player-left", handlePlayerLeft);
-      socket.off("state-synced", handleStateSync);
-      socket.off("dice-rolled", handleDiceRolled);
-      socket.off("piece-moved", handlePieceMoved);
-      socket.off("player-offline-warning", handlePlayerOfflineWarning);
-      socket.off("player-reconnected", handlePlayerReconnected);
+      // socket.off("join-success", handleJoinSuccess);
+      // socket.off("player-joined", handlePlayerJoined);
+      // socket.off("player-left", handlePlayerLeft);
+      // socket.off("state-synced", handleStateSync);
+      // socket.off("dice-rolled", handleDiceRolled);
+      // socket.off("piece-moved", handlePieceMoved);
+      // socket.off("player-offline-warning", handlePlayerOfflineWarning);
+      // socket.off("player-reconnected", handlePlayerReconnected);
     };
   }, [socket, gameId, gameType, userInfo]);
 

@@ -8,7 +8,7 @@ const useUserStore = create(
             info: {
                 fullname: "New Pilot",
                 username: "identity_pending",
-                email: "",
+                email: "user@ludoneo.game",
                 avatar: "/defaultProfile.png",
                 isVerified: false,
                 notifications: [], // ✅ Added Notification Array

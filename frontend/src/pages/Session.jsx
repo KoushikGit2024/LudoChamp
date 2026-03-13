@@ -1,5 +1,5 @@
-import React, { Suspense, useContext, useEffect, useState } from 'react';
-import { useNavigate, useParams, useBlocker } from 'react-router-dom';
+import React, { Suspense, useContext, useEffect, useState, useRef } from 'react';
+import { useNavigate, useParams, useBlocker, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useShallow } from 'zustand/shallow';
 import { 
@@ -27,7 +27,9 @@ const generateDefaultTitle = () => {
 };
 
 const Session = () => {
-  const { boardType } = useParams();
+  const { boardType, gameId } = useParams();
+  const [searchParams] = useSearchParams()
+  
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showRules, setShowRules] = useState(false);
@@ -52,6 +54,7 @@ const Session = () => {
       if (isLeaving && canSave && !saveTitle) {
          setSaveTitle(generateDefaultTitle());
       }
+      if (redirectedRef.current) return false;
       return isLeaving;
     }
   );
@@ -94,21 +97,23 @@ const Session = () => {
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    if (isOnlineMode && !userInfo?.email) {
+    if (isOnlineMode && userInfo && !userInfo?.email) {
+      console.log(userInfo)
       toast.info("Neural link requires Pilot Registration.", { theme: "dark" });
-      navigate("/dashboard"); // ✅ Changed to redirect to dashboard
+      navigate("/dashboard"); 
     } else if (isOnlineMode) {
-      socket.connect();
+      socket.auth = {
+        playerDescription: searchParams.get("idf"),
+        gameId: gameId,
+      };
 
-      socket.on("connect", (data) => {
-        console.log("Socket Connected",socket, "data",data);
-      })
+      socket.connect();
     }
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [isOnlineMode, userInfo, navigate, gameStatus]);
+  }, [isOnlineMode, userInfo, navigate, gameStatus, searchParams, gameId]);
 
   const rules = [
     "Pieces move based on 1-6 dice rolls.",
@@ -117,6 +122,61 @@ const Session = () => {
     "Safe zones (marked with Shields) prevent cutting.",
     "First to bring all 4 pieces to the Center wins."
   ];
+
+  const redirectedRef = useRef(false);
+
+  // --- 4. OPTIMIZED SOCKET EVENT HANDLERS ---
+  // --- 4. OPTIMIZED SOCKET EVENT HANDLERS ---
+  useEffect(() => {
+    // Only run this in online modes
+    if (!isOnlineMode) return;
+
+    const handleError = (err) => {
+      if (redirectedRef.current) return;
+      redirectedRef.current = true;
+
+      console.error("Socket Error:", err.message);
+      toast.error(err.message || "Connection lost", { theme: "dark" });
+
+      socket.disconnect(); 
+
+      setTimeout(() => {
+        navigate("/dashboard", { replace: true });
+      }, 100);
+    };
+
+    const handleConnect = () => {
+      console.log("🟢 1. Socket connected:", socket.id);
+      
+      setTimeout(() => {
+        try {
+          // console.log("🟢 2. Firing emit now! Payload:", { type: boardType });
+          socket.emit("join-game", { type: boardType });
+          // console.log("🟢 3. Emit successfully pushed to network!");
+        } catch (error) {
+          console.error("🔴 Emit crashed locally:", error);
+        }
+      }, 100); // Wait 1s to bypass React Strict Mode double-mounts
+    };
+
+    // 1. Attach listeners UNCONDITIONALLY
+    socket.on("connect", handleConnect);
+    socket.on("connect_error", handleError);
+
+    // 2. Immediate check in case socket connected before the effect ran
+    if (socket.connected) {
+      handleConnect();
+    }
+
+    // 3. Clean up
+    return () => {
+      console.log("🧹 Cleaning up socket listeners...");
+      socket.off("connect", handleConnect);
+      socket.off("connect_error", handleError);
+    };
+
+    // Put the variables you actually use inside the array
+  }, [isOnlineMode, boardType]);
 
   return (
     <div className='bg-[#020205] relative h-[100dvh] w-full flex items-center justify-center overflow-hidden'>

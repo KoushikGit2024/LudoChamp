@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, LogIn, UserPlus, Settings, LogOut, Bell, 
-  X, AlertTriangle, ShieldCheck, Volume2, Music, Info, XCircle, RefreshCcw, Database, Activity, Loader2
+  X, AlertTriangle, ShieldCheck, Volume2, Music, Info, XCircle, RefreshCcw, Database, Activity, Loader2, Trash2
 } from 'lucide-react';
 import { toast } from 'react-toastify';
 
@@ -92,7 +92,32 @@ const ActionModal = ({ activeModal, setActiveModal, handleLogout }) => {
     if (activeModal === 'savedGames') fetchSavedGames();
   }, [activeModal]);
 
-  // ✅ UPDATED: Intelligent Notification Routing for POF Invites
+  // ✅ NEW: Delete Notification Logic
+  const handleDeleteNotification = async (e, notifId) => {
+    e.stopPropagation(); // Prevents triggering the routing click event
+    try {
+      await api.delete(`/api/auth/notifications/${notifId}`);
+      const updatedNotifs = sortedNotifications.filter(n => n._id !== notifId);
+      setSortedNotifications(updatedNotifs);
+      updateUserInfo({ notifications: updatedNotifs }); 
+      // toast.success("Comm log purged.", { theme: "dark", autoClose: 2000 });
+    } catch (err) {
+      toast.error("ERROR: Failed to purge comm log.", { theme: "dark" });
+    }
+  };
+
+  // ✅ NEW: Delete Saved Game Logic
+  const handleDeleteGame = async (e, gameId) => {
+    e.stopPropagation();
+    try {
+      await api.delete(`/api/games/saved/${gameId}`);
+      setSavedGames(prev => prev.filter(g => (g._id || g.meta.gameId) !== gameId));
+      // toast.success("Memory Core permanently erased.", { theme: "dark", autoClose: 2000 });
+    } catch (err) {
+      toast.error("ERROR: Failed to erase Memory Core.", { theme: "dark" });
+    }
+  };
+
   const handleNotificationClick = async (notif) => {
     // 1. Mark as read immediately (Optimistic UI)
     if (!notif.read) {
@@ -105,13 +130,12 @@ const ActionModal = ({ activeModal, setActiveModal, handleLogout }) => {
     }
 
     // 2. Scan the notification payload for routing instructions (POF Invites)
-    // Looks for internal app routes like /session/pof/12345 or /setup/pof?join=12345
     const internalLinkMatch = notif.message.match(/(\/(session|setup)\/(pof|poi)[^\s]+)/);
     
     if (internalLinkMatch) {
       setActiveModal(null);
       toast.success("Uplink accepted. Rerouting to grid...", { theme: "dark" });
-      navigate(internalLinkMatch[0]); // Instantly routes the user to the game!
+      navigate(internalLinkMatch[0]); 
       return;
     } 
 
@@ -223,25 +247,43 @@ const ActionModal = ({ activeModal, setActiveModal, handleLogout }) => {
                </div>
             ) : (
                <div className="space-y-3">
-                 {savedGames.map(game => (
-                   <div key={game._id || game.meta.gameId} className="p-4 bg-white/5 border border-white/10 hover:border-[#00ff3c]/40 rounded-xl transition-all group flex flex-col gap-3">
-                     <div className="flex justify-between items-start">
-                       <div className="flex-1 min-w-0 pr-2">
-                         <h4 className="text-xs font-black text-white uppercase tracking-wider truncate">{game.meta.title}</h4>
-                         <p className="text-[9px] text-gray-500 font-mono mt-1">
-                           {new Date(game.updatedAt || game.createdAt).toLocaleString()}
-                         </p>
+                 {savedGames.map(game => {
+                   const gameId = game._id || game.meta.gameId;
+                   return (
+                     <div key={gameId} className="p-4 bg-white/5 border border-white/10 hover:border-[#00ff3c]/40 rounded-xl transition-all group flex flex-col gap-3 relative overflow-hidden">
+                       
+                       {/* UPDATED: Grouped the header text, badge, and delete button using Flexbox */}
+                       <div className="flex justify-between items-start gap-3">
+                         <div className="flex-1 min-w-0">
+                           <h4 className="text-xs font-black text-white uppercase tracking-wider truncate">{game.meta.title}</h4>
+                           <p className="text-[9px] text-gray-500 font-mono mt-1">
+                             {new Date(game.updatedAt || game.createdAt).toLocaleString()}
+                           </p>
+                         </div>
+                         
+                         <div className="flex items-center gap-2 shrink-0">
+                           <span className="text-[8px] font-black px-2 py-1 bg-[#00ff3c]/10 text-[#00ff3c] rounded border border-[#00ff3c]/30 uppercase tracking-widest">
+                             {game.meta.type}
+                           </span>
+                           
+                           {/* Delete Game Button (No longer absolute) */}
+                           <button 
+                             onClick={(e) => handleDeleteGame(e, gameId)}
+                             className="text-gray-600 hover:text-red-500 transition-colors bg-[#0a0a0f] p-1.5 rounded-md border border-white/5 hover:border-red-500/30"
+                             title="Purge Core"
+                           >
+                             <Trash2 size={12} />
+                           </button>
+                         </div>
                        </div>
-                       <span className="text-[8px] font-black px-2 py-1 bg-[#00ff3c]/10 text-[#00ff3c] rounded border border-[#00ff3c]/30 uppercase tracking-widest shrink-0">
-                         {game.meta.type}
-                       </span>
+
+                       <button onClick={() => handleLoadGame(game)} disabled={loadingGameId === game.meta.gameId} className="w-full py-2.5 bg-[#00ff3c]/10 hover:bg-[#00ff3c] text-[#00ff3c] hover:text-black font-black uppercase text-[9px] tracking-widest rounded-lg transition-all flex items-center justify-center gap-2">
+                         {loadingGameId === game.meta.gameId ? <Loader2 size={12} className="animate-spin"/> : <Activity size={12}/>}
+                         {loadingGameId === game.meta.gameId ? "INITIALIZING..." : "RESUME_UPLINK"}
+                       </button>
                      </div>
-                     <button onClick={() => handleLoadGame(game)} disabled={loadingGameId === game.meta.gameId} className="w-full py-2.5 bg-[#00ff3c]/10 hover:bg-[#00ff3c] text-[#00ff3c] hover:text-black font-black uppercase text-[9px] tracking-widest rounded-lg transition-all flex items-center justify-center gap-2">
-                       {loadingGameId === game.meta.gameId ? <Loader2 size={12} className="animate-spin"/> : <Activity size={12}/>}
-                       {loadingGameId === game.meta.gameId ? "INITIALIZING..." : "RESUME_UPLINK"}
-                     </button>
-                   </div>
-                 ))}
+                   );
+                 })}
                </div>
             )}
           </div>
@@ -258,9 +300,9 @@ const ActionModal = ({ activeModal, setActiveModal, handleLogout }) => {
               sortedNotifications.map((notif) => {
                 const { color, bg, border, Icon } = getNotificationStyle(notif.type);
                 return (
-                  <div key={notif._id} onClick={() => handleNotificationClick(notif)} className={`p-4 rounded-xl flex gap-3 items-start cursor-pointer transition-all duration-300 ${notif.read ? 'bg-white/5 border border-white/5 opacity-50 hover:opacity-100' : `${bg} border ${border} shadow-[0_0_15px_rgba(0,0,0,0.2)] hover:brightness-125`}`}>
+                  <div key={notif._id} onClick={() => handleNotificationClick(notif)} className={`relative p-4 rounded-xl flex gap-3 items-start cursor-pointer transition-all duration-300 ${notif.read ? 'bg-white/5 border border-white/5 opacity-50 hover:opacity-100' : `${bg} border ${border} shadow-[0_0_15px_rgba(0,0,0,0.2)] hover:brightness-125`}`}>
                     <Icon size={16} className={`${color} shrink-0 mt-0.5`}/>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 pr-6">
                       <div className="flex justify-between items-center mb-1">
                         <p className={`text-[10px] font-black uppercase tracking-widest truncate ${color}`}>{notif.title}</p>
                         {!notif.read && <span className={`w-2 h-2 rounded-full ${bg.replace('/10', '')} animate-pulse shrink-0 ml-2`} />}
@@ -274,6 +316,15 @@ const ActionModal = ({ activeModal, setActiveModal, handleLogout }) => {
                       </p>
                       <p className="text-[8px] text-gray-500 mt-2 font-mono uppercase">{new Date(notif.createdAt).toLocaleString()}</p>
                     </div>
+                    
+                    {/* Delete Notification Button */}
+                    <button 
+                      onClick={(e) => handleDeleteNotification(e, notif._id)}
+                      className="absolute top-3 right-3 text-gray-500 hover:text-red-500 transition-colors p-1"
+                      title="Delete Log"
+                    >
+                      <Trash2 size={12} />
+                    </button>
                   </div>
                 )
               })
@@ -314,7 +365,6 @@ const Dashboard = () => {
     }
   };
 
-  // ✅ UPDATED: Intercept clicks on Menu Items to verify authorization for POI and POF
   const handleMenuClick = (e, route) => {
     e.preventDefault();
     const isOnlineMode = route.includes('poi') || route.includes('pof');
@@ -325,8 +375,6 @@ const Dashboard = () => {
       return;
     }
 
-    // Pass valid users to the required routing endpoints
-    // Setup POI handles random match queuing, Setup POF handles room creation + invites
     navigate(route);
   };
 
@@ -411,7 +459,6 @@ const Dashboard = () => {
       <div className="absolute inset-0 z-10 w-full h-full overflow-x-hidden overflow-y-auto lg:overflow-y-hidden lg:overflow-x-auto custom-scrollbar">
         <div className="min-h-full w-full flex flex-wrap lg:flex-nowrap items-start justify-center lg:justify-start lg:items-center gap-10 px-6 pt-[50%] sm:pt-[20%] sm:pb-[32px] lg:pt-[10%] lg:pb-0 lg:px-[10%]">
           
-          {/* ✅ UPDATED: Menu mapping handles dynamic clicks instead of raw Links */}
           {MENU_ITEMS.map((item, idx) => (
             <button 
               key={item.label} 

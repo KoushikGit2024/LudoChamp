@@ -181,6 +181,7 @@ function initiateOfflineGameLogic(state, gameObj) {
       currentTurn: gameObj.players[0],
       gameStartedAt: startTime,
       type: gameObj.type,
+      color: "R",
       winLast: 0,
     },
     players: {
