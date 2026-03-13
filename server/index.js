@@ -13,11 +13,10 @@ import ErrorLog from "./src/models/errorModel.js";
 
 // Socket and Game Logic Imports
 import registerGameHandlers from "./src/sockets/gameControllers.js";
-// import {redisGameInitiate} from "./src/handlers/gameHandlers.js"; 
-
-// Standardized Redis import (Ensure your redis.js exports your client)
+import socketGaurd from "./src/middlewares/socketGaurd.js";
 import redis from "./src/config/redis.js"; 
 import gameRoute from "./src/routes/gameRoutes.js";
+import errorHandler from "./src/middlewares/errorHandler.js";
 
 dotenv.config();
 
@@ -62,69 +61,11 @@ connectMongo();
 // ===== Socket.io Setup =====
 const io = new Server(server, {cors:corsOptions});
 
-// Socket Middleware: Verify User via JWT Cookie
-// io.use((socket, next) => {
-//     const token = socket.request.headers.cookie 
-//         ? socket.request.headers.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1] 
-//         : null;
 
-//     if (!token) return next(); // Allow guest connection
-
-//     jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-//         if (err) return next(); // Token invalid, proceed as guest
-//         socket.user = decoded;  // Attach authenticated user data to socket
-//         next();
-//     });
-// });
-
-// Initialize External Socket Logic for the Ludo Game
-
-
-io.use((socket, next) => {
-  try {
-
-    // Extract cookie string
-    const cookie = socket.request.headers.cookie;
-
-    const token = cookie
-      ? cookie
-          .split("; ")
-          .find(row => row.startsWith("token="))
-          ?.split("=")[1]
-      : null;
-
-    const playerDescription = socket.handshake.auth?.playerDescription || null;
-    const gameId = socket.handshake.auth?.gameId || null;
-
-    if (!token || !playerDescription || !gameId) {
-      return next(new Error("Authentication failed"));
-    }
-
-    const decodedUser = jwt.verify(token, process.env.JWT_SECRET);
-    socket.user = decodedUser;
-
-    // Verify playerDescription token
-    const decodedPlayer = jwt.verify(playerDescription, process.env.JWT_SECRET);
-    socket.player = decodedPlayer;
-    console.log(socket.player,gameId,decodedUser)
-
-    if (socket.player.gameId !== gameId) {
-        console.log("Connection revoked");
-      return next(new Error("Connection revoked"));
-    }
-
-    console.log("Player verified:", socket.player);
-
-    next();
-
-  } catch (err) {
-    console.error("Socket auth error:", err.message);
-    next(new Error("Authentication error"));
-  }
-});
+io.use((socket,next)=>socketGaurd(socket,next,io));
 
 registerGameHandlers(io);
-// ===== HTTP Routes =====
+// ===== HTTP Routes ====={socket.join})//
 
 // Root Route
 app.get('/', async (req, res) => {
@@ -153,33 +94,10 @@ app.get("/redis", async (req, res) => {
 // Auth Routes
 app.use('/api/auth', authRoute);
 app.use('/api/games', gameRoute);
-// Ludo Setup Route (Called by GameSetup.jsx to create the game matrix in Redis)
-// app.post('/api/create-game', redisGameInitiate);
 
 
 // ===== Global Error Handler =====
-app.use(async (err, req, res, next) => {
-    try {
-        console.log("Error:", err);
-        ErrorLog.create({
-            source: req.originalUrl?.includes('auth') ? 'Auth' : 'General',
-            message: err.message,
-            stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
-            method: req.method,
-            url: req.originalUrl,
-            userId: req.user?.id,
-            payload: { ...(req.body), password: "[REDACTED]" }, // Better standard than [PASSWORD]
-            metadata: { userAgent: req.get('User-Agent') }
-        });
-    } catch (logError) {
-        console.error("Failed to save error to DB:", logError);
-    }
-
-    res.status(err.status || 500).json({
-        success: false,
-        message: err.message || "Internal Server Error"
-    });
-});
+app.use(errorHandler);
 
 // ===== Start Server =====
 server.listen(PORT, () => {

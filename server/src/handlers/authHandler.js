@@ -539,6 +539,7 @@ const getNotifications = async (req, res, next) => {
 // ==========================================
 // MARK NOTIFICATION AS READ
 // ==========================================
+
 const markNotificationRead = async (req, res, next) => {
     try {
         const userId = req.user.id;
@@ -563,6 +564,9 @@ const markNotificationRead = async (req, res, next) => {
     }
 }
 
+// ==========================================
+// SEND INVITES
+// ==========================================
 const sendInvites = async (req, res, next) => {
     try {
         const { targets, title, colors, message, type,gameId } = req.body;
@@ -570,7 +574,7 @@ const sendInvites = async (req, res, next) => {
         // 1. Create an array of individual update operations
         const bulkOps = targets.map((target, idx) => {
             // Generate the unique token for this specific user and color
-            const token = jwt.sign({color:colors[idx],target,gameId:gameId}, process.env.JWT_SECRET);
+            const token = jwt.sign({color:colors[idx],target,gameId:gameId,size:colors.length}, process.env.JWT_SECRET);
             
             // Append the token to the base message string
             const customMessage = `${message}?idf=${token}`;
@@ -605,6 +609,27 @@ const sendInvites = async (req, res, next) => {
 };
 
 
+
+const deleteNotification = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Pilot identity not found.' });
+    }
+
+    // Filter out the deleted notification
+    user.notifications = user.notifications.filter(
+      (notif) => notif._id.toString() !== req.params.id
+    );
+
+    await user.save();
+    res.status(200).json({ success: true, message: 'Comm log purged successfully.' });
+  } catch (error) {
+    console.error("Error deleting notification:", error);
+    next(error);
+  }
+}
+
 export { 
     loginHandler, 
     registerHandler, 
@@ -619,5 +644,6 @@ export {
     searchUsers,
     getNotifications,
     markNotificationRead,
-    sendInvites
+    sendInvites,
+    deleteNotification
 };

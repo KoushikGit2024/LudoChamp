@@ -31,177 +31,163 @@ const getSkeletonPlayer = (colorKey) => {
 };
 
 export default function registerGameHandlers(io) {
-  // console.log("io",io);
-  io.on("connection",async (socket) => {
+  
+  io.on("connection",(socket,next) => {
     console.log("Total sockets:", io.engine.clientsCount);
     
     console.log(`[NETWORK] 🟢 Socket Connected: ${socket.id}`);
-    const sockets = await io.in(socket.player.gameId).fetchSockets();
+    // const sockets = await io.in(socket.player.gameId).fetchSockets();
+    // next(new Error("Socket authentication failed"));
+    console.log("Disconnect check")
 
-    const count = sockets.length;
-
-    console.log("Players in room:", count);
-
-    // const cancelDisconnectTimer = (gameId, color) => {
-    //   const timerKey = `${gameId}:${color}`;
-    //   if (disconnectTimers.has(timerKey)) {
-    //     console.log(`[DISCONNECT] 🛑 Cancelled purge timer for Node ${color} in ${gameId}`);
-    //     clearTimeout(disconnectTimers.get(timerKey));
-    //     disconnectTimers.delete(timerKey);
+    const cancelDisconnectTimer = (gameId, color) => {
+      const timerKey = `${gameId}:${color}`;
+      if (disconnectTimers.has(timerKey)) {
+        console.log(`[DISCONNECT] 🛑 Cancelled purge timer for Node ${color} in ${gameId}`);
+        clearTimeout(disconnectTimers.get(timerKey));
+        disconnectTimers.delete(timerKey);
         
-    //     // ✅ FIX: Use socket.to() so the reconnecting player doesn't get their own toast
-    //     socket.to(gameId).emit("player-reconnected", { 
-    //       message: `Node ${color} uplink restored.`, 
-    //       color 
-    //     });
-    //   }
-    // };
+        // ✅ FIX: Use socket.to() so the reconnecting player doesn't get their own toast
+        socket.to(gameId).emit("player-reconnected", { 
+          message: `Node ${color} uplink restored.`, 
+          color 
+        });
+      }
+    };
+    // console.log(socket)
+    socket.on("join-game", async ({ type }) => {
+      // console.log("🔥 BINGO! The server received the emit! Payload:", type);
+      try {
+        // ✅ Safely extract variables assuming socket middleware populated them
+        const user = socket.user || {}; 
+        const playerInfo = socket.player || {};
+        const gameId = playerInfo.gameId || socket.handshake.auth.gameId; // Fallback to auth if playerInfo fails
+        const requestedColor = playerInfo.color || null; // Fallback if no color requested
 
-    socket.on("connect",()=>{
-      console.log("Socket connected successfully",socket.id);
-      socket.emit('connect', {
-        msg: "Socket connected successfully",
-        socketId: socket.id
-      });
-    })
-    
-    // socket.on("joinRoom", (roomId) => {
+        if (!gameId) {
+            console.error("❌ [JOIN] Missing gameId for socket", socket.id);
+            return socket.emit("error", "Invalid session data.");
+        }
 
-    //   socket.join(roomId);
+        // console.log(`\n[JOIN] 📥 Request -> Game: ${gameId} | Type: ${type} | User: ${user.name || 'Unknown'}`);
 
-    //   const room = io.sockets.adapter.rooms.get(roomId);
-    //   const count = room ? room.size : 0;
+        let state = await redisClient.json.get(`game:${gameId}`);
+        // console.log("state",state)
+        if (!state) {
+            console.log(`[JOIN] 🏗️ Game ${gameId} not found. Initializing...`);
+            state = {
+                meta: {
+                    gameId: gameId,
+                    status: "WAITING",
+                    type: type,
+                    gameStartedAt: [Date.now()],
+                    winLast: 0,
+                    playerCount: 0,
+                    onBoard: [],
+                    syncTick: 0
+                },
+                move: {
+                    playerIdx: 0,
+                    turn: requestedColor || "R", 
+                    rollAllowed: true,
+                    moveCount: 0,
+                    ticks: 0,
+                    moveAllowed: false,
+                    moving: false,
+                    timeOut: false,
+                },
+                players: { 
+                    R: getSkeletonPlayer('R'), 
+                    B: getSkeletonPlayer('B'), 
+                    Y: getSkeletonPlayer('Y'), 
+                    G: getSkeletonPlayer('G') 
+                }, 
+                // syncTick: 0
+            };
+        }
 
-    //   console.log(`Players in ${roomId}:`, count);
+        let assignedColor = null;
 
-    // });
+        // 1a. Security Check: Block duplicate joins / Find reconnections
+        for (const c of ["R", "B", "Y", "G"]) {
+           if (user.userId && state.players[c].userId === user.userId) {
+               console.log(`[JOIN] 🔄 Reconnection detected for user ${user.name} as Node ${c}`);
+               assignedColor = c;
+               break;
+           }
+        }
 
-    // --- 1. JOIN GAME ---
-    // socket.on("join-game", async ({ gameId, type, requestedColor, user }) => {
-    //   console.log(`\n[JOIN] 📥 Request -> Game: ${gameId} | Type: ${type} | User: ${user?.name}`);
-    //   console.log("Socket ID: ", socket.id," | User obj: ",user);
-      
-    //   try {
-    //     let state = await redisClient.json.get(`game:${gameId}`);
+        // 1b. New Player Joining
+        if (!assignedColor) {
+            if (state.meta.status === "FINISHED" || (state.meta.status === "RUNNING" && type !== "poi")) {
+                return socket.emit("error", "Game has already started or finished.");
+            }
 
-    //     if (!state) {
-    //         console.log(`[JOIN] 🏗️ Game ${gameId} not found. Initializing...`);
-    //         state = {
-    //             meta: {
-    //                 gameId: gameId,
-    //                 status: "WAITING",
-    //                 type: type,
-    //                 gameStartedAt: [Date.now()],
-    //                 winLast: 0,
-    //                 playerCount: 0,
-    //                 onBoard: [],
-    //             },
-    //             move: {
-    //                 playerIdx: 0,
-    //                 turn: requestedColor || "R", 
-    //                 rollAllowed: true,
-    //                 moveCount: 0,
-    //                 ticks: 0,
-    //                 moveAllowed: false,
-    //                 moving: false,
-    //                 timeOut: false,
-    //             },
-    //             players: { 
-    //                 R: getSkeletonPlayer('R'), 
-    //                 B: getSkeletonPlayer('B'), 
-    //                 Y: getSkeletonPlayer('Y'), 
-    //                 G: getSkeletonPlayer('G') 
-    //             }, 
-    //             syncTick: 0
-    //         };
-    //     }
-
-    //     let assignedColor = null;
-
-    //     // 1a. Security Check: Block duplicate joins / Find reconnections
-    //     for (const c of ["R", "B", "Y", "G"]) {
-    //        if (state.players[c].userId === user.userId) {
-    //            console.log(`[JOIN] 🔄 Reconnection detected for user ${user.name} as Node ${c}`);
-    //            assignedColor = c;
-    //            break;
-    //        }
-    //     }
-
-    //     // 1b. New Player Joining
-    //     if (!assignedColor) {
-    //         // Prevent new joins if game is already fully running and not POI waiting for fill
-    //         if (state.meta.status === "FINISHED" || (state.meta.status === "RUNNING" && type !== "poi")) {
-    //             return socket.emit("error", "Game has already started or finished.");
-    //         }
-
-    //         const availableColors = ["R", "B", "Y", "G"].filter(c => !state.meta.onBoard.includes(c));
+            const availableColors = ["R", "B", "Y", "G"].filter(c => !state.meta.onBoard.includes(c));
             
-    //         if (availableColors.length === 0) {
-    //             return socket.emit("error", "Lobby is full.");
-    //         }
+            if (availableColors.length === 0) {
+                return socket.emit("error", "Lobby is full.");
+            }
 
-    //         if (type === "poi") {
-    //             // Random assignment for POI
-    //             assignedColor = availableColors[Math.floor(Math.random() * availableColors.length)];
-    //         } else {
-    //             // POF Assignment
-    //             assignedColor = availableColors.includes(requestedColor) ? requestedColor : availableColors[0]; 
-    //         }
+            if (type === "poi") {
+                assignedColor = availableColors[Math.floor(Math.random() * availableColors.length)];
+            } else {
+                assignedColor = availableColors.includes(requestedColor) ? requestedColor : availableColors[0]; 
+            }
 
-    //         state.players[assignedColor] = {
-    //             ...state.players[assignedColor],
-    //             socketId: socket.id,
-    //             name: user.name,
-    //             userId: user.userId,
-    //             profile: user.profile,
-    //             online: true
-    //         };
+            state.players[assignedColor] = {
+                ...state.players[assignedColor],
+                socketId: socket.id,
+                name: user.name,
+                userId: user.userId,
+                profile: user.profile,
+                online: true
+            };
 
-    //         // Maintain stable turn order tracking
-    //         state.meta.onBoard.push(assignedColor);
-    //         state.meta.onBoard.sort((a, b) => MASTER_TURN_ORDER.indexOf(a) - MASTER_TURN_ORDER.indexOf(b));
-    //         state.meta.playerCount = state.meta.onBoard.length;
+            state.meta.onBoard.push(assignedColor);
+            state.meta.onBoard.sort((a, b) => MASTER_TURN_ORDER.indexOf(a) - MASTER_TURN_ORDER.indexOf(b));
+            state.meta.playerCount = state.meta.onBoard.length;
 
-    //         if (state.meta.playerCount === 1) state.move.turn = assignedColor;
-            
-    //         // POI auto-start logic: Don't wait for all 4, start as soon as 2 are present
-    //         if (state.meta.playerCount >= 2 && type === "poi") state.meta.status = "RUNNING";
-    //         // POF auto-start logic
-    //         if (state.meta.playerCount >= 2 && type === "pof") state.meta.status = "RUNNING";
-    //     } else {
-    //         state.players[assignedColor].socketId = socket.id;
-    //         state.players[assignedColor].online = true;
-    //     }
+            if (state.meta.playerCount === 1) state.move.turn = assignedColor;
+            if (state.meta.playerCount >= 2 && (type === "poi" || type === "pof")) state.meta.status = "RUNNING";
 
-    //     // Lock socket session securely
-    //     socket.gameId = gameId;
-    //     socket.playerColor = assignedColor;
-    //     socket.userId = user.userId;
-    //     socket.join(gameId);
-    //     const room = io.sockets.adapter.rooms.get(gameId);
-    //     const count = room ? room.size : 0;
+        } else {
+            state.players[assignedColor].socketId = socket.id;
+            state.players[assignedColor].online = true;
+        }
 
-    //     console.log(`Players in ${gameId}:`, count);
+        // Lock socket session securely
+        socket.gameId = gameId;
+        socket.playerColor = assignedColor;
+        socket.userId = user.userId;
+        
+        socket.join(gameId); // ✅ THIS is where they actually join the room!
+        
+        const room = io.sockets.adapter.rooms.get(gameId);
+        console.log(`Players currently in room ${gameId}:`, room ? room.size : 0);
 
-    //     cancelDisconnectTimer(gameId, assignedColor);
+        cancelDisconnectTimer(gameId, assignedColor);
 
-    //     state.syncTick = (state.syncTick || 0) + 1;
+        state.syncTick = (state.syncTick || 0) + 1;
 
-    //     // Save with 2-hour Redis TTL to prevent memory leaks
-    //     await redisClient.json.set(`game:${gameId}`, '.', state);
-    //     await redisClient.expire(`game:${gameId}`, 7200);
+        await redisClient.json.set(`game:${gameId}`, '.', state);
+        await redisClient.expire(`game:${gameId}`, 7200);
 
-    //     socket.emit("join-success", { assignedColor, newState: state });
-    //     io.to(gameId).emit("player-joined", {
-    //         message: `Pilot ${user.name} established uplink to Node ${assignedColor}.`,
-    //         newState: state,
-    //         syncArray: [state.syncTick - 1, state.syncTick]
-    //     });
+        socket.emit("join-success", { assignedColor, newState: state });
+        io.to(gameId).emit("player-joined", {
+            message: `Pilot ${user.name} established uplink to Node ${assignedColor}.`,
+            newState: state,
+            syncArray: [state.syncTick - 1, state.syncTick]
+        });
 
-    //   } catch (err) {
-    //     console.error("❌ [JOIN] Error:", err);
-    //   }
-    // });
+      } catch (err) {
+        console.error("❌ [JOIN] Error:", err);
+      }
+    });
+
+    // ... (Your other socket events stay the same) ...
+
+  // });
 
     // --- 2. SYNC STATE ---
     // socket.on("sync-state", async ({ gameId, color }) => {
@@ -411,72 +397,81 @@ export default function registerGameHandlers(io) {
     // });
 
     // --- 5. DELAYED DISCONNECT LOGIC ---
+// --- 5. DELAYED DISCONNECT LOGIC ---
     socket.on("disconnect", (reason) => {
       console.log(`[NETWORK] 🔴 Socket Disconnected: ${socket.id} | Reason: ${reason}`);
-
-      // const { gameId, playerColor } = socket;
       
-      // // 2. If they were just in the lobby and hadn't fully joined a room, stop here.
-      // if (!gameId || !playerColor) {
-      //    console.log(`[DISCONNECT] Socket ${socket.id} disconnected before joining a game.`);
-      //    return; 
-      // }
+      // ✅ FIX 1: Safely extract variables using optional chaining.
+      // We prioritize the properties you set during `join-game`, falling back to `socket.player`.
+      const gameId = socket.gameId || socket.player?.gameId;
+      const color = socket.playerColor || socket.player?.color;
+      
+      // ✅ FIX 2: Check against `color` so the lobby check works flawlessly.
+      if (!gameId || !color) {
+         console.log(`[DISCONNECT] 🛑 Socket ${socket.id} disconnected before joining a game.`);
+         return; 
+      }
 
-      // io.to(gameId).emit("player-offline-warning", {
-      //    message: `WARNING: Node ${playerColor} signal lost. Commencing 10s purge protocol...`,
-      //    color: playerColor
-      // });
+      io.to(gameId).emit("player-offline-warning", {
+         message: `WARNING: player ${color} signal lost.`,
+         color: color // Frontend expects `color`
+      });
 
-      // const timerKey = `${gameId}:${playerColor}`;
-      // const purgeTimer = setTimeout(async () => {
-      //   try {
-      //     const state = await redisClient.json.get(`game:${gameId}`);
-      //     if (!state || state.meta.status === "FINISHED") return;
+      // ✅ FIX 3: Consistently use `color` for the timer key and all internal logic.
+      const timerKey = `${gameId}:${color}`;
+      
+      const purgeTimer = setTimeout(async () => {
+        try {
+          const state = await redisClient.json.get(`game:${gameId}`);
+          if (!state || state.meta.status === "FINISHED") return;
 
-      //     const boardIndex = state.meta.onBoard.indexOf(playerColor);
-      //     if (boardIndex === -1) return;
+          const boardIndex = state.meta.onBoard.indexOf(color);
+          if (boardIndex === -1) return;
 
-      //     // Remove from active board cleanly
-      //     state.meta.onBoard.splice(boardIndex, 1);
-      //     state.meta.playerCount = state.meta.onBoard.length;
+          // Remove from active board cleanly
+          state.meta.onBoard.splice(boardIndex, 1);
+          state.meta.playerCount = state.meta.onBoard.length;
 
-      //     // Reset to Skeleton
-      //     state.players[playerColor] = getSkeletonPlayer(playerColor);
+          // Reset to Skeleton
+          state.players[color] = getSkeletonPlayer(color);
 
-      //     // Pass turn if they disconnected during their turn
-      //     if (state.move.turn === playerColor && state.meta.onBoard.length > 0) {
-      //       state.move.turn = getNextTurn(playerColor, state.meta.onBoard);
-      //       state.move.rollAllowed = true;
-      //       state.move.moveAllowed = false;
-      //       state.move.moveCount = 0;
-      //       state.move.ticks = 0;
-      //     }
+          // Pass turn if they disconnected during their turn
+          if (state.move.turn === color && state.meta.onBoard.length > 0) {
+            state.move.turn = getNextTurn(color, state.meta.onBoard);
+            state.move.rollAllowed = true;
+            state.move.moveAllowed = false;
+            state.move.moveCount = 0;
+            state.move.ticks = 0;
+          }
 
-      //     if (state.meta.onBoard.length < 2) {
-      //       state.meta.status = "FINISHED";
-      //       state.move.rollAllowed = false;
-      //       state.move.moveAllowed = false;
-      //       state.move.turn = null;
-      //     }
+          // End game if not enough players remain
+          if (state.meta.onBoard.length < 2) {
+            state.meta.status = "FINISHED";
+            state.move.rollAllowed = false;
+            state.move.moveAllowed = false;
+            state.move.turn = null;
+          }
 
-      //     state.syncTick = (state.syncTick || 0) + 1;
+          state.syncTick = (state.syncTick || 0) + 1;
 
-      //     await redisClient.json.set(`game:${gameId}`, '.', state);
-      //     await redisClient.expire(`game:${gameId}`, 7200);
+          await redisClient.json.set(`game:${gameId}`, '.', state);
+          await redisClient.expire(`game:${gameId}`, 7200);
+          
+          io.to(gameId).emit("player-left", { 
+            message: `CRITICAL: Node ${color} purged from memory core.`,
+            newState: state,
+            syncArray: [state.syncTick - 1, state.syncTick]
+          });
+          
+          console.log(`[DISCONNECT] ✅ Purged Node ${color} from game ${gameId}`);
+          disconnectTimers.delete(timerKey);
+          
+        } catch (err) {
+          console.error("❌ [PURGE] Error:", err);
+        }
+      }, 10000); 
 
-      //     io.to(gameId).emit("player-left", { 
-      //       message: `CRITICAL: Node ${playerColor} purged from memory core.`,
-      //       newState: state,
-      //       syncArray: [state.syncTick - 1, state.syncTick]
-      //     });
-      //     console.log(`[DISCONNECT] ✅ Purged Node ${playerColor} from game ${gameId}`);
-      //     disconnectTimers.delete(timerKey);
-      //   } catch (err) {
-      //     console.error("❌ [PURGE] Error:", err);
-      //   }
-      // }, 10000); 
-
-      // disconnectTimers.set(timerKey, purgeTimer);
+      disconnectTimers.set(timerKey, purgeTimer);
     });
 
   });

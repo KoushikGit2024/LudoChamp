@@ -114,3 +114,23 @@ export const getGameById = async (req, res, next) => {
         next(error);
     }
 };
+export const deleteSavedGame = async (req, res, next) => {
+  try {
+    const gameId = req.params.id;
+    console.log(req.user);
+    // Assuming your Game model is separate and bound to the user
+    const deletedGame = await Game.findOneAndDelete({ 
+       $or: [{ _id: gameId }, { 'meta.gameId': gameId }], 
+       ownerId: req.user.id // Security check to ensure they own the core
+    });
+    console.log(deletedGame);
+    if (!deletedGame) {
+      return res.status(404).json({ success: false, message: 'Memory Core not found or unauthorized.' });
+    }
+
+    res.status(200).json({ success: true, message: 'Memory Core permanently erased.' });
+  } catch (error) {
+    console.error("Error deleting saved game:", error);
+    next(error);
+  }
+}

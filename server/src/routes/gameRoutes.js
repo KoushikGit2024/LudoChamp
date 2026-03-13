@@ -3,7 +3,8 @@ import {
     initOnlineGameRedis, 
     saveGame, 
     getSavedGamesList, 
-    getGameById 
+    getGameById, 
+    deleteSavedGame
 } from "../handlers/gameHandlers.js";
 import tokenChecker from "../middlewares/tokenCheker.js"; 
 
@@ -16,5 +17,6 @@ gameRoute.post("/init-online", tokenChecker, initOnlineGameRedis);
 gameRoute.post("/save", tokenChecker, saveGame);
 gameRoute.get("/saved", tokenChecker, getSavedGamesList);
 gameRoute.get("/:gameId", tokenChecker, getGameById);
+gameRoute.delete('/saved/:id', tokenChecker, deleteSavedGame);
 
 export default gameRoute;

@@ -5,7 +5,7 @@ dotenv.config();
 
 const isProduction = process.env.NODE_ENV === "production";
 const redisUrl = isProduction ? process.env.REDIS_URL : "redis://localhost:6379";
-
+// console.log(redisUrl)
 if (!redisUrl) {
     console.error("❌ ERROR: Redis connection URL is missing in .env");
     process.exit(1);
