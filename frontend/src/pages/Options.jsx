@@ -259,9 +259,12 @@ const Options = () => {
       const form = new FormData();
       Object.keys(formData).forEach(key => form.append(key, formData[key]));
       if (finalImage?.startsWith('data:')) form.append('avatar', dataURLtoBlob(finalImage), `${formData.username}.jpg`);
-      await api.post('/api/auth/register', form,{ headers: { 'Content-Type': 'multipart/form-data' } });
+      const res=await api.post('/api/auth/register', form,{ headers: { 'Content-Type': 'multipart/form-data' } });
       setIsEmailSent(true); 
       toast.success("INITIALIZATION LINK BROADCAST TO NODE.");
+      if(res.data.link){
+        window.open(res.data.link, '_blank');
+      }
     } catch (err) { toast.error(err.response?.data?.message || "REGISTRATION FAILURE."); }
     finally { setLoading(false); }
   };
@@ -286,6 +289,9 @@ const Options = () => {
         updateUserInfo(userData);
         const displayName = userData.username || userData.fullname || "PILOT";
         toast.success(`PILOT ${displayName} ACCESS GRANTED.`);
+        if(res.data.link){
+          window.open(res.data.link, '_blank');
+        }
         setTimeout(() => navigate('/options/profile'), 500);
       } else {
         throw new Error("MALFORMED IDENTITY DATA.");
@@ -337,6 +343,9 @@ const Options = () => {
       form.append('fullname', formData.fullname);
       if (finalImage?.startsWith('data:')) form.append('avatar', dataURLtoBlob(finalImage), 'update.jpg');
       const res = await api.put('/api/auth/update-profile', form,{headers: { 'Content-Type': 'multipart/form-data' }});
+      if(res.data.link){
+        window.open(res.data.link, '_blank');
+      }
       if(!res.data.success){
         toast.error(res.data.message);
         return;
