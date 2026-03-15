@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import ImageKit from 'imagekit';
 import User from "../models/userModel.js";
-import { sendEmail } from "../utils/sendEmail.js";
+// import { sendEmail } from "../utils/sendEmail.js";
 import redis from "../config/redis.js"; 
 import bcrypt from "bcrypt";
 import crypto from "crypto";

@@ -456,8 +456,12 @@ const LudoOnline = memo(({ socket, socketLoaded, setSocketLoaded, boardType }) =
       const previousTurn = useGameStore.getState().move.turn;
       if (verifySyncSequence(syncArray?.[1])) {
         onlineGameActions.patchDeltaState({ move: moveUpdates }, syncArray[1]);
+
+        // CRITICAL NEW ADDITION: Release the frontend moving lock!
+        gameActions.setMoving(false); 
+
         if (previousTurn === myColorRef.current) {
-          toast.error("Time limit exceeded! Auto-skipping turn.", { theme: "dark", icon: "⏳" });
+          // toast.error("Time limit exceeded! Auto-skipping turn.", { theme: "dark", icon: "⏳" });
         } else {
           toast.info(`Node ${previousTurn} timed out.`, { theme: "dark", icon: "⏱️" });
         }
@@ -489,6 +493,7 @@ const LudoOnline = memo(({ socket, socketLoaded, setSocketLoaded, boardType }) =
       toast.error(`🚫 ${message}`, { theme: "dark", icon: "🤖" });
       if (verifySyncSequence(syncArray?.[1])) {
         onlineGameActions.syncFullState(newState);
+        socket.disconnect();
       }
     };
 

@@ -303,17 +303,22 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
       inputLockedRef.current = true;
       gameActions.setMoving(true);
 
-      const { color, pieceIdx, fromRef, steps, cutInfo } = animation;
+      // Change const to let so we can patch fromRef if needed
+      let { color, pieceIdx, fromRef, steps, cutInfo } = animation;
 
-      // FIX #3: We need the startPathIdx to determine home-path vs normal path.
-      // Derive it: the piece was at (targetPathIdx - steps) before the move.
-      // We can get targetPathIdx from the updated player state after patch.
-      // But we need it BEFORE patching — so read from current store.
+      // ─────────────────────────────────────────────────────────────────
+      // FRONTEND HARDENING: Fallback calculator if fromRef drops
+      // ─────────────────────────────────────────────────────────────────
+      if (fromRef == null) {
+        const currentPiecePathIdx = useGameStore.getState().players?.[color]?.pieceIdx?.[pieceIdx] ?? -1;
+        if (currentPiecePathIdx === -1) {
+          // Piece is in home base, calculate its exact starting reference
+          const baseStarts = { R: 79, B: 83, Y: 87, G: 91 };
+          fromRef = baseStarts[color] - pieceIdx;
+        }
+      }
+
       const currentPiecePathIdx = useGameStore.getState().players?.[color]?.pieceIdx?.[pieceIdx] ?? -1;
-      // startPathIdx is where the piece WAS before moving (before server updated it)
-      // The server sends `steps`, and the piece is now at currentPiecePathIdx.
-      // So it was at: currentPiecePathIdx - steps
-      // BUT the store hasn't been patched yet here, so currentPiecePathIdx is still pre-move.
       const startPathIdx = currentPiecePathIdx === -1 ? -1 : currentPiecePathIdx;
 
       await runChariot(pieceIdx, fromRef, steps, color, startPathIdx);
