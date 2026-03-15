@@ -91,7 +91,7 @@ const socketGuard = async (socket, next, io) => {
         const playerCount = currentSocketsInRoom.length;
 
         const existingPlayerRecord = playerStateList.find(
-          (p) => p.userId === socket.player.username
+          (p) => p.username === socket.player.username
         );
 
         if (existingPlayerRecord && existingPlayerRecord.socketId) {

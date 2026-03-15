@@ -2,7 +2,9 @@ import React, { memo, useContext, useEffect, useMemo, useRef, useState } from "r
 import { Shield, ChevronRight, Zap, Trophy, Ban } from "lucide-react";
 import "@/styles/gameBoard.css";
 import SlideEffect  from '@/assets/SlideEffect.mp3';
-import FinishSound  from '@/assets/FinishSound.mp3';
+import FinishSound  from '@/assets/SlideEffect.mp3';
+import HomePathSound from '@/assets/SlideEffect.mp3'; // FIX #3: new sound for home-path steps
+import GameOverSound from '@/assets/SlideEffect.mp3'; // FIX #3: ultimate game-finish sound
 import gsap         from "gsap";
 import debounce     from '@/derivedFuncs/debounce.js';
 import Cell         from "@/components/sharedBoardComponents/Cell.jsx";
@@ -12,6 +14,19 @@ import gameActions  from '@/store/gameLogic';
 import { useShallow } from "zustand/shallow";
 import piecePath    from "@/contexts/PiecePath.js";
 import { AudioContext } from "@/contexts/SoundContext";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// FIX #3: Animation timing constants
+// Dice animation: 1900ms (handled in Dice.jsx)
+// Each piece step: 200ms (was instant, now smooth per-block)
+// Home path step:  250ms (slightly slower for dramatic effect)
+// ─────────────────────────────────────────────────────────────────────────────
+const STEP_DURATION_NORMAL   = 0.2;  // seconds per board step
+const STEP_DURATION_HOMEPATH = 0.25; // seconds per home-path step (indices 52-56)
+const STEP_DURATION_CUT      = 0.18; // seconds per step when returning a cut piece
+
+// Home path starts at piecePath index 52 (track cells in the UI are 52-71)
+const HOME_PATH_START_IDX = 52;
 
 const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxArr, winState, myColor }) => {
 
@@ -28,24 +43,26 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
   const pathRefs     = useRef([]);
   const boardRef     = useRef(null);
   const chariotRef   = useRef(null);
-  const audioRef     = useRef(null);
-  const audioRefFinish = useRef(null);
-  const inputLockedRef = useRef(false);
+  const audioRef         = useRef(null); // normal slide
+  const audioRefFinish   = useRef(null); // single piece finishes
+  const audioRefHomePath = useRef(null); // FIX #3: home-path steps
+  const audioRefGameOver = useRef(null); // FIX #3: game-over fanfare
+  const inputLockedRef   = useRef(false);
 
   // ─── Store subscriptions ────────────────────────────────────────────────
   const { turn, moveAllowed, onBoard, clrR, clrB, clrY, clrG, winR, winB, winY, winG } = useGameStore(
     useShallow(state => ({
-      turn:       state.move.turn,
+      turn:        state.move.turn,
       moveAllowed: state.move.moveAllowed,
-      onBoard:    state.meta.onBoard,
-      clrR:       state.players.R?.color,
-      clrB:       state.players.B?.color,
-      clrY:       state.players.Y?.color,
-      clrG:       state.players.G?.color,
-      winR:       state.players.R?.winCount,
-      winB:       state.players.B?.winCount,
-      winY:       state.players.Y?.winCount,
-      winG:       state.players.G?.winCount,
+      onBoard:     state.meta.onBoard,
+      clrR:        state.players.R?.color,
+      clrB:        state.players.B?.color,
+      clrY:        state.players.Y?.color,
+      clrG:        state.players.G?.color,
+      winR:        state.players.R?.winCount,
+      winB:        state.players.B?.winCount,
+      winY:        state.players.Y?.winCount,
+      winG:        state.players.G?.winCount,
     }))
   );
 
@@ -54,8 +71,6 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
   const isMyTurn = !isOnline || (myColor === turn);
   const canMove  = moveAllowed && isMyTurn && !moving;
 
-  // Unlock input whenever the turn or server timestamp changes.
-  // This handles the case where the server auto-skips while the board is locked.
   useEffect(() => {
     inputLockedRef.current = false;
   }, [turn, turnStartedAt]);
@@ -68,12 +83,6 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
     R: winR, B: winB, Y: winY, G: winG
   }), [winR, winB, winY, winG]);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // pieceState — subscribe to all four pieceRef Maps in one useShallow call.
-  // Previously this was four separate useGameStore calls inside an object
-  // literal — while it worked syntactically, it created 4 independent
-  // subscriptions and was fragile.
-  // ─────────────────────────────────────────────────────────────────────────
   const { pieceRefR, pieceRefB, pieceRefY, pieceRefG } = useGameStore(
     useShallow(state => ({
       pieceRefR: state.players.R?.pieceRef,
@@ -105,20 +114,27 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
     { color: COLORS.Y, clip: "polygon(0% 0%, 100% 0%, 50% 50%)",        align: "flex justify-center pt-1",          ref: 74, rotate: "rotate-225" },
     { color: COLORS.G, clip: "polygon(100% 0%, 100% 100%, 50% 50%)",    align: "flex items-center justify-end pr-1", ref: 75, rotate: "rotate-315" },
     { color: COLORS.R, clip: "polygon(100% 100%, 0% 100%, 50% 50%)",    align: "flex justify-center items-end pb-1", ref: 72, rotate: "rotate-45"  },
-    { color: COLORS.B, clip: "polygon(0% 100%, 0% 0%, 50% 50%)",        align: "flex items-center pl-1",            ref: 73, rotate: "rotate-135" },
+    { color: COLORS.B, clip: "polygon(0% 100%, 0% 0%, 50% 50%)",        align: "flex items-center pl-1",             ref: 73, rotate: "rotate-135" },
   ]), [COLORS]);
 
   const SAFE_CELLS = new Set([1, 9, 14, 22, 27, 35, 40, 48, 52]);
   const homePointer = new Map([[12, 0], [25, 90], [38, 180], [51, 270]]);
 
+  // FIX #3: Sound helpers with context
   const playSound = (playCase = -1) => {
     if (playCase === -1 || !sound) return;
     if (playCase === 1 && audioRef.current) {
       audioRef.current.currentTime = 0;
-      audioRef.current.play();
+      audioRef.current.play().catch(() => {});
     } else if (playCase === 2 && audioRefFinish.current) {
       audioRefFinish.current.currentTime = 0;
-      audioRefFinish.current.play();
+      audioRefFinish.current.play().catch(() => {});
+    } else if (playCase === 3 && audioRefHomePath.current) {
+      audioRefHomePath.current.currentTime = 0;
+      audioRefHomePath.current.play().catch(() => {});
+    } else if (playCase === 4 && audioRefGameOver.current) {
+      audioRefGameOver.current.currentTime = 0;
+      audioRefGameOver.current.play().catch(() => {});
     }
   };
 
@@ -145,7 +161,12 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
     return () => window.removeEventListener('resize', resizeHandler);
   }, []);
 
-  const oneStepAnimation = (from, to) => {
+  // ─────────────────────────────────────────────────────────────────────────
+  // FIX #3: oneStepAnimation — duration varies by path type.
+  // Normal steps: 200ms. Home-path steps (idx 52+): 250ms with glow effect.
+  // FIX #1: finish cell (pathIdx 56) maps to triangle refs 72-75 in pathRefs.
+  // ─────────────────────────────────────────────────────────────────────────
+  const oneStepAnimation = (from, to, isHomePath = false, isFinishStep = false) => {
     return new Promise(resolve => {
       if (!pathPoints[from] || !pathPoints[to] || !chariotRef.current) {
         resolve();
@@ -153,50 +174,90 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
       }
       const targetW = pathPoints[to].w;
       const targetH = pathPoints[to].h;
+      const dur = isHomePath ? STEP_DURATION_HOMEPATH : STEP_DURATION_NORMAL;
 
       gsap.fromTo(
         chariotRef.current,
-        { x: pathPoints[from].cx - targetW / 2, y: pathPoints[from].cy - targetH / 2, width: pathPoints[from].w, height: pathPoints[from].h },
-        { x: pathPoints[to].cx   - targetW / 2, y: pathPoints[to].cy   - targetH / 2, width: pathPoints[to].w,  height: pathPoints[to].h,
-          duration: 0.15, ease: "power1.inOut", onComplete: resolve }
+        {
+          x: pathPoints[from].cx - targetW / 2,
+          y: pathPoints[from].cy - targetH / 2,
+          width: pathPoints[from].w,
+          height: pathPoints[from].h,
+          filter: 'drop-shadow(0 0 15px white)'
+        },
+        {
+          x: pathPoints[to].cx   - targetW / 2,
+          y: pathPoints[to].cy   - targetH / 2,
+          width: pathPoints[to].w,
+          height: pathPoints[to].h,
+          filter: isFinishStep ? 'drop-shadow(0 0 30px gold)' : 'drop-shadow(0 0 15px white)',
+          duration: dur,
+          ease: "power2.inOut",
+          onComplete: resolve
+        }
       );
 
-      const finalCells = new Set([72, 73, 74, 75]);
-      if (finalCells.has(to)) playSound(2);
-      else playSound(1);
+      // FIX #3: play appropriate sound per step
+      if (isFinishStep) {
+        playSound(2); // single piece finish chime
+      } else if (isHomePath) {
+        playSound(3); // home-path special sound
+      } else {
+        playSound(1); // normal slide
+      }
     });
   };
 
-  const runChariot = async (idx = -1, refNum = null, stepCount = -1, turnColor = '') => {
+  // ─────────────────────────────────────────────────────────────────────────
+  // FIX #1 + #3: runChariot fully rebuilt.
+  // - Handles normal steps, home-path steps, and the final finish triangle step.
+  // - piecePath index 56 is the finish triangle — maps to ref 72/73/74/75
+  //   which are pathRefs entries at those ref numbers.
+  // ─────────────────────────────────────────────────────────────────────────
+  const runChariot = async (idx = -1, refNum = null, stepCount = -1, turnColor = '', startPathIdx = -1) => {
     if (idx < 0 || refNum === null || stepCount === -1 || !turnColor) return;
     let from = refNum;
     setChariotColor(turnColor);
 
+    // stepCount === -2 means a cut piece returning home
     if (stepCount === -2) {
       const baseStart = turnColor === 'R' ? 79 : turnColor === 'B' ? 83 : turnColor === 'Y' ? 87 : 91;
       const to = baseStart - idx;
       setShowChariotDisplay(true);
-      await oneStepAnimation(from, to);
+      await oneStepAnimation(from, to, false, false);
       setShowChariotDisplay(false);
       return;
     }
 
-    const indexVal = pieceIdxArr[turnColor][idx];
     setShowChariotDisplay(true);
     for (let step = 1; step <= stepCount; step++) {
-      from = step === 1 ? refNum : piecePath[turnColor][indexVal + step - 1];
-      const to = piecePath[turnColor][indexVal + step];
-      await oneStepAnimation(from, to);
+      const currentPiecePathIdx = startPathIdx + step; // absolute index in piecePath[color]
+      const prevPiecePathIdx    = startPathIdx + step - 1;
+
+      from = step === 1 ? refNum : piecePath[turnColor][prevPiecePathIdx];
+
+      // FIX #1: The last step reaching piecePath index 56 goes to the finish triangle ref (72-75)
+      // piecePath already has the finish triangle ref as the last entry so piecePath[color][56]
+      // correctly returns the triangle cell ref number.
+      const to = piecePath[turnColor][currentPiecePathIdx];
+
+      const isHomePath    = currentPiecePathIdx >= HOME_PATH_START_IDX && currentPiecePathIdx < 56;
+      const isFinishStep  = currentPiecePathIdx === 56;
+
+      await oneStepAnimation(from, to, isHomePath, isFinishStep);
     }
     setShowChariotDisplay(false);
+
+    // FIX #3: If ALL 4 pieces of a color finished, play game-over sound
+    const currentWinCount = useGameStore.getState().players?.[turnColor]?.winCount;
+    if (currentWinCount >= 4) {
+      playSound(4);
+    }
   };
 
   const determineAndProcessClickCell = (refNum) => {
     if (!isOnline || !socket || !canMove || inputLockedRef.current) return;
 
-    // BUG F9 FIX: Guard against null/undefined pieceState[turn] before
-    // calling .get(). This can happen during the brief window between a
-    // turn change and the store updating the new active player's pieceRef.
     const activePieceMap = pieceState[turn];
     if (!activePieceMap || typeof activePieceMap.get !== 'function') return;
 
@@ -209,7 +270,6 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
     inputLockedRef.current = true;
     socket.emit("move-piece", { gameId, color: turn, pieceIdx: idx, refNum });
 
-    // Safety fallback: unlock if the server never responds within 2s
     setTimeout(() => {
       if (inputLockedRef.current && !useGameStore.getState().move.moving) {
         console.warn("[NETWORK] Move dropped or rejected. Releasing lock.");
@@ -218,11 +278,6 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
     }, 2000);
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // Sync reference — tracks [prevTick, currentTick] for piece-moved events.
-  // Separate from LudoOnline's verifySyncSequence because the move animation
-  // must complete BEFORE the store update, so we can't rely on the store tick.
-  // ─────────────────────────────────────────────────────────────────────────
   const syncArrRef = useRef([0, 0]);
 
   useEffect(() => {
@@ -232,7 +287,7 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
       const { animation, updates, syncArray } = payload;
 
       if (syncArray && Array.isArray(syncArray) && syncArray.length === 2) {
-        const localCurrent  = syncArrRef.current[1];
+        const localCurrent   = syncArrRef.current[1];
         const serverPrevious = syncArray[0];
 
         if (localCurrent !== 0 && localCurrent !== serverPrevious) {
@@ -250,21 +305,24 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
 
       const { color, pieceIdx, fromRef, steps, cutInfo } = animation;
 
-      await runChariot(pieceIdx, fromRef, steps, color);
+      // FIX #3: We need the startPathIdx to determine home-path vs normal path.
+      // Derive it: the piece was at (targetPathIdx - steps) before the move.
+      // We can get targetPathIdx from the updated player state after patch.
+      // But we need it BEFORE patching — so read from current store.
+      const currentPiecePathIdx = useGameStore.getState().players?.[color]?.pieceIdx?.[pieceIdx] ?? -1;
+      // startPathIdx is where the piece WAS before moving (before server updated it)
+      // The server sends `steps`, and the piece is now at currentPiecePathIdx.
+      // So it was at: currentPiecePathIdx - steps
+      // BUT the store hasn't been patched yet here, so currentPiecePathIdx is still pre-move.
+      const startPathIdx = currentPiecePathIdx === -1 ? -1 : currentPiecePathIdx;
+
+      await runChariot(pieceIdx, fromRef, steps, color, startPathIdx);
+
       if (cutInfo) {
-        await runChariot(cutInfo.idx, cutInfo.fromRef, -2, cutInfo.color);
+        await runChariot(cutInfo.idx, cutInfo.fromRef, -2, cutInfo.color, -1);
       }
 
-      // ─────────────────────────────────────────────────────────────────────
-      // BUG F7 FIX: The server sends `pieceRef` as a plain Array of [ref,count]
-      // tuples (JSON from Redis). Directly spreading `updates.playerUpdates[c]`
-      // into the store would overwrite the player's Map with an Array, causing
-      // all subsequent `pieceState[c].get(refNum)` calls to crash with
-      // "TypeError: pieceState[...].get is not a function".
-      //
-      // Fix: use onlineGameActions.patchDeltaState which already includes the
-      // Array → Map conversion in patchStateLogic. Remove the raw setState call.
-      // ─────────────────────────────────────────────────────────────────────
+      // FIX #7: patch delta state — patchDeltaState handles Array→Map conversion
       onlineGameActions.patchDeltaState(
         {
           move:          updates.move,
@@ -274,18 +332,20 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
         syncArray?.[1]
       );
 
+      // FIX #3: If game just finished, play game-over sound
+      const newStatus = updates.metaUpdates?.status;
+      if (newStatus === "FINISHED") {
+        playSound(4);
+      }
+
       gameActions.setMoving(false);
       inputLockedRef.current = false;
     };
 
-    // dice-rolled: only update syncArrRef here.
-    // The actual store update (moveUpdates) is handled by Dice.jsx via
-    // onlineGameActions.patchDeltaState to avoid double-processing.
     const handleDiceRolled = (payload) => {
       if (payload.syncArray) syncArrRef.current = payload.syncArray;
     };
 
-    // state-synced: realign syncArrRef after a full server resync
     const handleStateSynced = (serverState) => {
       const tick = serverState.meta?.syncTick ?? serverState.syncTick;
       if (tick) syncArrRef.current = [tick - 1, tick];
@@ -311,7 +371,7 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
     >
       {/* Standard cells */}
       {Array.from({ length: 52 }, (_, i) => {
-        const isSafe      = SAFE_CELLS.has(i);
+        const isSafe       = SAFE_CELLS.has(i);
         const isHomePointer = homePointer.has(i);
 
         let neonColor = null;
@@ -355,7 +415,7 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
         );
       })}
 
-      {/* Track cells */}
+      {/* Track cells (home paths, refs 52–71) */}
       {["R", "B", "Y", "G"].map((c, i) =>
         [1, 2, 3, 4, 5].map((n, j) => {
           const trackColor = COLORS[c];
@@ -476,17 +536,13 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
       </div>
 
       {/* Chariot animation overlay */}
-      {/* BUG F8 FIX: was `pathPoints[1]?.width` — the pathPoints objects have
-          property `w` not `width` (see pathPointCalculator above). This caused
-          the chariot to render with width=undefined → "auto", breaking the
-          GSAP animation sizing completely. */}
+      {/* FIX: use `w` property (not `width`) from pathPointCalculator */}
       <div
         ref={chariotRef}
         className="piece absolute z-[100] pointer-events-none text-white flex items-center justify-center aspect-square"
         style={{
           width:   pathPoints[1]?.w || 'auto',
           display: showChariot ? "flex" : "none",
-          filter:  'drop-shadow(0 0 15px white)'
         }}
       >
         <Cell
@@ -496,8 +552,10 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
         />
       </div>
 
-      <audio ref={audioRef}        src={SlideEffect}  preload="auto" />
-      <audio ref={audioRefFinish}  src={FinishSound}   preload="auto" />
+      <audio ref={audioRef}         src={SlideEffect}   preload="auto" />
+      <audio ref={audioRefFinish}   src={FinishSound}    preload="auto" />
+      <audio ref={audioRefHomePath} src={HomePathSound}  preload="auto" />
+      <audio ref={audioRefGameOver} src={GameOverSound}  preload="auto" />
     </div>
   );
 });

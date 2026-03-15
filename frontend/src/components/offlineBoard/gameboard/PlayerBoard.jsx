@@ -42,7 +42,7 @@ const PlayerBoard = memo(({ playing, left, turn = 0, idx, timeOut, moveAllowed, 
     };
   }, [turn, rollAllowed, moveAllowed]);
 
-  const userName = useGameStore((state) => state.players[idx].userId);
+  const userName = useGameStore((state) => state.players[idx].username);
   const playerName = useGameStore((state) => state.players[idx].name);
 
   // --- Design Constants ---

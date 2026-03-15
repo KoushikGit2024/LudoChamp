@@ -215,7 +215,7 @@ const LudoOffline = memo(() => {
                             {player.winPosn !== 0 ? `#${player.winPosn}` : '-'}
                           </span>
                           <div className="flex flex-col">
-                            <span className="text-sm font-bold uppercase text-white">{player.name || player.userId}</span>
+                            <span className="text-sm font-bold uppercase text-white">{player.name || player.username}</span>
                             <span className="text-[8px] font-mono text-gray-500 tracking-widest">Node_{player.color}</span>
                           </div>
                         </div>

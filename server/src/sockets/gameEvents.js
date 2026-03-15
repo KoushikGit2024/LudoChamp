@@ -25,7 +25,7 @@
 //     const startIdx = colorKey === 'R' ? 79 : colorKey === 'B' ? 83 : colorKey === 'Y' ? 87 : 91;
 //     const hex = colorKey === 'R' ? "#ff0505" : colorKey === 'B' ? "#00D4FF" : colorKey === 'Y' ? "#ffc400" : "#00ff3c";
 //     return {
-//         socketId: "", userId: "", profile: "", online: false,
+//         socketId: "", username: "", profile: "", online: false,
 //         pieceIdx: [-1, -1, -1, -1],
 //         pieceRef: [[startIdx, 1], [startIdx - 1, 1], [startIdx - 2, 1], [startIdx - 3, 1]],
 //         homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: hex
@@ -83,7 +83,7 @@
 
 //         state.meta.onBoard = normalizeSequence([...state.meta.onBoard, color]);
 //         state.players[color].socketId = socket.id;
-//         state.players[color].userId = username;
+//         state.players[color].username = username;
 //         state.players[color].profile = socket.player.profile || "";
 //         state.players[color].online = true;
 
@@ -151,7 +151,7 @@
 //         let assignedColor = null;
 
 //         for (const c of ["R", "B", "Y", "G"]) {
-//            if (user.userId && state.players[c].userId === user.userId) {
+//            if (user.username && state.players[c].username === user.username) {
 //                assignedColor = c;
 //                break;
 //            }
@@ -165,7 +165,7 @@
 
 //             assignedColor = type === "poi" ? availableColors[Math.floor(Math.random() * availableColors.length)] : (availableColors.includes(requestedColor) ? requestedColor : availableColors[0]); 
 
-//             state.players[assignedColor] = { ...state.players[assignedColor], socketId: socket.id, name: user.name, userId: user.userId, profile: user.profile, online: true };
+//             state.players[assignedColor] = { ...state.players[assignedColor], socketId: socket.id, name: user.name, username: user.username, profile: user.profile, online: true };
 //             state.meta.onBoard.push(assignedColor);
 //             state.meta.onBoard.sort((a, b) => MASTER_TURN_ORDER.indexOf(a) - MASTER_TURN_ORDER.indexOf(b));
 //             state.meta.playerCount = state.meta.onBoard.length;
@@ -180,7 +180,7 @@
 
 //         socket.gameId = gameId;
 //         socket.playerColor = assignedColor;
-//         socket.userId = user.userId;
+//         socket.username = user.username;
         
 //         socket.join(gameId); 
 //         cancelDisconnectTimer(gameId, assignedColor);

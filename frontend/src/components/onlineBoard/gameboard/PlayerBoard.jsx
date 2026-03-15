@@ -58,7 +58,7 @@ const PlayerBoard = memo(({ playing, left, turn = false, idx, isOnline = false }
     return () => animRef.current?.kill();
   }, [turn, turnStartedAt]); // ✅ Re-run if the timestamp changes (e.g., player rolled the dice and gets a fresh 30s)
 
-  const userName = useGameStore((state) => state.players[idx]?.userId);
+  const userName = useGameStore((state) => state.players[idx]?.username);
   const playerName = useGameStore((state) => state.players[idx]?.name);
   const playerProfile = useGameStore((state) => state.players[idx]?.profile);
   const isBot = useGameStore((state) => state.players[idx]?.difficulty !== undefined);

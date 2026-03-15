@@ -7,10 +7,10 @@ const initialState = {
   meta: { gameId: "", status: "WAITING", type: "offline", gameStartedAt: [], winLast: 0, playerCount: 4, onBoard: new Set(['R', 'B', 'Y', 'G']), syncTick: 0 },
   move: { playerIdx: 0, turn: 'R', rollAllowed: true, moveCount: 0, ticks: 0, moveAllowed: false, moving: false, timeOut: false },
   players: {
-    R: { socketId: '', name: "", userId: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[79, 1], [78, 1], [77, 1], [76, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#FF3131" },
-    B: { socketId: '', name: "", userId: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[83, 1], [82, 1], [81, 1], [80, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#00D4FF" },
-    Y: { socketId: '', name: "", userId: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[87, 1], [86, 1], [85, 1], [84, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#ffc400" },
-    G: { socketId: '', name: "", userId: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[91, 1], [90, 1], [89, 1], [88, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#39FF14" },
+    R: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[79, 1], [78, 1], [77, 1], [76, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#FF3131" },
+    B: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[83, 1], [82, 1], [81, 1], [80, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#00D4FF" },
+    Y: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[87, 1], [86, 1], [85, 1], [84, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#ffc400" },
+    G: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[91, 1], [90, 1], [89, 1], [88, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#39FF14" },
   },
 };
 
@@ -25,7 +25,7 @@ function getSkeletonPlayer(colorKey) {
   const startIdx = { R: 79, B: 83, Y: 87, G: 91 }[colorKey];
   const hex = { R: "#FF3131", B: "#00D4FF", Y: "#ffc400", G: "#39FF14" }[colorKey];
   return {
-    socketId: '', name: "", userId: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1],
+    socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1],
     pieceRef: new Map([[startIdx, 1], [startIdx - 1, 1], [startIdx - 2, 1], [startIdx - 3, 1]]),
     homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: hex
   };
@@ -73,7 +73,7 @@ function initiateOfflineGameLogic(state, gameObj) {
 
     if (playerIndexInGameObj !== -1) {
       players[el] = {
-        ...state.players[el], name: gameObj.names[playerIndexInGameObj], userId: "", profile: "/defaultProfile.png",
+        ...state.players[el], name: gameObj.names[playerIndexInGameObj], username: "", profile: "/defaultProfile.png",
         pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[startIdx, 1], [startIdx - 1, 1], [startIdx - 2, 1], [startIdx - 3, 1]]),
         homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: colors[idx],
         ...(gameObj.type === "bot") && { difficulty: gameObj.botDifficulties[el] }
@@ -165,7 +165,7 @@ const gameActions = {
       if (!state.meta.onBoard.has(color) || !player || !player.name) return null;
       const sanitized = { ...player };
       if (sanitized.pieceRef instanceof Map) sanitized.pieceRef = Array.from(sanitized.pieceRef.entries());
-      if (!sanitized.userId || sanitized.userId === "") { delete sanitized.userId; delete sanitized.socketId; }
+      if (!sanitized.username || sanitized.username === "") { delete sanitized.username; delete sanitized.socketId; }
       return sanitized;
     };
 

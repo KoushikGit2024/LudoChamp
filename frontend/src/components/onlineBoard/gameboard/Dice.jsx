@@ -7,24 +7,25 @@ import { AudioContext } from "@/contexts/SoundContext";
 import onlineGameActions from '@/store/onlineGameLogic';
 import gameActions       from '@/store/gameLogic';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// FIX #3: Timing constants — keep in sync with GameBoard animation durations.
+// The dice visual flutter runs for DICE_FLUTTER_MS before showing final value.
+// Total perceived animation = DICE_FLUTTER_MS (flutter) — matches CSS roll anim.
+// ─────────────────────────────────────────────────────────────────────────────
+const DICE_FLUTTER_MS    = 1900; // total flutter animation duration
+const DICE_FLUTTER_TICK  = 100;  // interval for fake random face changes
+const SERVER_TIMEOUT_MS  = 3000; // safety unlock if server never responds
+
 const Dice = ({ turn, rollAllowed, gameFinished, socket, gameId, isOnline, myColor }) => {
   const { sound } = useContext(AudioContext);
   const [rolling, setRolling] = useState(false);
   const [value,   setValue]   = useState(1);
   const audioRef = useRef(null);
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // BUG F11 FIX: The fake-roll interval ID was previously stored on
-  // `audioRef.current.fakeRollInterval` — piggybacking on a DOM element.
-  // This is fragile: audioRef.current can be null during cleanup and the
-  // pattern conflates two unrelated concerns.
-  //
-  // Fix: use a dedicated useRef for the interval ID.
-  // ─────────────────────────────────────────────────────────────────────────
+  // Dedicated ref for fake-roll interval (not piggy-backed on DOM element)
   const fakeRollIntervalRef = useRef(null);
 
   // Tracks whether we are waiting for a server dice-rolled response.
-  // Prevents the user from double-emitting or the UI from double-animating.
   const isAwaitingServerRef = useRef(false);
 
   const isMyTurn = !isOnline || (myColor === turn);
@@ -33,7 +34,7 @@ const Dice = ({ turn, rollAllowed, gameFinished, socket, gameId, isOnline, myCol
   const playSound = () => {
     if (!audioRef.current || !sound) return;
     audioRef.current.currentTime = 0;
-    audioRef.current.play();
+    audioRef.current.play().catch(() => {});
   };
 
   const clearFakeRoll = () => {
@@ -46,19 +47,19 @@ const Dice = ({ turn, rollAllowed, gameFinished, socket, gameId, isOnline, myCol
   const handleUserClick = () => {
     if (rolling || isAwaitingServerRef.current || !canRoll) return;
 
-    // Optimistic update: lock UI and start fake visual roll immediately
+    // Optimistic: lock UI and start fake visual roll immediately
     setRolling(true);
     isAwaitingServerRef.current = true;
     playSound();
 
     fakeRollIntervalRef.current = setInterval(() => {
       setValue(Math.floor(Math.random() * 6) + 1);
-    }, 100);
+    }, DICE_FLUTTER_TICK);
 
     if (isOnline && socket) {
       socket.emit("roll-dice", { gameId, color: turn });
 
-      // Safety fallback: if the server drops the packet, unlock after 2s
+      // Safety fallback: if the server drops the packet, unlock after timeout
       setTimeout(() => {
         if (isAwaitingServerRef.current) {
           console.warn("[NETWORK] Dice roll timed out. Unlocking.");
@@ -66,9 +67,10 @@ const Dice = ({ turn, rollAllowed, gameFinished, socket, gameId, isOnline, myCol
           isAwaitingServerRef.current = false;
           setRolling(false);
         }
-      }, 2000);
+      }, SERVER_TIMEOUT_MS);
 
     } else if (!isOnline) {
+      // Offline / local mode: resolve after flutter duration
       setTimeout(() => {
         clearFakeRoll();
         const finalValue = Math.floor(Math.random() * 6) + 1;
@@ -76,7 +78,7 @@ const Dice = ({ turn, rollAllowed, gameFinished, socket, gameId, isOnline, myCol
         setRolling(false);
         isAwaitingServerRef.current = false;
         gameActions.updateMoveCount(finalValue);
-      }, 500);
+      }, DICE_FLUTTER_MS);
     }
   };
 
@@ -84,34 +86,36 @@ const Dice = ({ turn, rollAllowed, gameFinished, socket, gameId, isOnline, myCol
     if (!isOnline || !socket) return;
 
     const handleDiceRolled = ({ value: finalValue, moveUpdates, syncArray }) => {
-      // Stop the fake roll animation
+      // Stop any existing fake roll (from this player's own click)
       clearFakeRoll();
 
-      // If this dice-rolled event is from another player, start our own
-      // brief animation so all clients see the roll visually
+      // If this is from another player — start our own brief visual animation
       if (!isAwaitingServerRef.current) {
         setRolling(true);
         playSound();
       }
 
-      // Flutter briefly to the final value
+      // FIX #3: Flutter for DICE_FLUTTER_MS then snap to final value
+      // This ensures the animation completes before piece-move begins,
+      // giving the board the full 1900ms before piece animations start.
       const resolveInterval = setInterval(() => {
         setValue(Math.floor(Math.random() * 6) + 1);
-      }, 100);
+      }, DICE_FLUTTER_TICK);
 
       setTimeout(() => {
         clearInterval(resolveInterval);
         setValue(finalValue);
         setRolling(false);
         isAwaitingServerRef.current = false;
-        onlineGameActions.patchDeltaState({ move: moveUpdates }, syncArray[1]);
-      }, 1900);
+        // Patch store after animation so UI transitions smoothly
+        onlineGameActions.patchDeltaState({ move: moveUpdates }, syncArray?.[1]);
+      }, DICE_FLUTTER_MS);
     };
 
     socket.on("dice-rolled", handleDiceRolled);
     return () => {
       socket.off("dice-rolled", handleDiceRolled);
-      clearFakeRoll(); // Clean up on unmount
+      clearFakeRoll();
     };
   }, [socket, isOnline]);
 

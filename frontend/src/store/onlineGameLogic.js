@@ -8,7 +8,7 @@ function getSkeletonPlayer(colorKey) {
   const startIdx = { R: 79, B: 83, Y: 87, G: 91 }[colorKey];
   const hex      = { R: "#FF3131", B: "#00D4FF", Y: "#ffc400", G: "#39FF14" }[colorKey];
   return {
-    socketId: '', name: "", userId: "", profile: "", online: false,
+    socketId: '', name: "", username: "", profile: "", online: false,
     pieceIdx: [-1, -1, -1, -1],
     pieceRef: new Map([[startIdx, 1], [startIdx - 1, 1], [startIdx - 2, 1], [startIdx - 3, 1]]),
     homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: hex

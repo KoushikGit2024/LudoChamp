@@ -31,10 +31,10 @@ export const initOnlineGameRedis = async (req, res, next) => {
         },
         players: {
             // Initialize all 4 colors. Only active ones will move.
-            R: { name: "", userId: "", profile: "", pieceIdx: [-1, -1, -1, -1], pieceRef: [[79, 1], [78, 1], [77, 1], [76, 1]], homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#FF3131" },
-            B: { name: "", userId: "", profile: "", pieceIdx: [-1, -1, -1, -1], pieceRef: [[83, 1], [82, 1], [81, 1], [80, 1]], homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#00D4FF" },
-            Y: { name: "", userId: "", profile: "", pieceIdx: [-1, -1, -1, -1], pieceRef: [[87, 1], [86, 1], [85, 1], [84, 1]], homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#ffc400" },
-            G: { name: "", userId: "", profile: "", pieceIdx: [-1, -1, -1, -1], pieceRef: [[91, 1], [90, 1], [89, 1], [88, 1]], homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#39FF14" },
+            R: { name: "", username: "", profile: "", pieceIdx: [-1, -1, -1, -1], pieceRef: [[79, 1], [78, 1], [77, 1], [76, 1]], homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#FF3131" },
+            B: { name: "", username: "", profile: "", pieceIdx: [-1, -1, -1, -1], pieceRef: [[83, 1], [82, 1], [81, 1], [80, 1]], homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#00D4FF" },
+            Y: { name: "", username: "", profile: "", pieceIdx: [-1, -1, -1, -1], pieceRef: [[87, 1], [86, 1], [85, 1], [84, 1]], homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#ffc400" },
+            G: { name: "", username: "", profile: "", pieceIdx: [-1, -1, -1, -1], pieceRef: [[91, 1], [90, 1], [89, 1], [88, 1]], homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#39FF14" },
         },
     };
 
