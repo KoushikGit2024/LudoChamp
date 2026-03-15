@@ -39,7 +39,7 @@ redisClient.on('connect', () => {
 });
 
 redisClient.on('ready', () => {
-    console.log(redisUrl)
+    console.log(!isProduction && redisUrl)
     console.log('✅ Redis: Client ready and RedisJSON enabled');
 });
 

@@ -33,8 +33,9 @@ const isProduction = process.env.NODE_ENV === "production";
 const loginHandler = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-
+        // console.log(email,password)
         const user = await User.findOne({ $or: [{ email }, { username: email }] }).select("+password");
+        // console.log(user)
         if (!user) return res.status(401).json({ success: false, message: "Invalid credentials" });
 
         if (!user?.isVerified) {
@@ -89,7 +90,7 @@ const loginHandler = async (req, res, next) => {
 
         const isMatch = await user.comparePassword(password);
         if (!isMatch) return res.status(401).json({ success: false, message: "Invalid credentials" });
-
+        // console.log("Password matched", isMatch);
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "30d" });
         res.cookie("token", token, getCookieOptions());
 
@@ -327,6 +328,7 @@ const registerHandler = async (req, res, next) => {
 
         const userExists = await User.findOne({ $or: [{ email }, { username }] });
         // console.log(userExists);
+        console.log(password)
         if (userExists) return res.status(400).json({ success: false, message: "User already exists" });
 
         let avatarUrl = "/defaultProfile.png";

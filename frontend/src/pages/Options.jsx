@@ -261,12 +261,19 @@ const Options = () => {
       if (finalImage?.startsWith('data:')) form.append('avatar', dataURLtoBlob(finalImage), `${formData.username}.jpg`);
       const res=await api.post('/api/auth/register', form,{ headers: { 'Content-Type': 'multipart/form-data' } });
       setIsEmailSent(true); 
-      toast.success("INITIALIZATION LINK BROADCAST TO NODE.");
+      // toast.success("INITIALIZATION LINK BROADCAST TO NODE.");
+      toast.success("REGISTRATION SUCCESSFUL.");
       if(res.data.link){
-        window.open(res.data.link, '_blank');
+        console.log(res.data.link);
+        const redirect = (res.data.link).toString().split(import.meta.env.VITE_MODE==="dev"?"5173":"ludoneo.onrender.com")[1];
+        console.log(redirect)
+        setTimeout(()=>{navigate(redirect);},500)
+        
       }
     } catch (err) { toast.error(err.response?.data?.message || "REGISTRATION FAILURE."); }
-    finally { setLoading(false); }
+    finally { 
+      setLoading(false); 
+    }
   };
 
   const handleSignin = async (e) => {
