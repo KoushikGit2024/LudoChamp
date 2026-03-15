@@ -1,12 +1,12 @@
 import useGameStore from "./useGameStore";
 
-// ==========================================
+// ─────────────────────────────────────────────────────────────────────────────
 // PURE LOGIC HELPERS (ONLINE SPECIFIC)
-// ==========================================
+// ─────────────────────────────────────────────────────────────────────────────
 
 function getSkeletonPlayer(colorKey) {
   const startIdx = { R: 79, B: 83, Y: 87, G: 91 }[colorKey];
-  const hex = { R: "#FF3131", B: "#00D4FF", Y: "#ffc400", G: "#39FF14" }[colorKey];
+  const hex      = { R: "#FF3131", B: "#00D4FF", Y: "#ffc400", G: "#39FF14" }[colorKey];
   return {
     socketId: '', name: "", userId: "", profile: "", online: false,
     pieceIdx: [-1, -1, -1, -1],
@@ -23,42 +23,34 @@ function syncStateLogic(state, serverState) {
     if (serverState.players[c] && onBoard.has(c)) {
       hydratedPlayers[c] = {
         ...serverState.players[c],
-        // Safely map Redis Arrays back to JS Maps for rendering
-        pieceRef: Array.isArray(serverState.players[c].pieceRef) 
-          ? new Map(serverState.players[c].pieceRef) 
-          : new Map()
+        // Convert Redis array [[ref, count], ...] → JS Map for rendering
+        pieceRef: Array.isArray(serverState.players[c].pieceRef)
+          ? new Map(serverState.players[c].pieceRef)
+          : (serverState.players[c].pieceRef instanceof Map
+              ? serverState.players[c].pieceRef
+              : new Map())
       };
     } else {
       hydratedPlayers[c] = getSkeletonPlayer(c);
     }
   });
 
-  console.log({
-    ...state,
-    meta: {
-      ...serverState.meta,
-      onBoard: new Set(serverState.meta.onBoard),
-      syncTick: serverState.syncTick ?? serverState.meta.syncTick ?? 0
-    },
-    move: {
-      ...serverState.move,
-      // ⏱️ Strictly enforce the timestamp fallback for full initial syncs
-      turnStartedAt: serverState.move?.turnStartedAt || Date.now() 
-    },
-    players: { ...state.players, ...hydratedPlayers }
-  })
-  
+  // BUG FIX: Removed debug console.log that was dumping the entire game state
+  // on every full sync. It produced massive console noise in production and
+  // could slow down the browser on large state objects.
+
   return {
     ...state,
     meta: {
       ...serverState.meta,
       onBoard: new Set(serverState.meta.onBoard),
-      syncTick: serverState.syncTick ?? serverState.meta.syncTick ?? 0
+      // Support both locations for syncTick (state.meta.syncTick preferred)
+      syncTick: serverState.meta?.syncTick ?? serverState.syncTick ?? 0
     },
     move: {
       ...serverState.move,
-      // ⏱️ Strictly enforce the timestamp fallback for full initial syncs
-      turnStartedAt: serverState.move?.turnStartedAt || Date.now() 
+      // Provide a sensible fallback if the server didn't send a timestamp
+      turnStartedAt: serverState.move?.turnStartedAt || Date.now()
     },
     players: { ...state.players, ...hydratedPlayers }
   };
@@ -68,40 +60,77 @@ function patchStateLogic(state, updates, syncTick) {
   const newPlayers = { ...state.players };
 
   if (updates.playerUpdates) {
-      Object.keys(updates.playerUpdates).forEach(pColor => {
-          const pData = updates.playerUpdates[pColor];
-          newPlayers[pColor] = { 
-            ...newPlayers[pColor], 
-            ...pData,
-            pieceRef: pData.pieceRef ? (Array.isArray(pData.pieceRef) ? new Map(pData.pieceRef) : pData.pieceRef) : newPlayers[pColor].pieceRef
-          };
-      });
+    Object.keys(updates.playerUpdates).forEach(pColor => {
+      const pData = updates.playerUpdates[pColor];
+      newPlayers[pColor] = {
+        ...newPlayers[pColor],
+        ...pData,
+        // Convert pieceRef Array → Map if needed.
+        // The server always sends pieceRef as [[ref, count], ...] from Redis.
+        // If we spread it raw, pieceState[c].get() in GameBoard will crash.
+        pieceRef: pData.pieceRef
+          ? (Array.isArray(pData.pieceRef)
+              ? new Map(pData.pieceRef)
+              : pData.pieceRef)
+          : newPlayers[pColor].pieceRef
+      };
+    });
   }
 
-  // ⏱️ Safely patch move updates, prioritizing the incoming server timestamp
-  const updatedMove = updates.move ? {
-    ...state.move,
-    ...updates.move,
-    turnStartedAt: updates.move.turnStartedAt || state.move.turnStartedAt || Date.now()
-  } : state.move;
+  // Patch move, preserving the server's turnStartedAt if present
+  const updatedMove = updates.move
+    ? {
+        ...state.move,
+        ...updates.move,
+        turnStartedAt: updates.move.turnStartedAt || state.move.turnStartedAt || Date.now()
+      }
+    : state.move;
 
   return {
-      ...state,
-      move: updatedMove,
-      meta: { ...state.meta, ...(updates.metaUpdates || {}), syncTick: syncTick ?? state.meta.syncTick },
-      players: newPlayers
+    ...state,
+    move: updatedMove,
+    meta: {
+      ...state.meta,
+      ...(updates.metaUpdates || {}),
+      // onBoard stays as a Set — metaUpdates only contains {status, winLast}
+      syncTick: syncTick ?? state.meta.syncTick
+    },
+    players: newPlayers
   };
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// EXPORTED ACTIONS
+// ─────────────────────────────────────────────────────────────────────────────
 const onlineGameActions = {
-  syncFullState: (serverState) => 
-    useGameStore.setState((state) => syncStateLogic(state, serverState), false, "syncFullState"),    
+  /**
+   * Full replace — used for join-success, initiate-game, state-synced,
+   * player-joined, player-left events where the server sends the complete state.
+   */
+  syncFullState: (serverState) =>
+    useGameStore.setState(
+      (state) => syncStateLogic(state, serverState),
+      false,
+      "syncFullState"
+    ),
 
+  /**
+   * Delta patch — used for dice-rolled, turn-timeout-update, piece-moved
+   * where only a portion of the state changes.
+   */
   patchDeltaState: (updates, syncTick) =>
-    useGameStore.setState((state) => patchStateLogic(state, updates, syncTick), false, "patchDeltaState"),
+    useGameStore.setState(
+      (state) => patchStateLogic(state, updates, syncTick),
+      false,
+      "patchDeltaState"
+    ),
 
-  setMoving: (val) => 
-    useGameStore.setState((state) => ({ move: { ...state.move, moving: val } }), false, "setMoving"),
+  setMoving: (val) =>
+    useGameStore.setState(
+      (state) => ({ move: { ...state.move, moving: val } }),
+      false,
+      "setMoving"
+    ),
 };
 
 export default onlineGameActions;

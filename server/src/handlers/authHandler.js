@@ -568,42 +568,117 @@ const markNotificationRead = async (req, res, next) => {
 // ==========================================
 // SEND INVITES
 // ==========================================
+// ==========================================
+// SEND INVITES
+// ==========================================
+// CHANGE SUMMARY:
+//
+// Previously sendInvites only sent notifications to guests and returned nothing
+// useful. The host then had to make a SECOND request to /generate-session-idf
+// to get their own signed session JWT.
+//
+// Now sendInvites:
+//   1. Accepts `hostColor` and `size` in the request body (new fields).
+//   2. Generates and returns a signed `hostToken` JWT in the response.
+//   3. Fixes the color–target alignment bug: `colors` must now only contain
+//      invited (non-host) colors, matching the `targets` array index-for-index.
+//      `size` is sent separately so the total player count is preserved in JWTs.
+//
+// This collapses two API calls into one.
+// ==========================================
 const sendInvites = async (req, res, next) => {
     try {
-        const { targets, title, colors, message, type,gameId,boardType } = req.body;
-        console.log(targets,colors,message)
-        // 1. Create an array of individual update operations
+        const {
+            targets,        // [[username, profile], ...]  — invited players only, no host
+            title,
+            colors,         // ['B','Y','G']               — invited colors only, aligned with targets
+            message,
+            type,
+            gameId,
+            boardType,
+            hostColor,      // 'R'                         — NEW: host's color
+            size,           // 4                           — NEW: total players including host
+        } = req.body;
+
+        // ─── Validate new required fields ────────────────────────────────────
+        if (!hostColor || !size) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required fields: hostColor and size are required."
+            });
+        }
+
+        // ─── Fetch host profile from DB ───────────────────────────────────────
+        // tokenChecker sets req.user = { id: ... } from the cookie JWT.
+        // The cookie JWT only stores the user's _id, so we need a DB lookup
+        // to get the real username and avatar for the host's session token.
+        const hostUser = await User.findById(req.user.id).select("username avatar");
+        if (!hostUser) {
+            return res.status(404).json({ success: false, message: "Host user not found." });
+        }
+
+        // ─── Generate host session JWT ────────────────────────────────────────
+        // Same payload shape as guest tokens so socketGuard decodes both identically.
+        const hostToken = jwt.sign(
+            {
+                color:    hostColor,
+                username: hostUser.username,
+                profile:  hostUser.avatar || "/defaultProfile.png",
+                gameId,
+                size,        // total player count — used by socketGuard room-full check
+                boardType,
+            },
+            process.env.JWT_SECRET
+            // No expiry — session token must remain valid for the full game duration.
+        );
+
+        // ─── Generate guest tokens and push notifications ─────────────────────
+        // BUG A2 FIX (enforced here): `colors[idx]` must align with `targets[idx]`.
+        // Callers must pass only invited (non-host) colors. `size` carries the
+        // total count separately so individual JWT `size` values are correct.
         const bulkOps = targets.map((target, idx) => {
-            // Generate the unique token for this specific user and color
-            const token = jwt.sign({color:colors[idx],username:target[0],profile:target[1],gameId:gameId,size:colors.length,boardType:boardType}, process.env.JWT_SECRET);
-            
-            // Append the token to the base message string
+            const token = jwt.sign(
+                {
+                    color:    colors[idx],
+                    username: target[0],
+                    profile:  target[1],
+                    gameId,
+                    size,      // same total size for all players
+                    boardType,
+                },
+                process.env.JWT_SECRET
+            );
+
             const customMessage = `${message}?idf=${token}`;
-            // console.log(targets,colors)
+
             return {
                 updateOne: {
                     filter: { username: target[0] },
-                    update: { 
-                        $push: { 
-                            notifications: { 
-                                title, 
-                                message: customMessage, 
-                                type, 
-                                read: false, 
-                                createdAt: new Date() 
-                            } 
-                        } 
+                    update: {
+                        $push: {
+                            notifications: {
+                                title,
+                                message: customMessage,
+                                type,
+                                read: false,
+                                createdAt: new Date()
+                            }
+                        }
                     }
                 }
             };
         });
-        // console.log(bulkOps)
-        // 2. Execute all updates in a single round-trip to the database
+
         if (bulkOps.length > 0) {
             await User.bulkWrite(bulkOps);
         }
 
-        res.status(200).json({ success: true, message: "Invites delivered." });
+        // Return the host token so GameSetup can navigate without a second request
+        return res.status(200).json({
+            success:    true,
+            message:    "Invites delivered.",
+            hostToken,          // ← GameSetup uses this as the ?idf= query param
+        });
     } catch (error) {
         next(error);
     }

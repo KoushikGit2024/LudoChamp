@@ -435,41 +435,111 @@
 //     });
 //   });
 // }
-import { 
-  handlePofInit, 
-  handleJoinGame, 
-  handleSyncState, 
-  handleRollDice, 
-  handleMovePiece, 
-  handleTurnTimeout, 
-  handleDisconnect 
+import {
+  handlePofInit,
+  handleJoinGame,
+  handleSyncState,
+  handleRollDice,
+  handleMovePiece,
+  handleTurnTimeout,
+  handleDisconnect
 } from './gameControlers.js';
 
 export default function registerGameHandlers(io) {
   io.on("connection", async (socket) => {
     console.log(`[NETWORK] 🟢 Socket Connected: ${socket.id}`);
-    // console.log(await io.fetchSockets())
-    // Auto-init for "Play with Friends" (POF) if auth data exists
+
     const gameType = socket.handshake.auth?.gameType;
-    // socket.emit("my-specifications",{})
-    if(gameType==="pof"){
-      if (socket.player.size) {
-        handlePofInit(io, socket);
+
+    // ── POF: Auto-init on connection ──────────────────────────────────────
+    if (gameType === "pof") {
+      // BUG 1 FIX: optional chain so missing socket.player never crashes
+      // BUG 7 FIX: try/catch so a controller error doesn't kill the connection
+      if (socket.player?.size) {
+        try {
+          await handlePofInit(io, socket);
+        } catch (err) {
+          console.error("❌ [POF INIT] Handler crashed:", err);
+          socket.emit("error", "Failed to initialize game session.");
+          return;
+        }
+      } else {
+        console.warn(`[POF] Socket ${socket.id} missing player.size — skipping init`);
+        socket.emit("error", "Invalid POF session data.");
+        return;
       }
     }
 
-    // Bind Event Listeners to Controllers
-    if(gameType==="poi")
-      socket.on("join-game", (data) => handleJoinGame(io, socket, data));
-    
-    socket.on("sync-state", (data) => handleSyncState(socket, data));
-    
-    socket.on("roll-dice", (data) => handleRollDice(io, socket, data));
-    
-    socket.on("move-piece", (data) => handleMovePiece(io, socket, data));
-    
-    socket.on("turn-timeout", (data) => handleTurnTimeout(io, socket, data));
-    
+    // ── POI: Manual join via event ────────────────────────────────────────
+    // BUG 5 FIX: removed strict gameType==="poi" gate so any client can join;
+    // the controller itself validates the type from the event payload.
+    // If you MUST gate it, use: if (!gameType || gameType === "poi")
+    socket.on("join-game", async (data) => {
+      try {
+        await handleJoinGame(io, socket, data);
+
+        // BUG 3 FIX: only register game-play listeners AFTER join succeeds,
+        // so socket.gameId and socket.playerColor are guaranteed to be set.
+        registerGameplayListeners(io, socket);
+      } catch (err) {
+        console.error("❌ [JOIN] Handler crashed:", err);
+        socket.emit("error", "Failed to join game.");
+      }
+    });
+
+    // ── POF: register gameplay listeners right away (already joined) ──────
+    // BUG 3 FIX (POF side): for POF, handlePofInit sets socket.gameId, so
+    // it's safe to register these now — but only for POF.
+    if (gameType === "pof") {
+      registerGameplayListeners(io, socket);
+    }
+
+    // ── Disconnect always registered ──────────────────────────────────────
     socket.on("disconnect", (reason) => handleDisconnect(io, socket, reason));
+  });
+}
+
+// ── Gameplay listeners — registered only after player is in a game ────────
+// BUG 3 FIX: extracted into a function called post-join, not at connect time.
+// BUG 6 FIX: sync-state re-joins the socket to its room on reconnect.
+function registerGameplayListeners(io, socket) {
+  // Guard: don't double-register if called twice (e.g. accidental re-emit)
+  if (socket._gameplayListenersRegistered) return;
+  socket._gameplayListenersRegistered = true;
+
+  // BUG 6 FIX: explicitly re-join room on sync-state so reconnected
+  // sockets receive future broadcasts
+  socket.on("sync-state", async (data) => {
+    try {
+      // Rejoin room in case this is a reconnect
+      if (socket.gameId) socket.join(socket.gameId);
+      await handleSyncState(socket, data);
+    } catch (err) {
+      console.error("❌ [SYNC] Handler crashed:", err);
+    }
+  });
+
+  socket.on("roll-dice", async (data) => {
+    try {
+      await handleRollDice(io, socket, data);
+    } catch (err) {
+      console.error("❌ [ROLL] Handler crashed:", err);
+    }
+  });
+
+  socket.on("move-piece", async (data) => {
+    try {
+      await handleMovePiece(io, socket, data);
+    } catch (err) {
+      console.error("❌ [MOVE] Handler crashed:", err);
+    }
+  });
+
+  socket.on("turn-timeout", async (data) => {
+    try {
+      await handleTurnTimeout(io, socket, data);
+    } catch (err) {
+      console.error("❌ [TIMEOUT] Handler crashed:", err);
+    }
   });
 }

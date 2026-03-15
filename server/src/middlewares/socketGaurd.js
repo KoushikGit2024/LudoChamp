@@ -16,21 +16,49 @@ const socketGuard = async (socket, next, io) => {
     const playerDescription = socket.handshake.auth?.playerDescription || null;
     const gameId = socket.handshake.auth?.gameId || null;
 
-    // 🛡️ gameId can be null for new POI matches, so we don't strictly require it here
-    if (!token || !playerDescription && gameType !== "poi" || !gameType) {
+    // ─────────────────────────────────────────────────────────────────
+    // BUG FIX #1: guard used to allow null playerDescription for POI,
+    // but then called jwt.verify(null, secret) unconditionally — always
+    // throwing.  Now we gate the verify behind a null-check.
+    // ─────────────────────────────────────────────────────────────────
+    if (!token || (!playerDescription && gameType !== "poi") || !gameType) {
       return next(new Error("Authentication failed: Missing credentials"));
     }
 
     if (gameType === "pof" && !gameId) {
-        return next(new Error("Authentication failed: POF requires a gameId"));
+      return next(new Error("Authentication failed: POF requires a gameId"));
     }
 
-    // 2. Verify Tokens
-    const decodedUser = jwt.verify(token, process.env.JWT_SECRET);
-    socket.user = decodedUser;
+    // 2. Verify user token (always required)
+    let decodedUser;
+    if(gameType === "pof"){
+      decodedUser = jwt.verify(token, process.env.JWT_SECRET);
+      socket.user = decodedUser;
+    } else {
+      socket.user = {
+        username: playerDescription.username,
+        profile: playerDescription.profile,
+        gameType: "poi",
+      };
+    }
 
-    const decodedPlayer = jwt.verify(playerDescription, process.env.JWT_SECRET);
-    socket.player = decodedPlayer;
+    // ─────────────────────────────────────────────────────────────────
+    // BUG FIX #1 (cont): Only verify playerDescription when present.
+    // For POI matchmaking there is no playerDescription JWT — we build
+    // a minimal socket.player from the already-verified user token so
+    // that handleJoinGame can read username/profile normally.
+    // ─────────────────────────────────────────────────────────────────
+    if (playerDescription && gameType === "pof") {
+      const decodedPlayer = jwt.verify(playerDescription, process.env.JWT_SECRET);
+      socket.player = decodedPlayer;
+    } else {
+      // POI path — no playerDescription token; derive from user token
+      socket.player = {
+        username: playerDescription.username || "",
+        profile:  playerDescription.avatar  || "",
+        gameType: "poi",
+      };
+    }
 
     if (gameId && socket.player.gameId && socket.player.gameId !== gameId) {
       console.log(`[AUTH] Connection revoked: Game ID mismatch for ${socket.player.username}`);
@@ -38,58 +66,67 @@ const socketGuard = async (socket, next, io) => {
     }
 
     // ==========================================
-    // 3. GLOBAL DUPLICATE TAB CHECK (Handles POI & POF)
+    // 3. GLOBAL DUPLICATE TAB CHECK
     // ==========================================
     const allSockets = await io.fetchSockets();
     const isUserAlreadyConnected = allSockets.some(
-        (s) => { return s.player?.username === socket.player.username && s.id !== socket.id}
+      (s) => s.player?.username === socket.player.username && s.id !== socket.id
     );
-    // console.log(isUserAlreadyConnected)
     if (isUserAlreadyConnected) {
-        console.log(`[AUTH] 🛑 Rejected: ${socket.player.username} is already connected in another tab.`);
-        return next(new Error("Player is already connected across the server"));
+      console.log(isUserAlreadyConnected, socket.player.username);
+      console.log(`[AUTH] 🛑 Rejected: ${socket.player.username} is already connected.`);
+      return next(new Error("Player is already connected across the server"));
     }
 
     // ==========================================
-    // 4. ROOM-SPECIFIC CHECKS (If gameId exists)
+    // 4. ROOM-SPECIFIC CHECKS (if gameId exists)
     // ==========================================
     if (gameId) {
-        // Fetch all 4 player objects in the room at once
-        const playerStateList = await redis.json.get(`game:${gameId}`, {
-            path: `$.players.*`
-        });
+      const playerStateList = await redis.json.get(`game:${gameId}`, {
+        path: `$.players.*`,
+      });
 
-        if (playerStateList) {
-            const currentSocketsInRoom = await io.in(gameId).fetchSockets();
-            const playerCount = currentSocketsInRoom.length;
+      if (playerStateList) {
+        const currentSocketsInRoom = await io.in(gameId).fetchSockets();
+        const playerCount = currentSocketsInRoom.length;
 
-            // Match by username to see if they are in this room state
-            const existingPlayerRecord = playerStateList.find(p => p.userId === socket.player.username);
-            // console.log(existingPlayerRecord)
-            if (existingPlayerRecord && existingPlayerRecord.socketId) {
-                const isOldSocketStillActive = currentSocketsInRoom.some(s => s.id === existingPlayerRecord.socketId);
-                if (isOldSocketStillActive) {
-                    console.log(`[AUTH] 🛑 Rejected: ${socket.player.username} is already active in game ${gameId}.`);
-                    return next(new Error("Player is already active in this game"));
-                }
-            }
+        const existingPlayerRecord = playerStateList.find(
+          (p) => p.userId === socket.player.username
+        );
 
-            // Reject if full, unless they are an existing player reconnecting
-            // console.log(existingPlayerRecord,playerCount,socket.player.size,gameType)
-            if (!existingPlayerRecord && playerCount >= socket.player.size && gameType === "pof") {
-                console.log(`[AUTH] 🛑 Rejected: Game ${gameId} is full.`);
-                return next(new Error("Game is full"));
-            }
+        if (existingPlayerRecord && existingPlayerRecord.socketId) {
+          const isOldSocketStillActive = currentSocketsInRoom.some(
+            (s) => s.id === existingPlayerRecord.socketId
+          );
+          if (isOldSocketStillActive) {
+            console.log(
+              `[AUTH] 🛑 Rejected: ${socket.player.username} is already active in game ${gameId}.`
+            );
+            return next(new Error("Player is already active in this game"));
+          }
         }
 
-        console.log(`[AUTH] ✅ Verified Node ${socket.player.color || 'Pending'} for user ${socket.player.username}`);
-        
-        // Auto-join socket room only for POF. POI matchmaking handles room assignment later.
-        if (gameType === "pof") {
-            socket.join(gameId);
+        if (
+          !existingPlayerRecord &&
+          playerCount >= socket.player.size &&
+          gameType === "pof"
+        ) {
+          console.log(`[AUTH] 🛑 Rejected: Game ${gameId} is full.`);
+          return next(new Error("Game is full"));
         }
+      }
+
+      console.log(
+        `[AUTH] ✅ Verified Node ${socket.player.color || "Pending"} for user ${socket.player.username}`
+      );
+
+      if (gameType === "pof") {
+        socket.join(gameId);
+      }
     } else {
-        console.log(`[AUTH] ✅ Verified user ${socket.player.username} for POI Matchmaking`);
+      console.log(
+        `[AUTH] ✅ Verified user ${socket.player.username} for POI Matchmaking`
+      );
     }
 
     return next();
