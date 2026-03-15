@@ -326,25 +326,44 @@ const registerHandler = async (req, res, next) => {
         const { fullname, username, email, password } = req.body;
         const file = req.file;
 
+        // 1. Validate if user already exists
         const userExists = await User.findOne({ $or: [{ email }, { username }] });
-        // console.log(userExists);
-        console.log(password)
-        if (userExists) return res.status(400).json({ success: false, message: "User already exists" });
+        if (userExists) {
+            return res.status(400).json({ success: false, message: "User already exists in the grid." });
+        }
 
+        // 2. Handle Avatar Upload
         let avatarUrl = "/defaultProfile.png";
         if (file) {
             const uploadResponse = await imagekit.upload({
                 file: file.buffer,
                 fileName: `profile_${username}_${Date.now()}`,
-                folder: "/LudoChamp"
+                folder: "/MyProjects/ludo_neo/avatars"
             });
             avatarUrl = uploadResponse.url;
         }
 
-        const verificationToken = generateToken();
-        await redis.set(`verify:${verificationToken}`, email, { EX: 3600 });
-        const verificationUrl =isProduction ? `https://ludoneo.onrender.com/options/signin?token=${verificationToken}` : `http://localhost:5173/options/signin?token=${verificationToken}`;
+        // 3. Create User in MongoDB FIRST
+        // Note: Make sure your userModel.js handles hashing the password before saving!
+        const newUser = await User.create({ 
+            fullname, 
+            username, 
+            email, 
+            password, 
+            avatar: avatarUrl, 
+            isVerified: false 
+        });
 
+        // 4. Generate and cache the verification token in Redis ONLY if user creation succeeds
+        const verificationToken = generateToken();
+        await redis.set(`verify:${verificationToken}`, email, { EX: 3600 }); // Expires in 1 hour
+        
+        // 5. Build the verification URL
+        const isProduction = process.env.NODE_ENV === 'production';
+        const baseUrl = isProduction ? 'https://ludoneo.onrender.com' : 'http://localhost:5173';
+        const verificationUrl = `${baseUrl}/options/signin?token=${verificationToken}`;
+
+        // 6. Broadcast Email (Currently commented out in your logic)
         // await sendEmail({
         //     email,
         //     subject: `SYSTEM: Identity Uplink Required for Pilot ${fullname}`,
@@ -383,14 +402,17 @@ const registerHandler = async (req, res, next) => {
         //     `,
         // });
 
-        await User.create({ fullname, username, email, password, avatar: avatarUrl, isVerified: false });
-
+        // 7. Send final success response
         res.status(200).json({ 
             success: true, 
             message: "Initialization link broadcast. Check your neural uplink (email).",
             link: verificationUrl
         });
-    } catch (error) { next(error); }
+
+    } catch (error) { 
+        // Pass any caught errors (like Mongoose validation errors) to the global error handler
+        next(error); 
+    }
 };
 
 // ==========================================

@@ -20,10 +20,10 @@ import "../styles/menu.css";
 import "../styles/cell.css";
 
 const MENU_ITEMS = [
-  { label: "Play With Bot", color: "#ff0505", route: "/setup/bot", img: "https://ik.imagekit.io/z41edgv2n/ludo_neo/bot.png" },
-  { label: "Offline Board", color: "#2b01ff", route: "/setup/offline", img: "https://ik.imagekit.io/z41edgv2n/ludo_neo/offline.png" },
-  { label: "Play On Internet", color: "#fff200", route: "/setup/poi", img: "https://ik.imagekit.io/z41edgv2n/ludo_neo/poi.png" },
-  { label: "Play With Friends", color: "#00ff3c", route: "/setup/pof", img: "https://ik.imagekit.io/z41edgv2n/ludo_neo/pof.png" }
+  { label: "Play With Bot", color: "#ff0505", route: "/setup/bot", img: "https://ik.imagekit.io/z41edgv2n/MyProjects/ludo_neo/bot.png" },
+  { label: "Offline Board", color: "#2b01ff", route: "/setup/offline", img: "https://ik.imagekit.io/z41edgv2n/MyProjects/ludo_neo/offline.png" },
+  { label: "Play On Internet", color: "#fff200", route: "/setup/poi", img: "https://ik.imagekit.io/z41edgv2n/MyProjects/ludo_neo/poi.png" },
+  { label: "Play With Friends", color: "#00ff3c", route: "/setup/pof", img: "https://ik.imagekit.io/z41edgv2n/MyProjects/ludo_neo/pof.png" }
 ];
 
 const getNotificationStyle = (type) => {

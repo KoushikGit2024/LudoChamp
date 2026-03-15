@@ -246,6 +246,7 @@ const Options = () => {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    
     if(formData.username.length < 3){
       toast.error("Username must be at least 3 characters long.");
       return;
@@ -254,24 +255,37 @@ const Options = () => {
       toast.error("Password must be at least 6 characters long.");
       return;
     }
+    
     setLoading(true);
+    
     try {
       const form = new FormData();
       Object.keys(formData).forEach(key => form.append(key, formData[key]));
-      if (finalImage?.startsWith('data:')) form.append('avatar', dataURLtoBlob(finalImage), `${formData.username}.jpg`);
-      const res=await api.post('/api/auth/register', form,{ headers: { 'Content-Type': 'multipart/form-data' } });
-      setIsEmailSent(true); 
-      // toast.success("INITIALIZATION LINK BROADCAST TO NODE.");
-      toast.success("REGISTRATION SUCCESSFUL.");
-      if(res.data.link){
-        console.log(res);
-        const redirect = (res.data.link).toString().split(import.meta.env.VITE_MODE==="dev"?"5173":"ludoneo.onrender.com")[1];
-        console.log(redirect)
-        setTimeout(()=>{navigate(redirect);},500)
-        
+      
+      if (finalImage?.startsWith('data:')) {
+        form.append('avatar', dataURLtoBlob(finalImage), `${formData.username}.jpg`);
       }
-    } catch (err) { toast.error(err.response?.data?.message || "REGISTRATION FAILURE."); }
-    finally { 
+      
+      const res = await api.post('/api/auth/register', form, { 
+        headers: { 'Content-Type': 'multipart/form-data' } 
+      });
+      
+      setIsEmailSent(true); 
+      toast.success("REGISTRATION SUCCESSFUL.");
+      
+      if (res.data.link) {
+        console.log(res);
+        
+        // Extract the path and query string natively
+        const urlObj = new URL(res.data.link);
+        const redirect = urlObj.pathname + urlObj.search; 
+        
+        console.log("Navigating to:", redirect);
+        setTimeout(() => { navigate(redirect); }, 500);
+      }
+    } catch (err) { 
+      toast.error(err.response?.data?.message || "REGISTRATION FAILURE."); 
+    } finally { 
       setLoading(false); 
     }
   };
