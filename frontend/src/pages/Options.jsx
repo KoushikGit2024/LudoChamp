@@ -264,7 +264,7 @@ const Options = () => {
       // toast.success("INITIALIZATION LINK BROADCAST TO NODE.");
       toast.success("REGISTRATION SUCCESSFUL.");
       if(res.data.link){
-        console.log(res.data.link);
+        console.log(res);
         const redirect = (res.data.link).toString().split(import.meta.env.VITE_MODE==="dev"?"5173":"ludoneo.onrender.com")[1];
         console.log(redirect)
         setTimeout(()=>{navigate(redirect);},500)
