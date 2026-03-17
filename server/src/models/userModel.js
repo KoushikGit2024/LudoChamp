@@ -124,11 +124,11 @@ const notificationSchema = new mongoose.Schema({
 });
 
 const matchHistorySchema = new mongoose.Schema({
-    gameId: { type: String, required: true },
+    gameId: { type: String, required: false, unique: true },
     date: { type: Date, default: Date.now },
-    result: { type: String, enum: ["win", "loss"], required: true },
+    result: { type: String, enum: ["win", "loss"], required: false },
     opponent: { type: String },
-    gameType: { type: String, enum: ["offline", "bot", "online", "pof", "poi"], required: true }
+    gameType: { type: String, enum: ["offline", "bot", "online", "pof", "poi"], required: false }
 }, { _id: false }); 
 
 const userSchema = new mongoose.Schema({

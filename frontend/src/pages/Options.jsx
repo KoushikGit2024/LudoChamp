@@ -23,13 +23,13 @@ import "../styles/options.css";
 // BADGE DEFINITIONS
 // ==========================================
 const BADGE_DEFS = [
-  { id: 'first_blood',  label: 'First Blood',     icon: <Swords size={16}/>,    color: '#ff4444', cond: (s) => s.wins >= 1,                                                          desc: '1st Win'         },
-  { id: 'veteran',      label: 'Veteran',         icon: <Shield size={16}/>,    color: '#00D4FF', cond: (s) => s.wins >= 10,                                                         desc: '10 Wins'         },
-  { id: 'champion',     label: 'Champion',        icon: <Trophy size={16}/>,    color: '#fff200', cond: (s) => s.wins >= 50,                                                         desc: '50 Wins'         },
-  { id: 'legendary',    label: 'Legendary',       icon: <Star size={16}/>,      color: '#ff0505', cond: (s) => s.wins >= 100,                                                        desc: '100 Wins'        },
-  { id: 'survivor',     label: 'Survivor',        icon: <Zap size={16}/>,       color: '#00ff3c', cond: (s) => s.totalMatches >= 50,                                                 desc: '50 Matches'      },
-  { id: 'sharp',        label: 'Sharp Shooter',   icon: <Crosshair size={16}/>, color: '#ec4899', cond: (s) => s.totalMatches >= 20 && parseFloat(s.winRate) >= 70,                  desc: '70%+ Win Rate'   },
-  { id: 'bot_slayer',   label: 'Bot Slayer',      icon: <Cpu size={16}/>,       color: '#a855f7', cond: (s) => s.matchHistory?.some(m => m.gameType === 'bot' && m.result === 'win'),desc: 'Defeat AI'       },
+  { id: 'first_blood',  label: 'First Blood',     icon: <Swords size={16}/>,    color: '#ff4444', cond: (s) => s.wins >= 1,                                                             desc: '1st Win'         },
+  { id: 'veteran',      label: 'Veteran',         icon: <Shield size={16}/>,    color: '#00D4FF', cond: (s) => s.wins >= 10,                                                            desc: '10 Wins'         },
+  { id: 'champion',     label: 'Champion',        icon: <Trophy size={16}/>,    color: '#fff200', cond: (s) => s.wins >= 50,                                                            desc: '50 Wins'         },
+  { id: 'legendary',    label: 'Legendary',       icon: <Star size={16}/>,      color: '#ff0505', cond: (s) => s.wins >= 100,                                                           desc: '100 Wins'        },
+  { id: 'survivor',     label: 'Survivor',        icon: <Zap size={16}/>,       color: '#00ff3c', cond: (s) => s.totalMatches >= 50,                                                    desc: '50 Matches'      },
+  { id: 'sharp',        label: 'Sharp Shooter',   icon: <Crosshair size={16}/>, color: '#ec4899', cond: (s) => s.totalMatches >= 20 && parseFloat(s.winRate) >= 70,                     desc: '70%+ Win Rate'   },
+  { id: 'bot_slayer',   label: 'Bot Slayer',      icon: <Cpu size={16}/>,       color: '#a855f7', cond: (s) => s.matchHistory?.some(m => m.gameType === 'bot' && m.result === 'win'),   desc: 'Defeat AI'       },
   { id: 'grid_master',  label: 'Grid Master',     icon: <Globe size={16}/>,     color: '#f97316', cond: (s) => s.matchHistory?.some(m => m.gameType === 'online' && m.result === 'win'),desc: 'Online Win'     },
 ];
 
@@ -152,7 +152,7 @@ const Options = () => {
     }
 
     if (subOption === 'signin' || subOption === 'signup') {
-      setFormData(prev => ({ ...prev, fullname: '', username: '', email: '' }));
+      setFormData(prev => ({ ...prev, fullname: '', username: '', email: '', password: '', newPassword: '' }));
       setFinalImage(null);
     }
 
@@ -166,6 +166,11 @@ const Options = () => {
     setIsEmailSent(false);
     setForgotPassMode(false); 
   }, [subOption, navigate]);
+
+  useEffect(() => {
+    setFormData(prev => ({ ...prev, fullname: '', username: '', email: '', password: '', newPassword: '' }));
+    setFinalImage(null);
+  }, [subOption]);
 
   useEffect(() => {
     if (subOption === 'setting' && info) {
@@ -299,6 +304,11 @@ const Options = () => {
 
   const handleUpdateProfile = async (e) => {
     if (e) e.preventDefault();
+    console.log(formData.fullname, info.fullname);
+    // console.log(formData.username, info.username);
+    console.log(formData.email, info.email);
+    console.log(finalImage);
+    if (formData.fullname===info.fullname && formData.email===info.email && finalImage===info.avatar) { toast.warn("PROFILE UPDATE FAILED: NO CHANGES DETECTED."); return; }
     setLoading(true); setIsSyncing(true);
     try {
       const form = new FormData();
@@ -309,7 +319,7 @@ const Options = () => {
       if (!res.data.success) { toast.error(res.data.message); return; }
       updateUserInfo(res.data.user);
       toast.success("NEURAL PROFILE SYNCHRONIZED.");
-    } catch (err) { toast.error("SYNC FAILURE."); } 
+    } catch (err) { toast.error("SYNC FAILURE."); console.log(err); } 
     finally { setLoading(false); setTimeout(() => setIsSyncing(false), 600); }
   };
 
