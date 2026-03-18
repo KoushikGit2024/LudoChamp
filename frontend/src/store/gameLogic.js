@@ -2,16 +2,16 @@ import { toast } from "react-toastify";
 import useGameStore from "./useGameStore";
 import piecePath from '../contexts/PiecePath.js'; 
 import api from "@/api/axiosConfig";
-import { updateUserInfo } from "./userActions"; // Added for stat synchronization
+import { updateUserInfo } from "./userActions";
 
 const initialState = {
   meta: { gameId: "", status: "WAITING", type: "offline", gameStartedAt: [], winLast: 0, playerCount: 4, onBoard: new Set(['R', 'B', 'Y', 'G']), syncTick: 0 },
   move: { playerIdx: 0, turn: 'R', rollAllowed: true, moveCount: 0, ticks: 0, moveAllowed: false, moving: false, timeOut: false },
   players: {
-    R: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[79, 1], [78, 1], [77, 1], [76, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#FF3131" },
-    B: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[83, 1], [82, 1], [81, 1], [80, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#00D4FF" },
-    Y: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[87, 1], [86, 1], [85, 1], [84, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#ffc400" },
-    G: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[91, 1], [90, 1], [89, 1], [88, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#39FF14" },
+    R: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[79, 1], [78, 1], [77, 1], [76, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#FF3131", difficulty:null },
+    B: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[83, 1], [82, 1], [81, 1], [80, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#00D4FF", difficulty:null },
+    Y: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[87, 1], [86, 1], [85, 1], [84, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#ffc400", difficulty:null },
+    G: { socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[91, 1], [90, 1], [89, 1], [88, 1]]), homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: "#39FF14", difficulty:null },
   },
 };
 
@@ -28,7 +28,7 @@ function getSkeletonPlayer(colorKey) {
   return {
     socketId: '', name: "", username: "", profile: "", online: false, pieceIdx: [-1, -1, -1, -1],
     pieceRef: new Map([[startIdx, 1], [startIdx - 1, 1], [startIdx - 2, 1], [startIdx - 3, 1]]),
-    homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: hex
+    homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: hex, difficulty:null
   };
 }
 
@@ -37,7 +37,7 @@ function loadGameLogic(state, dbState) {
   const colors = ["R", "B", "Y", "G"];
   const startIdxMap = { R: 79, B: 83, Y: 87, G: 91 };
   const onBoard = new Set(dbState.meta.onBoard);
-
+  const gameStartedAt=[...dbState.meta.gameStartedAt,Date.now()];
   colors.forEach(c => {
     if (dbState.players[c] && onBoard.has(c)) {
       const pData = dbState.players[c];
@@ -56,25 +56,29 @@ function loadGameLogic(state, dbState) {
     }
   });
 
-  return { ...state, meta: { ...state.meta, ...dbState.meta, onBoard: new Set(dbState.meta.onBoard) }, move: { ...state.move, ...dbState.move }, players: { ...state.players, ...hydratedPlayers } };
+  return { ...state, meta: { ...state.meta, ...dbState.meta, onBoard: new Set(dbState.meta.onBoard), gameStartedAt:gameStartedAt }, move: { ...state.move, ...dbState.move }, players: { ...state.players, ...hydratedPlayers } };
 }
 
 function initiateOfflineGameLogic(state, gameObj) {
   if (state.meta.status !== "WAITING") return state;
   const genId = shortId(16);
   if (!["offline", "bot", "pof", "poi"].includes(gameObj.type)) return state;
-  
+  let userProfile;
+  // if(gameObj.type==="bot")
+  //   userProfile = useUserStore(state=>state.info.avatar)
   const players = {};
   const colors = ["#FF3131", "#00D4FF", "#ffc400", "#00FF14"];
   const masterOrder = ["R", "B", "Y", "G"];
-
+  const onBoardPlayers = new Set(masterOrder.filter((el) => gameObj.players.includes(el)));
+  gameObj.players=[...onBoardPlayers];
+  // console.log(gameObj)
   masterOrder.forEach((el, idx) => {
     let startIdx = { R: 79, B: 83, Y: 87, G: 91 }[el];
-    const playerIndexInGameObj = gameObj.players.indexOf(el);
-
-    if (playerIndexInGameObj !== -1) {
+    const playerIndexInGameObj = onBoardPlayers.has(el);
+    // console.log(gameObj.botDifficulties[el],gameObj.names[idx])
+    if (playerIndexInGameObj) {
       players[el] = {
-        ...state.players[el], name: gameObj.names[playerIndexInGameObj], username: "", profile: "/defaultProfile.png",
+        ...state.players[el], name: gameObj.names[el], username: "", profile: (gameObj.type==="bot" && gameObj.botDifficulties[el]===null)?gameObj.avatar:"/defaultProfile.png",
         pieceIdx: [-1, -1, -1, -1], pieceRef: new Map([[startIdx, 1], [startIdx - 1, 1], [startIdx - 2, 1], [startIdx - 3, 1]]),
         homeCount: 4, outCount: 0, winCount: 0, winPosn: 0, color: colors[idx],
         ...(gameObj.type === "bot") && { difficulty: gameObj.botDifficulties[el] }
@@ -83,11 +87,17 @@ function initiateOfflineGameLogic(state, gameObj) {
       players[el] = getSkeletonPlayer(el);
     }
   });
-
+  // console.log(onBoardPlayers[0])
+  // console.log({
+  //   ...state,
+  //   move: { ...state.move, color: gameObj.players[0], playerIdx: 0, turn: gameObj.players[0], rollAllowed: true, moveCount: 0, ticks: 0, version: 0, moveAllowed: false, moving: false, timeOut: false },
+  //   meta: { ...state.meta, playerCount: gameObj.players.length, onBoard: onBoardPlayers, gameId: genId, status: "RUNNING", currentTurn: gameObj.players[0], gameStartedAt: [...state.meta.gameStartedAt, Date.now()], type: gameObj.type, color: "R", winLast: 0 },
+  //   players: { ...state.players, ...players },
+  // })
   return {
     ...state,
-    move: { ...state.move, playerIdx: 0, turn: gameObj.players[0], rollAllowed: true, moveCount: 0, ticks: 0, version: 0, moveAllowed: false, moving: false, timeOut: false },
-    meta: { ...state.meta, playerCount: gameObj.players.length, onBoard: new Set(gameObj.players), gameId: genId, status: "RUNNING", currentTurn: gameObj.players[0], gameStartedAt: [...state.meta.gameStartedAt, Date.now()], type: gameObj.type, color: "R", winLast: 0 },
+    move: { ...state.move, color: gameObj.players[0], playerIdx: 0, turn: gameObj.players[0], rollAllowed: true, moveCount: 0, ticks: 0, version: 0, moveAllowed: false, moving: false, timeOut: false },
+    meta: { ...state.meta, playerCount: gameObj.players.length, onBoard: onBoardPlayers, gameId: genId, status: "RUNNING", currentTurn: onBoardPlayers[0], gameStartedAt: [...state.meta.gameStartedAt, Date.now()], type: gameObj.type, color: "R", winLast: 0 },
     players: { ...state.players, ...players },
   };
 }
@@ -148,22 +158,73 @@ function endGameLogic(state) {
   return { ...state, meta: { ...state.meta, status: "FINISHED" }, move: { ...state.move, rollAllowed: false, moveAllowed: false, moving: false, turn: null } };
 }
 
+// ==============================================
+// INTERNAL AUTOMATIC STAT PROCESSOR
+// ==============================================
+const recordMatchStats = async (state) => {
+    // Only process local game types here; online variants should be handled by socket events
+    if (state.meta.type !== "offline" && state.meta.type !== "bot") return;
+
+    const userColor = state.meta.color || "R";
+    const userDidWin = state.players[userColor].winPosn === 1;
+
+    const statsPayload = {
+        gameId: state.meta.gameId,
+        result: userDidWin ? 'win' : 'loss',
+        opponent: state.meta.type === 'bot' ? 'A.I. Core' : 'Local Challenger',
+        gameType: state.meta.type
+    };
+
+    try {
+        const statsRes = await api.post('/api/games/record-stats', statsPayload);
+        if (statsRes.data.success) {
+            updateUserInfo(statsRes.data.user);
+            toast.success("Match statistics processed & synchronized!");
+        }
+    } catch (error) {
+        console.error("Failed to record stats:", error);
+    }
+};
+
 const gameActions = {
   initiateGame: (gameObj) => useGameStore.setState((state) => initiateOfflineGameLogic(state, gameObj), false, "initiateGame"),
   updateMoveCount: (moveCount = 0) => useGameStore.setState((state) => updateMoveCountLogic(state, moveCount), false, "updateMoveCount"),
-  updatePieceState: (curColor, pieceIdx, pieceRef, deltaRef = 0, deltaIdx = 0) => useGameStore.setState((state) => updatePieceStateLogic(state, curColor, pieceIdx, pieceRef, deltaRef, deltaIdx), false, "updatePieceState"),
+  
+  updatePieceState: (curColor, pieceIdx, pieceRef, deltaRef = 0, deltaIdx = 0) => {
+    const prevState = useGameStore.getState();
+    useGameStore.setState((state) => updatePieceStateLogic(state, curColor, pieceIdx, pieceRef, deltaRef, deltaIdx), false, "updatePieceState");
+    
+    // Automatically intercept and broadcast stat logic if a piece move triggers FINISHED state
+    const newState = useGameStore.getState();
+    if (prevState.meta.status !== "FINISHED" && newState.meta.status === "FINISHED") {
+        recordMatchStats(newState);
+    }
+  },
+
   transferTurn: (turnCase = -1) => useGameStore.setState((state) => transferTurnLogic(state, turnCase), false, "transferTurn"),
   updateTimeOut: (newState) => useGameStore.setState((state) => updateTimeOutLogic(state, newState), false, "updateTimeOut"),
   setMoving: (val) => useGameStore.setState((state) => setMovingLogic(state, val), false, "setMoving"),
   resetStore: () => useGameStore.setState(initialState, false, "resetStore"),
-  endGame: () => useGameStore.setState((state) => endGameLogic(state), false, "endGame"),
+  
+  endGame: () => {
+    const prevState = useGameStore.getState();
+    useGameStore.setState((state) => endGameLogic(state), false, "endGame");
+    
+    // Process stats if the game was ended explicitly (e.g., player surrendered)
+    const newState = useGameStore.getState();
+    if (prevState.meta.status !== "FINISHED" && newState.meta.status === "FINISHED") {
+        recordMatchStats(newState);
+    }
+  },
 
   saveGameToDB: async (title) => {
     const state = useGameStore.getState();
+    console.log(state)
     if (state.meta.type !== "offline" && state.meta.type !== "bot") return;
     
     const sanitizePlayer = (player, color) => {
-      if (!state.meta.onBoard.has(color) || !player || !player.name) return null;
+      console.log(state.meta.onBoard.has(color) , player , player.name)
+      if (!state.meta.onBoard.has(color) || !player || !player.name) return getSkeletonPlayer(color);
       const sanitized = { ...player };
       if (sanitized.pieceRef instanceof Map) sanitized.pieceRef = Array.from(sanitized.pieceRef.entries());
       if (!sanitized.username || sanitized.username === "") { delete sanitized.username; delete sanitized.socketId; }
@@ -171,38 +232,15 @@ const gameActions = {
     };
 
     const payload = {
-      meta: { gameId: state.meta.gameId, status: state.meta.status, type: state.meta.type, title, playerCount: state.meta.playerCount, onBoard: Array.from(state.meta.onBoard), winLast: state.meta.winLast },
+      meta: { gameId: state.meta.gameId, status: state.meta.status, type: state.meta.type, title, playerCount: state.meta.playerCount, onBoard: Array.from(state.meta.onBoard), winLast: state.meta.winLast, gameStartedAt: state.meta.gameStartedAt },
       move: { playerIdx: state.move.playerIdx, turn: state.move.turn, moveCount: state.move.moveCount, rollAllowed: state.move.rollAllowed, ticks: state.move.ticks, moveAllowed: state.move.moveAllowed, moving: state.move.moving, timeOut: state.move.timeOut },
       players: { R: sanitizePlayer(state.players.R, "R"), B: sanitizePlayer(state.players.B, "B"), Y: sanitizePlayer(state.players.Y, "Y"), G: sanitizePlayer(state.players.G, "G") }
     };
-
+    console.log(payload);
     try {
       await api.post('/api/games/save', payload);
       toast.success(state.meta.status === "FINISHED" ? "Match results saved!" : "Game progress saved!", { theme: "dark" });
-
-      // ==============================================
-      // NEW STAT UPDATION LOGIC ON GAME FINISH
-      // ==============================================
-      if (state.meta.status === "FINISHED") {
-          // Identify local user's color (defaults to 'R' based on initiateOfflineGameLogic)
-          const userColor = state.meta.color || "R";
-          
-          // User wins if their win position is 1st
-          const userDidWin = state.players[userColor].winPosn === 1;
-
-          const statsPayload = {
-              gameId: state.meta.gameId,
-              result: userDidWin ? 'win' : 'loss',
-              opponent: state.meta.type === 'bot' ? 'A.I. Core' : 'Local Challenger',
-              gameType: state.meta.type
-          };
-
-          const statsRes = await api.post('/api/games/record-stats', statsPayload);
-          if (statsRes.data.success) {
-              updateUserInfo(statsRes.data.user);
-          }
-      }
-    } catch (error) { toast.error("Failed to sync with server"); }
+    } catch (error) { toast.error("Failed to sync with server"); console.log(error) }
   },
 
   loadGameFromDB: async (gameId) => {
@@ -215,6 +253,7 @@ const gameActions = {
       return false;
     } catch (error) {
       toast.error("Saved game not found");
+      console.log(error)
       return false;
     }
   }

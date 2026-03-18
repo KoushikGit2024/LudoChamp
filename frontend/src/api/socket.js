@@ -7,7 +7,7 @@ const SERVER_URL = import.meta.env.VITE_MODE === 'production'
         : "http://localhost:3000";
 
 const socket = io(SERVER_URL, {
-  autoConnect: false,           // Set to false so we only connect when the user actually enters a game/dashboard
+  autoConnect: false,           // Set to false so we only connect when the user actually enters a game/session
   withCredentials: true,        // Essential if you are using HTTP cookies/sessions for authentication
   transports: ['websocket'],    // Force WebSocket first for lower latency (skips HTTP long-polling)
   reconnectionAttempts: 5,      // How many times to try reconnecting if the network drops

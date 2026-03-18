@@ -582,24 +582,7 @@ const markNotificationRead = async (req, res, next) => {
 // ==========================================
 // SEND INVITES
 // ==========================================
-// ==========================================
-// SEND INVITES
-// ==========================================
-// CHANGE SUMMARY:
-//
-// Previously sendInvites only sent notifications to guests and returned nothing
-// useful. The host then had to make a SECOND request to /generate-session-idf
-// to get their own signed session JWT.
-//
-// Now sendInvites:
-//   1. Accepts `hostColor` and `size` in the request body (new fields).
-//   2. Generates and returns a signed `hostToken` JWT in the response.
-//   3. Fixes the color–target alignment bug: `colors` must now only contain
-//      invited (non-host) colors, matching the `targets` array index-for-index.
-//      `size` is sent separately so the total player count is preserved in JWTs.
-//
-// This collapses two API calls into one.
-// ==========================================
+
 const sendInvites = async (req, res, next) => {
     try {
         const {

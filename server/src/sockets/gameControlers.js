@@ -163,8 +163,6 @@ const manageTurnTimer = (io, gameId, color) => {
       const state = await redisClient.json.get(`game:${gameId}`);
       if (!state || state.meta.status !== "RUNNING" || state.move.turn !== color) return;
 
-      console.log(`[AUTO-SKIP] ⏱️ 30s Timeout fired for ${color} in ${gameId}`);
-
       if (!state.meta.timeoutCounts) state.meta.timeoutCounts = {};
       state.meta.timeoutCounts[color] = (state.meta.timeoutCounts[color] || 0) + 1;
       const skipCount = state.meta.timeoutCounts[color];
@@ -189,14 +187,18 @@ const manageTurnTimer = (io, gameId, color) => {
           return;
         }
 
+        // ===============================================
+        // AUTO-SKIP: CHECK IF GAME ENDS DUE TO AFK PURGE
+        // ===============================================
         if (state.meta.onBoard.length < 2) {
           state.meta.status      = "FINISHED";
           state.move.rollAllowed = false;
           state.move.moveAllowed = false;
           state.move.turn        = null;
+          
           const survivor = state.meta.onBoard[0];
           if (survivor && state.players[survivor].winPosn === 0) {
-            state.players[survivor].winPosn = 1;
+            state.players[survivor].winPosn = 1; // Crown the last man standing
           }
         } else {
           state.move.turn          = getNextTurn(color, state.meta.onBoard);
@@ -215,7 +217,12 @@ const manageTurnTimer = (io, gameId, color) => {
           color, message: `Node ${color} removed: exceeded auto-skip limit.`, newState: state, syncArray: [state.meta.syncTick - 1, state.meta.syncTick]
         });
 
-        if (state.meta.status !== "FINISHED") manageTurnTimer(io, gameId, state.move.turn);
+        // Trigger flush if game just ended from afk limit
+        if (state.meta.status === "FINISHED") {
+          await flushScoresToProfiles(gameId, state); 
+        } else {
+          manageTurnTimer(io, gameId, state.move.turn);
+        }
         return;
       }
 
@@ -282,7 +289,7 @@ const manageTurnTimer = (io, gameId, color) => {
           }
 
           if (delayedState.meta.status === "FINISHED") {
-            await flushScoresToProfiles(gameId, delayedState); // Pass state directly
+            await flushScoresToProfiles(gameId, delayedState); 
           } else {
             manageTurnTimer(io, gameId, delayedState.move.turn);
           }
@@ -299,44 +306,70 @@ const manageTurnTimer = (io, gameId, color) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SCORE DB FLUSH (Computed directly from final state)
+// SCORE DB FLUSH (Fully Integrated & Dynamic)
 // ─────────────────────────────────────────────────────────────────────────────
 const flushScoresToProfiles = async (gameId, state) => {
   try {
     if (!state) return;
+    
+    const gameType = state.meta.type;
 
-    // Dynamically build scores mapping from the final state object
+    // Build scores mapping from final state object
     const scores = {};
     for (const color of MASTER_TURN_ORDER) {
       const p = state.players[color];
-      if (!p || !p.username) continue;
+      // Skip bots and unregistered players
+      if (!p || !p.username) continue; 
+      
       scores[p.username] = {
         color, username: p.username, winPosn: p.winPosn, winCount: p.winCount,
-        gameId, status: state.meta.status, finishedAt: Date.now()
+        gameId, status: state.meta.status
       };
     }
 
+    // Process each authenticated player
     for (const username of Object.keys(scores)) {
-      const entry = scores[username];
-      const isWin  = entry.winPosn === 1;
-      const isLoss = entry.winPosn > 1 || (entry.winPosn === 0 && entry.winCount < 4);
-      const result = isWin ? "win" : isLoss ? "loss" : "draw";
-
-      await User.findOneAndUpdate(
-        { username: username },
-        {
-          $inc: { 'stats.wins': isWin ? 1 : 0, 'stats.losses': isLoss ? 1 : 0, 'stats.totalMatches': 1, 'stats.xp': isWin ? 100 : 10 },
-          $push: { 'stats.matchHistory': { $each: [{ gameId, result, date: new Date() }], $slice: -50 } }
-        }
-      );
-    }
-
-    for (const username of Object.keys(scores)) {
-      const user = await User.findOne({ username: username }).select('stats');
+      const user = await User.findOne({ username });
       if (!user) continue;
-      const total = user.stats.totalMatches || 1;
-      const winRate = ((user.stats.wins / total) * 100).toFixed(1) + '%';
-      await User.updateOne({ username: username }, { $set: { 'stats.winRate': winRate } });
+
+      const entry = scores[username];
+      const isWin = entry.winPosn === 1; // No draws; you either win or lose.
+      const result = isWin ? "win" : "loss";
+      
+      // 1. Calculate Base Progress
+      const xpGain = isWin ? 750 : 200;
+      user.stats.xp += xpGain;
+      user.stats.totalMatches += 1;
+      
+      if (isWin) user.stats.wins += 1;
+      else user.stats.losses += 1;
+
+      // 2. Process Level Ups dynamically
+      while (user.stats.xp >= user.stats.nextLevelXp) {
+          user.stats.level += 1;
+          user.stats.xp -= user.stats.nextLevelXp;
+          user.stats.nextLevelXp = Math.floor(user.stats.nextLevelXp * 1.6);
+      }
+
+      // 3. Update Win Rate string
+      user.stats.winRate = user.stats.totalMatches > 0 
+          ? ((user.stats.wins / user.stats.totalMatches) * 100).toFixed(1) + '%' 
+          : "0%";
+
+      // 4. Update History (capping at 50 matches)
+      user.stats.matchHistory.push({ 
+          gameId, 
+          date: new Date(), 
+          result, 
+          opponent: "Online Grid", 
+          gameType 
+      });
+      
+      if (user.stats.matchHistory.length > 50) {
+          user.stats.matchHistory.shift();
+      }
+
+      await user.save();
     }
 
     console.log(`[SCORE] ✅ Final scores calculated and flushed to profiles for game ${gameId}`);
@@ -719,7 +752,7 @@ export const handleMovePiece = async (io, socket, { gameId, color, pieceIdx, ref
     });
 
     if (state.meta.status === "FINISHED") {
-      await flushScoresToProfiles(gameId, state); // Pass state directly
+      await flushScoresToProfiles(gameId, state); 
     } else {
       manageTurnTimer(io, gameId, state.move.turn);
     }
@@ -781,8 +814,7 @@ export const handleDisconnect = (io, socket, reason) => {
       if (!state) return;
 
       if (state.meta.status === "FINISHED") {
-        await flushScoresToProfiles(gameId, state); // Pass state directly
-        return;
+        return; // Prevent flushing twice if game was already flagged as finished
       } 
 
       const boardIndex = state.meta.onBoard.indexOf(color);
@@ -803,13 +835,17 @@ export const handleDisconnect = (io, socket, reason) => {
         return;
       }
 
+      // ===============================================
+      // DISCONNECT: CHECK IF GAME ENDS DUE TO PURGE
+      // ===============================================
       if (state.meta.status === "RUNNING" && state.meta.onBoard.length < 2) {
         state.meta.status      = "FINISHED";
         state.move.rollAllowed = false;
         state.move.moveAllowed = false;
         state.move.turn        = null;
+        
         const survivor = state.meta.onBoard[0];
-        if (state.players[survivor].winPosn === 0) state.players[survivor].winPosn = 1;
+        if (state.players[survivor].winPosn === 0) state.players[survivor].winPosn = 1; // Crown survivor
         if (turnTimers.has(gameId)) { clearTimeout(turnTimers.get(gameId)); turnTimers.delete(gameId); }
       }
 
@@ -833,8 +869,9 @@ export const handleDisconnect = (io, socket, reason) => {
         syncArray: [state.meta.syncTick - 1, state.meta.syncTick]
       });
 
+      // Trigger flush if game just ended from disconnect
       if (state.meta.status === "FINISHED") {
-        await flushScoresToProfiles(gameId, state); // Pass state directly
+        await flushScoresToProfiles(gameId, state); 
       }
     } catch (err) {
       console.error("❌ [PURGE] Error:", err);

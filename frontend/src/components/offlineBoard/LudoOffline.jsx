@@ -89,7 +89,7 @@ const LudoOffline = memo(() => {
     navigate('/dashboard');
   };
 
-  // console.log(playersSet)
+  // console.log(useGameStore(state=>state))
 
   return (
     <div className="w-full h-full min-h-screen bg-[#050502] flex items-center justify-center relative overflow-hidden">

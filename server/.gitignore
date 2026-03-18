@@ -3,7 +3,6 @@ node_modules/
 dist/
 dist-ssr/
 *.local
-dummyard/
 # Environment variables (Keep your keys private)
 .env
 .env.local

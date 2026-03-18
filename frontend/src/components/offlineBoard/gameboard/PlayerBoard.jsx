@@ -42,8 +42,8 @@ const PlayerBoard = memo(({ playing, left, turn = 0, idx, timeOut, moveAllowed, 
     };
   }, [turn, rollAllowed, moveAllowed]);
 
-  const userName = useGameStore((state) => state.players[idx].username);
-  const playerName = useGameStore((state) => state.players[idx].name);
+  const { username: userName, name: playerName, profile: playerProfile } =
+  useGameStore(state => state.players[idx] || {});
 
   // --- Design Constants ---
   const PLAYER_COLORS = {
@@ -91,7 +91,7 @@ const PlayerBoard = memo(({ playing, left, turn = 0, idx, timeOut, moveAllowed, 
            
            {/* Profile Image */}
            <img
-             src="/defaultProfile.png"
+             src={playerProfile||"/defaultProfile.png"}
              className="h-full w-full object-cover"
              alt="profile"
              onError={(e) => { e.target.style.display = 'none'; }} // Fallback if img missing
@@ -99,7 +99,7 @@ const PlayerBoard = memo(({ playing, left, turn = 0, idx, timeOut, moveAllowed, 
            
            {/* Fallback Icon if Image Fails/Missing */}
            <div className="absolute z-0 text-white/20">
-              {online ? <User size={20} /> : <Cpu size={20} />}
+              {online ? <User size={20} /> : playerProfile==='/defaultProfile.png' && <Cpu size={20} />}
            </div>
 
            {/* Online Status Dot */}

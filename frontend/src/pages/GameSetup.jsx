@@ -224,14 +224,23 @@ const GameSetup = () => {
       }
 
       // ─── Local / Bot modes ───────────────────────────────────────────────
+      // console.log(players)
       const gameObj = {
-        type:    boardType,
+        type: boardType,
+
         players: selectedColors,
-        names:   selectedColors.map(c => isPOF ? players[c].username : players[c].name),
+
+        names: selectedColors.reduce((acc, c) => {
+          acc[c] = players[c].username || players[c].name;
+          return acc;
+        }, {}),
+
         botDifficulties: selectedColors.reduce((acc, c) => {
           acc[c] = (isBot && c !== humanColor) ? botDifficulty[c] : null;
           return acc;
-        }, {})
+        }, {}),
+
+        avatar: myAvatar
       };
 
       gameActions.resetStore();
@@ -242,7 +251,7 @@ const GameSetup = () => {
 
     } catch (error) {
       console.error(error);
-      console.log({...error})
+      // console.log({...error})
       toast.error("Failed to initialize session.", { theme: "dark" });
     } finally {
       setIsStarting(false);
