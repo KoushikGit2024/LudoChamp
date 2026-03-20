@@ -19,7 +19,7 @@ const getUser = async () => {
       updateUserInfo(res.data.user);
     }
   } catch (err) {
-    console.error("Auth sync failed or no active session.");
+    console.error(err);
   }
 };
 

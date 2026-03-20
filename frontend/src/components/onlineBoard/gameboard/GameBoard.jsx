@@ -410,15 +410,17 @@ const GameBoard = memo(({ socket, gameId, isOnline, moveCount, moving, pieceIdxA
       {["R", "B", "Y", "G"].map((c, i) =>
         [1, 2, 3, 4, 5].map((n, j) => {
           const trackColor = COLORS[c];
+          const cursorStyle = canMove ? 'cursor-pointer hover:bg-white/10' : 'cursor-default';
           return (
             <div
               className={`track${c}${n} relative flex items-center justify-center rounded-[4px] aspect-square`}
               key={`${c}${n}`}
             >
               <div
-                className="cell w-full h-full rounded-[3px] flex items-center justify-center bg-black/40 border transition-all"
+                className={`cell w-full h-full rounded-[3px] flex items-center justify-center bg-black/40 border transition-all ${cursorStyle}`}
                 style={{ borderColor: trackColor, boxShadow: `inset 0 0 8px ${trackColor}44` }}
                 ref={(el) => (pathRefs.current[i * 5 + j + 52] = el)}
+                onClick={() => determineAndProcessClickCell(i * 5 + j + 52)}
               >
                 <div className="absolute w-1 h-1 rounded-full opacity-50" style={{ backgroundColor: trackColor }} />
                 <Cell

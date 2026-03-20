@@ -130,13 +130,13 @@ const LudoOnline = memo(({ socket, socketLoaded, setSocketLoaded, boardType }) =
         if (previousTurn === myColorRef.current) {
           // toast.error("Time limit exceeded! Auto-skipping turn.", { theme: "dark", icon: "⏳" });
         } else {
-          toast.info(`Node ${previousTurn} timed out.`, { theme: "dark", icon: "⏱️" });
+          // toast.info(`Node ${previousTurn} timed out.`, { theme: "dark", icon: "⏱️" });
         }
       }
     };
 
     const handleAddPlayer = ({ color, curCount, username, boardSize }) => {
-      // toast.success(`CurCount ${curCount}`, { theme: "dark", icon: "🌐" });
+      toast.success(`CurCount ${curCount}`, { theme: "dark", icon: "🌐" });
       toast.info(`@${username} joined via Node ${color}`, { theme: "dark", icon: "🌐" });
       setGameSize([curCount, boardSize]);
     };
@@ -149,11 +149,11 @@ const LudoOnline = memo(({ socket, socketLoaded, setSocketLoaded, boardType }) =
 
     // FIX #5: Handle AFK warning from server (3 skips warning, 4 skips warning)
     const handleAutoSkipWarning = ({ color, skipsLeft, message }) => {
-      if (color === myColorRef.current) {
-        toast.error(`⚠️ ${message}`, { theme: "dark", toastId: `afk-warn-${color}`, autoClose: 8000 });
-      } else {
-        toast.warning(`Node ${color}: ${skipsLeft} skip(s) left before removal.`, { theme: "dark", icon: "⏳" });
-      }
+      // if (color === myColorRef.current) {
+      //   toast.error(`⚠️ ${message}`, { theme: "dark", toastId: `afk-warn-${color}`, autoClose: 8000 });
+      // } else {
+      //   toast.warning(`Node ${color}: ${skipsLeft} skip(s) left before removal.`, { theme: "dark", icon: "⏳" });
+      // }
     };
 
     // FIX #5: Handle player removal due to AFK
