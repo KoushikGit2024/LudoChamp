@@ -76,14 +76,14 @@ if (process.env.NODE_ENV !== "production") {
 // ===== HTTP Routes =====
 
 // Root Route
-app.get('/', async (req, res) => {
-    try {
-        let users = await User.find({});
-        res.send(users);
-    } catch (err) {
-        res.status(500).send("Error fetching users");
-    }
-});
+// app.get('/', async (req, res) => {
+//     try {
+//         let users = await User.find({});
+//         res.send(users);
+//     } catch (err) {
+//         res.status(500).send("Error fetching users");
+//     }
+// });
 
 // Health check
 app.get("/test", (req, res) => res.send({ msg: "Server running well!!!" }));
